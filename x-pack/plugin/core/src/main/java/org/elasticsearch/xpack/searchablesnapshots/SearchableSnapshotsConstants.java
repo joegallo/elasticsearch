@@ -6,7 +6,6 @@
  */
 package org.elasticsearch.xpack.searchablesnapshots;
 
-import org.elasticsearch.Version;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 
@@ -54,7 +53,5 @@ public class SearchableSnapshotsConstants {
     public static final String CACHE_PREWARMING_THREAD_POOL_SETTING = "xpack.searchable_snapshots.cache_prewarming_thread_pool";
 
     public static final String SNAPSHOT_BLOB_CACHE_INDEX = ".snapshot-blob-cache";
-
-    public static final Version SHARED_CACHE_VERSION = Version.V_7_12_0;
 
 }

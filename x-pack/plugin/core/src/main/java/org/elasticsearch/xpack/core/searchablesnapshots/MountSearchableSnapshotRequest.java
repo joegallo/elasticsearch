@@ -20,7 +20,6 @@ import org.elasticsearch.common.xcontent.ConstructingObjectParser;
 import org.elasticsearch.common.xcontent.ObjectParser;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.rest.RestRequest;
-import org.elasticsearch.xpack.searchablesnapshots.SearchableSnapshotsConstants;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -102,11 +101,7 @@ public class MountSearchableSnapshotRequest extends MasterNodeRequest<MountSearc
         this.indexSettings = readSettingsFromStream(in);
         this.ignoredIndexSettings = in.readStringArray();
         this.waitForCompletion = in.readBoolean();
-        if (in.getVersion().onOrAfter(SearchableSnapshotsConstants.SHARED_CACHE_VERSION)) {
-            this.storage = Storage.readFromStream(in);
-        } else {
-            this.storage = Storage.FULL_COPY;
-        }
+        this.storage = Storage.readFromStream(in);
     }
 
     @Override
@@ -119,12 +114,7 @@ public class MountSearchableSnapshotRequest extends MasterNodeRequest<MountSearc
         writeSettingsToStream(indexSettings, out);
         out.writeStringArray(ignoredIndexSettings);
         out.writeBoolean(waitForCompletion);
-        if (out.getVersion().onOrAfter(SearchableSnapshotsConstants.SHARED_CACHE_VERSION)) {
-            storage.writeTo(out);
-        } else if (storage != Storage.FULL_COPY) {
-            throw new UnsupportedOperationException(
-                    "storage type [" + storage + "] is not supported on version [" + out.getVersion() + "]");
-        }
+        storage.writeTo(out);
     }
 
     @Override
