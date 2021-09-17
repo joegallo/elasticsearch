@@ -320,13 +320,11 @@ public class IndexLifecycleService
         logger.info("triggerPolicies [" + fromClusterStateChange + "]");
 
         IndexLifecycleMetadata currentMetadata = clusterState.metadata().custom(IndexLifecycleMetadata.TYPE);
-
         if (currentMetadata == null) {
             return;
         }
 
         OperationMode currentMode = currentMetadata.getOperationMode();
-
         if (OperationMode.STOPPED.equals(currentMode)) {
             return;
         }
