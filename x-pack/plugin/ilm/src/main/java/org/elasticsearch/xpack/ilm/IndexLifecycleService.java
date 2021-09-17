@@ -317,6 +317,8 @@ public class IndexLifecycleService
      * @param fromClusterStateChange whether things are triggered from the cluster-state-listener or the scheduler
      */
     void triggerPolicies(ClusterState clusterState, boolean fromClusterStateChange) {
+        logger.info("triggerPolicies [" + fromClusterStateChange + "]");
+
         IndexLifecycleMetadata currentMetadata = clusterState.metadata().custom(IndexLifecycleMetadata.TYPE);
 
         if (currentMetadata == null) {

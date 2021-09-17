@@ -325,6 +325,8 @@ class IndexLifecycleRunner {
      * Invoked after the cluster state has been changed
      */
     void runPolicyAfterStateChange(String policy, IndexMetadata indexMetadata) {
+        logger.info("runPolicyAfterStateChange [" + policy + ", " + indexMetadata.getIndex().getName() + "]");
+
         String index = indexMetadata.getIndex().getName();
         LifecycleExecutionState lifecycleState = LifecycleExecutionState.fromIndexMetadata(indexMetadata);
         final Step currentStep;
