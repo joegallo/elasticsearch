@@ -388,32 +388,6 @@ public class RolloverRequest extends AcknowledgedRequest<RolloverRequest> implem
     }
 
     /**
-     * Given the results of evaluating each individual condition, determine whether the rollover request should proceed -- that is,
-     * whether the conditions are met.
-     *
-     * If there are no conditions at all, then the request is unconditional (i.e. a command), and the conditions are met.
-     *
-     * If the request has conditions, then all min_* conditions and at least one max_* condition must have a true result.
-     *
-     * @param conditionResults a map of individual conditions and their associated evaluation results
-     *
-     * @return where the conditions for rollover are satisfied or not
-     */
-    public boolean areConditionsMet(Map<String, Boolean> conditionResults) {
-        boolean allMinConditionsMet = conditions.values()
-            .stream()
-            .filter(c -> Condition.Type.MIN == c.type())
-            .allMatch(c -> conditionResults.getOrDefault(c.toString(), false));
-
-        boolean anyMaxConditionsMet = conditions.values()
-            .stream()
-            .filter(c -> Condition.Type.MAX == c.type())
-            .anyMatch(c -> conditionResults.getOrDefault(c.toString(), false));
-
-        return conditionResults.size() == 0 || (allMinConditionsMet && anyMaxConditionsMet);
-    }
-
-    /**
      * Returns the inner {@link CreateIndexRequest}. Allows to configure mappings, settings and aliases for the new index.
      */
     public CreateIndexRequest getCreateIndexRequest() {

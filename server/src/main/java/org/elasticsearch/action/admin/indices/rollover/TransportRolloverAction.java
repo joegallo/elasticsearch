@@ -46,12 +46,9 @@ import org.elasticsearch.transport.TransportService;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Main class to swap the index pointed to by an alias, given some conditions
@@ -148,7 +145,7 @@ public class TransportRolloverAction extends TransportMasterNodeAction<RolloverR
                 MetadataRolloverService.validateIndexName(oldState, trialRolloverIndexName);
 
                 // Evaluate the conditions, so that we can tell without a cluster state update whether a rollover would occur.
-                final Map<String, Boolean> trialConditionResults = evaluateConditions(
+                final RolloverConditionEvaluation evaluation = new RolloverConditionEvaluation(
                     rolloverRequest.getConditions().values(),
                     buildStats(metadata.index(trialSourceIndexName), statsResponse)
                 );
@@ -156,7 +153,7 @@ public class TransportRolloverAction extends TransportMasterNodeAction<RolloverR
                 final RolloverResponse trialRolloverResponse = new RolloverResponse(
                     trialSourceIndexName,
                     trialRolloverIndexName,
-                    trialConditionResults,
+                    evaluation.getResults(),
                     rolloverRequest.isDryRun(),
                     false,
                     false,
@@ -170,7 +167,7 @@ public class TransportRolloverAction extends TransportMasterNodeAction<RolloverR
                 }
 
                 // Pre-check the conditions to see whether we should submit a new cluster state task
-                if (rolloverRequest.areConditionsMet(trialConditionResults)) {
+                if (evaluation.areConditionsMet()) {
                     String source = "rollover_index source [" + trialRolloverIndexName + "] to target [" + trialRolloverIndexName + "]";
                     RolloverTask rolloverTask = new RolloverTask(rolloverRequest, statsResponse, trialRolloverResponse, listener);
                     ClusterStateTaskConfig config = ClusterStateTaskConfig.build(Priority.NORMAL, rolloverRequest.masterNodeTimeout());
@@ -181,19 +178,6 @@ public class TransportRolloverAction extends TransportMasterNodeAction<RolloverR
                 }
             }, listener::onFailure)
         );
-    }
-
-    static Map<String, Boolean> evaluateConditions(final Collection<Condition<?>> conditions, @Nullable final Condition.Stats stats) {
-        Objects.requireNonNull(conditions, "conditions must not be null");
-
-        if (stats != null) {
-            return conditions.stream()
-                .map(condition -> condition.evaluate(stats))
-                .collect(Collectors.toMap(result -> result.condition().toString(), Condition.Result::matched));
-        } else {
-            // no conditions matched
-            return conditions.stream().collect(Collectors.toMap(Condition::toString, cond -> false));
-        }
     }
 
     static Condition.Stats buildStats(@Nullable final IndexMetadata metadata, @Nullable final IndicesStatsResponse statsResponse) {
@@ -302,26 +286,19 @@ public class TransportRolloverAction extends TransportMasterNodeAction<RolloverR
             );
             final String sourceIndexName = rolloverNames.sourceName();
 
-            // Re-evaluate the conditions, now with our final source index name
-            final Map<String, Boolean> postConditionResults = evaluateConditions(
+            final RolloverConditionEvaluation evaluation = new RolloverConditionEvaluation(
                 rolloverRequest.getConditions().values(),
                 buildStats(currentState.metadata().index(sourceIndexName), rolloverTask.statsResponse())
             );
 
-            if (rolloverRequest.areConditionsMet(postConditionResults)) {
-                final List<Condition<?>> metConditions = rolloverRequest.getConditions()
-                    .values()
-                    .stream()
-                    .filter(condition -> postConditionResults.get(condition.toString()))
-                    .toList();
-
+            if (evaluation.areConditionsMet()) {
                 // Perform the actual rollover
                 final var rolloverResult = rolloverService.rolloverClusterState(
                     currentState,
                     rolloverRequest.getRolloverTarget(),
                     rolloverRequest.getNewIndexName(),
                     rolloverRequest.getCreateIndexRequest(),
-                    metConditions,
+                    evaluation.getMetConditions(),
                     Instant.now(),
                     false,
                     false
@@ -344,7 +321,7 @@ public class TransportRolloverAction extends TransportMasterNodeAction<RolloverR
                                     // things like date resolution
                                     rolloverResult.sourceIndexName(),
                                     rolloverResult.rolloverIndexName(),
-                                    postConditionResults,
+                                    evaluation.getResults(),
                                     false,
                                     true,
                                     true,

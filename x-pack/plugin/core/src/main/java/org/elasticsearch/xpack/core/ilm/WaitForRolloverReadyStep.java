@@ -26,6 +26,8 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.Objects;
 
+import static org.elasticsearch.action.admin.indices.rollover.RolloverConditionEvaluation.areConditionsMet;
+
 /**
  * Waits for at least one rollover condition to be satisfied, using the Rollover API's dry_run option.
  */
@@ -233,7 +235,10 @@ public class WaitForRolloverReadyStep extends AsyncWaitStep {
             .rolloverIndex(
                 rolloverRequest,
                 ActionListener.wrap(
-                    response -> listener.onResponse(rolloverRequest.areConditionsMet(response.getConditionStatus()), EmptyInfo.INSTANCE),
+                    response -> listener.onResponse(
+                        areConditionsMet(rolloverRequest.getConditions().values(), response.getConditionStatus()),
+                        EmptyInfo.INSTANCE
+                    ),
                     listener::onFailure
                 )
             );
