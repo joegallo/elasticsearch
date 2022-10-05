@@ -210,8 +210,6 @@ public class IngestService implements ClusterStateApplier, ReportingService<Inge
             final String requestPipeline = indexRequest.getPipeline();
             indexRequest.setPipeline(NOOP_PIPELINE_NAME);
             indexRequest.setFinalPipeline(NOOP_PIPELINE_NAME);
-            String defaultPipeline = null;
-            String finalPipeline = null;
             IndexMetadata indexMetadata = null;
             // start to look for default or final pipelines via settings found in the index metadata
             if (originalRequest != null) {
@@ -234,16 +232,9 @@ public class IngestService implements ClusterStateApplier, ReportingService<Inge
             }
             if (indexMetadata != null) {
                 final Settings indexSettings = indexMetadata.getSettings();
-                if (IndexSettings.DEFAULT_PIPELINE.exists(indexSettings)) {
-                    // find the default pipeline if one is defined from an existing index setting
-                    defaultPipeline = IndexSettings.DEFAULT_PIPELINE.get(indexSettings);
-                    indexRequest.setPipeline(defaultPipeline);
-                }
-                if (IndexSettings.FINAL_PIPELINE.exists(indexSettings)) {
-                    // find the final pipeline if one is defined from an existing index setting
-                    finalPipeline = IndexSettings.FINAL_PIPELINE.get(indexSettings);
-                    indexRequest.setFinalPipeline(finalPipeline);
-                }
+                // use the default and final pipeline from the existing index's settings
+                indexRequest.setPipeline(IndexSettings.DEFAULT_PIPELINE.get(indexSettings));
+                indexRequest.setFinalPipeline(IndexSettings.FINAL_PIPELINE.get(indexSettings));
             } else if (indexRequest.index() != null) {
                 // the index does not exist yet (and this is a valid request), so match index
                 // templates to look for pipelines in either a matching V2 template (which takes
@@ -251,20 +242,19 @@ public class IngestService implements ClusterStateApplier, ReportingService<Inge
                 String v2Template = MetadataIndexTemplateService.findV2Template(metadata, indexRequest.index(), false);
                 if (v2Template != null) {
                     Settings settings = MetadataIndexTemplateService.resolveSettings(metadata, v2Template);
-                    if (IndexSettings.DEFAULT_PIPELINE.exists(settings)) {
-                        defaultPipeline = IndexSettings.DEFAULT_PIPELINE.get(settings);
-                    }
-                    if (IndexSettings.FINAL_PIPELINE.exists(settings)) {
-                        finalPipeline = IndexSettings.FINAL_PIPELINE.get(settings);
-                    }
-                    indexRequest.setPipeline(Objects.requireNonNullElse(defaultPipeline, NOOP_PIPELINE_NAME));
-                    indexRequest.setFinalPipeline(Objects.requireNonNullElse(finalPipeline, NOOP_PIPELINE_NAME));
+                    // use the default and final pipeline from the templated settings
+                    indexRequest.setPipeline(IndexSettings.DEFAULT_PIPELINE.get(settings));
+                    indexRequest.setFinalPipeline(IndexSettings.FINAL_PIPELINE.get(settings));
                 } else {
                     List<IndexTemplateMetadata> templates = MetadataIndexTemplateService.findV1Templates(
                         metadata,
                         indexRequest.index(),
                         null
                     );
+                    // using null rather than NOOP_PIPELINE_NAME (and careful use of .exists) so that we can detect whether
+                    // pipelines have been found and escape the loop if they have been
+                    String defaultPipeline = null;
+                    String finalPipeline = null;
                     // order of templates are highest order first
                     for (final IndexTemplateMetadata template : templates) {
                         final Settings settings = template.settings();
