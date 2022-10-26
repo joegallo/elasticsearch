@@ -99,9 +99,7 @@ def main(diagnostic):
 
     print(title("Pipeline Summary:"))
     print(p.head(5))
-    print()
-    print(title("Pipeline Totals / Ingest Totals:"))
-    print(pt / t)
+    print("{0:.0%}".format((pt / t)["time_in_millis"]))
     print()
 
     for pipeline in p.index[0:2]:
@@ -111,7 +109,6 @@ def main(diagnostic):
 
         print(title(f"Pipeline '{pipeline}' processors:"))
         print(pr.head(5))
-        print()
         print("{0:.0%}".format((prt / p.loc[pipeline])["time_in_millis"]))
         print()
 
