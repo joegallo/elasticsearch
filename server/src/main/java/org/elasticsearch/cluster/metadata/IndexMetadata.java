@@ -623,6 +623,10 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
     @Nullable
     private final Long shardSizeInBytesForecast;
 
+    private final String defaultPipeline;
+
+    private final String finalPipeline;
+
     private IndexMetadata(
         final Index index,
         final long version,
@@ -667,7 +671,9 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
         final Version indexCompatibilityVersion,
         @Nullable final IndexMetadataStats stats,
         @Nullable final Double writeLoadForecast,
-        @Nullable Long shardSizeInBytesForecast
+        @Nullable Long shardSizeInBytesForecast,
+        final String defaultPipeline,
+        final String finalPipeline
     ) {
         this.index = index;
         this.version = version;
@@ -721,6 +727,8 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
         this.stats = stats;
         this.writeLoadForecast = writeLoadForecast;
         this.shardSizeInBytesForecast = shardSizeInBytesForecast;
+        this.defaultPipeline = defaultPipeline;
+        this.finalPipeline = finalPipeline;
         assert numberOfShards * routingFactor == routingNumShards : routingNumShards + " must be a multiple of " + numberOfShards;
     }
 
@@ -772,7 +780,9 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
             this.indexCompatibilityVersion,
             this.stats,
             this.writeLoadForecast,
-            this.shardSizeInBytesForecast
+            this.shardSizeInBytesForecast,
+            this.defaultPipeline,
+            this.finalPipeline
         );
     }
 
@@ -830,7 +840,9 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
             this.indexCompatibilityVersion,
             this.stats,
             this.writeLoadForecast,
-            this.shardSizeInBytesForecast
+            this.shardSizeInBytesForecast,
+            this.defaultPipeline,
+            this.finalPipeline
         );
     }
 
@@ -886,7 +898,9 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
             this.indexCompatibilityVersion,
             this.stats,
             this.writeLoadForecast,
-            this.shardSizeInBytesForecast
+            this.shardSizeInBytesForecast,
+            this.defaultPipeline,
+            this.finalPipeline
         );
     }
 
@@ -942,7 +956,9 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
             this.indexCompatibilityVersion,
             this.stats,
             this.writeLoadForecast,
-            this.shardSizeInBytesForecast
+            this.shardSizeInBytesForecast,
+            this.defaultPipeline,
+            this.finalPipeline
         );
     }
 
@@ -994,7 +1010,9 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
             this.indexCompatibilityVersion,
             this.stats,
             this.writeLoadForecast,
-            this.shardSizeInBytesForecast
+            this.shardSizeInBytesForecast,
+            this.defaultPipeline,
+            this.finalPipeline
         );
     }
 
@@ -1175,6 +1193,20 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
     @Nullable
     public Instant getTimeSeriesEnd() {
         return timeSeriesEnd;
+    }
+
+    /**
+     * @return the default_pipeline for this index (or IngestService.NOOP_PIPELINE_NAME) if there is not a default_pipeline
+     */
+    public String getDefaultPipeline() {
+        return defaultPipeline;
+    }
+
+    /**
+     * @return the final_pipeline for this index (or IngestService.NOOP_PIPELINE_NAME) if there is not a final_pipeline
+     */
+    public String getFinalPipeline() {
+        return finalPipeline;
     }
 
     /**
@@ -2210,7 +2242,9 @@ public class IndexMetadata implements Diffable<IndexMetadata>, ToXContentFragmen
                 SETTING_INDEX_VERSION_COMPATIBILITY.get(settings),
                 stats,
                 indexWriteLoadForecast,
-                shardSizeInBytesForecast
+                shardSizeInBytesForecast,
+                IndexSettings.DEFAULT_PIPELINE.get(settings),
+                IndexSettings.FINAL_PIPELINE.get(settings)
             );
         }
 

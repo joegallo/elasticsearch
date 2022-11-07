@@ -231,10 +231,9 @@ public class IngestService implements ClusterStateApplier, ReportingService<Inge
                 }
             }
             if (indexMetadata != null) {
-                final Settings indexSettings = indexMetadata.getSettings();
-                // use the default and final pipeline from the existing index's settings
-                indexRequest.setPipeline(IndexSettings.DEFAULT_PIPELINE.get(indexSettings));
-                indexRequest.setFinalPipeline(IndexSettings.FINAL_PIPELINE.get(indexSettings));
+                // use the default and final pipeline from the existing index's metadata
+                indexRequest.setPipeline(indexMetadata.getDefaultPipeline());
+                indexRequest.setFinalPipeline(indexMetadata.getFinalPipeline());
             } else if (indexRequest.index() != null) {
                 // the index does not exist yet (and this is a valid request), so match index
                 // templates to look for pipelines in either a matching V2 template (which takes

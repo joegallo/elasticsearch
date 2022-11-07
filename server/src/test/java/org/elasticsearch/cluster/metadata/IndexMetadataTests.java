@@ -27,8 +27,10 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.core.SuppressForbidden;
 import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.indices.IndicesModule;
+import org.elasticsearch.ingest.IngestService;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xcontent.NamedXContentRegistry;
 import org.elasticsearch.xcontent.XContentBuilder;
@@ -532,6 +534,40 @@ public class IndexMetadataTests extends ESTestCase {
             .putAlias(AliasMetadata.builder("index").build())
             .build(true);
         assertThat(indexMetadata.getAliases(), hasKey("index-alias-corrupted-by-8-5"));
+    }
+
+    public void testDefaultPipeline() {
+        Settings.Builder settings = Settings.builder()
+            .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, randomIntBetween(1, 8))
+            .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
+            .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT);
+
+        IndexMetadata idxMeta1 = IndexMetadata.builder("test").settings(settings).build();
+
+        assertThat(idxMeta1.getDefaultPipeline(), equalTo(IngestService.NOOP_PIPELINE_NAME));
+
+        IndexMetadata idxMeta2 = IndexMetadata.builder(idxMeta1)
+            .settings(settings.put(IndexSettings.DEFAULT_PIPELINE.getKey(), "some_default_pipeline").build())
+            .build();
+
+        assertThat(idxMeta2.getDefaultPipeline(), equalTo("some_default_pipeline"));
+    }
+
+    public void testFinalPipeline() {
+        Settings.Builder settings = Settings.builder()
+            .put(IndexMetadata.SETTING_NUMBER_OF_SHARDS, randomIntBetween(1, 8))
+            .put(IndexMetadata.SETTING_NUMBER_OF_REPLICAS, 0)
+            .put(IndexMetadata.SETTING_VERSION_CREATED, Version.CURRENT);
+
+        IndexMetadata idxMeta1 = IndexMetadata.builder("test").settings(settings).build();
+
+        assertThat(idxMeta1.getFinalPipeline(), equalTo(IngestService.NOOP_PIPELINE_NAME));
+
+        IndexMetadata idxMeta2 = IndexMetadata.builder(idxMeta1)
+            .settings(settings.put(IndexSettings.FINAL_PIPELINE.getKey(), "some_final_pipeline").build())
+            .build();
+
+        assertThat(idxMeta2.getFinalPipeline(), equalTo("some_final_pipeline"));
     }
 
     private static Settings indexSettingsWithDataTier(String dataTier) {
