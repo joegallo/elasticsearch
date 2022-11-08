@@ -255,11 +255,15 @@ public class TransportBulkAction extends HandledTransportAction<BulkRequest, Bul
         boolean hasIndexRequestsWithPipelines = false;
         final Metadata metadata = clusterService.state().getMetadata();
         final Version minNodeVersion = clusterService.state().getNodes().getMinNodeVersion();
+
+        // resolve 'now' once for this bulk request, w.r.t. date math expression andd then pipeline resolution
+        final long epochMillis = System.currentTimeMillis();
+
         for (DocWriteRequest<?> actionRequest : bulkRequest.requests) {
             IndexRequest indexRequest = getIndexWriteRequest(actionRequest);
             if (indexRequest != null) {
                 // Each index request needs to be evaluated, because this method also modifies the IndexRequest
-                boolean indexRequestHasPipeline = IngestService.resolvePipelines(actionRequest, indexRequest, metadata);
+                boolean indexRequestHasPipeline = IngestService.resolvePipelines(actionRequest, indexRequest, metadata, epochMillis);
                 hasIndexRequestsWithPipelines |= indexRequestHasPipeline;
             }
 
