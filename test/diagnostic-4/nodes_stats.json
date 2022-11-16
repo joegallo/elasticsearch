@@ -1,0 +1,158 @@
+{
+  "nodes" : {
+    "jbRa_xktTg6b09rqXQbK9g" : {
+      "ingest" : {
+        "total" : {
+          "count" : 250000,
+          "time" : "7.8s",
+          "time_in_millis" : 7839,
+          "current" : 0,
+          "failed" : 0
+        },
+        "pipelines" : {
+          "test-pipeline-1" : {
+            "count" : 250000,
+            "time" : "7s",
+            "time_in_millis" : 7079,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 250000,
+                    "time" : "105ms",
+                    "time_in_millis" : 105,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 250000,
+                    "time" : "2.3s",
+                    "time_in_millis" : 2382,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "rename" : {
+                  "type" : "rename",
+                  "stats" : {
+                    "count" : 250000,
+                    "time" : "224ms",
+                    "time_in_millis" : 224,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "dissect" : {
+                  "type" : "dissect",
+                  "stats" : {
+                    "count" : 250000,
+                    "time" : "474ms",
+                    "time_in_millis" : 474,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 250000,
+                    "time" : "117ms",
+                    "time_in_millis" : 117,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "convert" : {
+                  "type" : "convert",
+                  "stats" : {
+                    "count" : 250000,
+                    "time" : "129ms",
+                    "time_in_millis" : 129,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "convert" : {
+                  "type" : "convert",
+                  "stats" : {
+                    "count" : 250000,
+                    "time" : "111ms",
+                    "time_in_millis" : 111,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "date" : {
+                  "type" : "date",
+                  "stats" : {
+                    "count" : 250000,
+                    "time" : "885ms",
+                    "time_in_millis" : 885,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "script" : {
+                  "type" : "script",
+                  "stats" : {
+                    "count" : 250000,
+                    "time" : "125ms",
+                    "time_in_millis" : 125,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "append" : {
+                  "type" : "append",
+                  "stats" : {
+                    "count" : 250000,
+                    "time" : "2.1s",
+                    "time_in_millis" : 2128,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "remove" : {
+                  "type" : "remove",
+                  "stats" : {
+                    "count" : 250000,
+                    "time" : "96ms",
+                    "time_in_millis" : 96,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

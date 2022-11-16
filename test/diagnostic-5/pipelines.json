@@ -1,0 +1,91 @@
+{
+  "test-pipeline-1" : {
+    "processors" : [
+      {
+        "set" : {
+          "field" : "event.version",
+          "value" : "1.2.3"
+        }
+      },
+      {
+        "set" : {
+          "field" : "event.ingested",
+          "value" : "{{_ingest.timestamp}}"
+        }
+      },
+      {
+        "rename" : {
+          "field" : "message",
+          "target_field" : "event.original"
+        }
+      },
+      {
+        "dissect" : {
+          "field" : "event.original",
+          "pattern" : "%{event.quantity} %{event.type} %{event.product_id} %{event.date}"
+        }
+      },
+      {
+        "set" : {
+          "field" : "event.types",
+          "copy_from" : "event.type"
+        }
+      },
+      {
+        "convert" : {
+          "field" : "event.quantity",
+          "type" : "long"
+        }
+      },
+      {
+        "convert" : {
+          "field" : "event.product_id",
+          "type" : "long"
+        }
+      },
+      {
+        "date" : {
+          "field" : "event.date",
+          "target_field" : "event.date",
+          "formats" : [
+            "ISO8601"
+          ]
+        }
+      },
+      {
+        "script" : {
+          "lang" : "painless",
+          "params" : {
+            "apple" : {
+              "1" : "macintosh",
+              "2" : "fuji",
+              "3" : "golden delicious"
+            },
+            "orange" : {
+              "1" : "navel",
+              "2" : "cara cara",
+              "3" : "sweet valencia"
+            },
+            "peach" : {
+              "1" : "red haven",
+              "2" : "elberta",
+              "3" : "allstar"
+            }
+          },
+          "source" : "ctx.event.sub_type = params.get(Processors.lowercase(ctx.event.type)).get(ctx.event.product_id.toString());"
+        }
+      },
+      {
+        "append" : {
+          "field" : "event.types",
+          "value" : "{{event.sub_type}}"
+        }
+      },
+      {
+        "remove" : {
+          "field" : "event.product_id"
+        }
+      }
+    ]
+  }
+}

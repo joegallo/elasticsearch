@@ -1,0 +1,17 @@
+{
+  "name" : "runTask-0",
+  "cluster_name" : "runTask",
+  "cluster_uuid" : "JJ9KwW3NSFSTPFOBYmx5sg",
+  "version" : {
+    "number" : "8.6.0-SNAPSHOT",
+    "build_flavor" : "default",
+    "build_type" : "tar",
+    "build_hash" : "bb44f7f30392f4a4f9ae418757092aa653898e62",
+    "build_date" : "2022-10-27T12:59:59.439431Z",
+    "build_snapshot" : true,
+    "lucene_version" : "9.4.1",
+    "minimum_wire_compatibility_version" : "7.17.0",
+    "minimum_index_compatibility_version" : "7.0.0"
+  },
+  "tagline" : "You Know, for Search"
+}
