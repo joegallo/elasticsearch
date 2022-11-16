@@ -52,6 +52,7 @@ def pipelines(data):
 
 def total(data):
     ingests = _ingests(data)
+    arr = np.zeros((1, 2), dtype=np.int64)
 
     t_count = 0
     t_time_in_millis = 0
@@ -59,7 +60,12 @@ def total(data):
         t_count += ingest["total"]["count"]
         t_time_in_millis += ingest["total"]["time_in_millis"]
 
-    return pd.Series(np.array([t_count, t_time_in_millis], dtype=np.int64), index=['count', 'time_in_millis'])
+    arr[0, 0] = t_count
+    arr[0, 1] = t_time_in_millis
+
+    df = pd.DataFrame(arr, index=["total"], columns=["count", "time_in_millis"])
+    df["time_in_nanos"] = ((df["time_in_millis"] * 1000000) / (df["count"] + 1)).apply(np.ceil).astype(np.int64)
+    return df
 
 def processor(data, pipeline):
     ingests = _ingests(data)
@@ -97,19 +103,23 @@ def main(diagnostic):
     pt = p.sum().drop(["time_in_nanos","percent"])
     t = total(data)
 
-    print(title("Pipeline Summary:"))
-    print(p.head(5))
-    print("{0:.0%}".format((pt / t)["time_in_millis"]))
+    print(title("Ingest Summary:"))
+    print(t)
     print()
 
-    for pipeline in p.index[0:2]:
+    print(title("Pipeline Summary:"))
+    print(p.head(5))
+    print("{0:.0%}".format((pt / t.loc["total"])["time_in_millis"]))
+    print()
+
+    for pipeline in p.index[0:5]:
         pr = processor(data, pipeline)
         pr = pr.sort_values("time_in_millis", ascending=False)
         prt = pr.sum().drop(["index","time_in_nanos","percent"])
 
         print(title(f"Pipeline '{pipeline}' processors:"))
-        print(pr.head(5))
-        print("{0:.0%}".format((prt / p.loc[pipeline])["time_in_millis"]))
+        print(pr)
+        print("{0:.0%}".format(pr['time_in_nanos'].sum() / p.loc[pipeline]["time_in_nanos"]))
         print()
 
 
