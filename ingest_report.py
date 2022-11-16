@@ -95,6 +95,9 @@ def processor(data, pipeline):
     return df
 
 def main(diagnostic):
+    pd.set_option('display.max_rows', None)
+    pd.set_option('display.max_colwidth', None)
+
     with open(os.path.join(diagnostic, "nodes_stats.json")) as f:
         data = json.load(f)
 
