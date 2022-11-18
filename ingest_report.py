@@ -46,7 +46,7 @@ def pipelines(data):
 
     df = pd.DataFrame(arr, index=pipelines, columns=["count", "time_in_millis"])
     df["time_in_nanos"] = ((df["time_in_millis"] * 1000000) / (df["count"] + 1)).apply(np.ceil).astype(np.int64)
-    df["percent"] = (df["time_in_millis"] * 100 / df["time_in_millis"].sum()).astype(np.int64)
+    df["percent"] = (df["time_in_millis"] * 100 / df["time_in_millis"].sum()).astype(np.float32)
 
     return df
 
@@ -91,12 +91,13 @@ def processor(data, pipeline):
 
     df = pd.DataFrame(arr, index=processors, columns=["index", "count", "time_in_millis"])
     df["time_in_nanos"] = ((df["time_in_millis"] * 1000000) / (df["count"] + 1)).apply(np.ceil).astype(np.int64)
-    df["percent"] = (df["time_in_millis"] * 100 / df["time_in_millis"].sum()).astype(np.int64)
+    df["percent"] = (df["time_in_millis"] * 100 / df["time_in_millis"].sum()).astype(np.float32)
     return df
 
 def main(diagnostic):
     pd.set_option('display.max_rows', None)
     pd.set_option('display.max_colwidth', None)
+    pd.set_option('display.float_format', '{:,.1f}%'.format)
 
     with open(os.path.join(diagnostic, "nodes_stats.json")) as f:
         data = json.load(f)
