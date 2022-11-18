@@ -1,0 +1,2311 @@
+{
+  "nodes" : {
+    "QF_JAtUBTMqVnHO6no12PQ" : {
+      "ingest" : {
+        "total" : {
+          "count" : 30265400,
+          "time" : "21.9m",
+          "time_in_millis" : 1315488,
+          "current" : 0,
+          "failed" : 0
+        },
+        "pipelines" : {
+          ".fleet_final_pipeline-1" : {
+            "count" : 15132700,
+            "time" : "4.1m",
+            "time_in_millis" : 248771,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "date:truncate-subseconds-event-ingested" : {
+                  "type" : "date",
+                  "stats" : {
+                    "count" : 15132700,
+                    "time" : "2.7m",
+                    "time_in_millis" : 167846,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "remove" : {
+                  "type" : "remove",
+                  "stats" : {
+                    "count" : 15132700,
+                    "time" : "18.6s",
+                    "time_in_millis" : 18625,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "set_security_user" : {
+                  "type" : "set_security_user",
+                  "stats" : {
+                    "count" : 15132700,
+                    "time" : "21.1s",
+                    "time_in_millis" : 21199,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "script:agent-id-status" : {
+                  "type" : "script",
+                  "stats" : {
+                    "count" : 15132700,
+                    "time" : "9.2s",
+                    "time_in_millis" : 9254,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "remove" : {
+                  "type" : "remove",
+                  "stats" : {
+                    "count" : 15132700,
+                    "time" : "5.8s",
+                    "time_in_millis" : 5822,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "logs-endpoint.events.network-8.5.0" : {
+            "count" : 2921236,
+            "time" : "2.4m",
+            "time_in_millis" : 145867,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 2921236,
+                    "time" : "47.3s",
+                    "time_in_millis" : 47373,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "geoip" : {
+                  "type" : "geoip",
+                  "stats" : {
+                    "count" : 2921236,
+                    "time" : "17.1s",
+                    "time_in_millis" : 17107,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "geoip" : {
+                  "type" : "geoip",
+                  "stats" : {
+                    "count" : 2921236,
+                    "time" : "11.4s",
+                    "time_in_millis" : 11444,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "geoip" : {
+                  "type" : "geoip",
+                  "stats" : {
+                    "count" : 2921236,
+                    "time" : "16.7s",
+                    "time_in_millis" : 16790,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "geoip" : {
+                  "type" : "geoip",
+                  "stats" : {
+                    "count" : 2921236,
+                    "time" : "12.3s",
+                    "time_in_millis" : 12398,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "rename" : {
+                  "type" : "rename",
+                  "stats" : {
+                    "count" : 2921236,
+                    "time" : "1.5s",
+                    "time_in_millis" : 1577,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "rename" : {
+                  "type" : "rename",
+                  "stats" : {
+                    "count" : 2921236,
+                    "time" : "836ms",
+                    "time_in_millis" : 836,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "rename" : {
+                  "type" : "rename",
+                  "stats" : {
+                    "count" : 2921236,
+                    "time" : "3.7s",
+                    "time_in_millis" : 3761,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "rename" : {
+                  "type" : "rename",
+                  "stats" : {
+                    "count" : 2921236,
+                    "time" : "3.3s",
+                    "time_in_millis" : 3349,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "compound:CompoundProcessor-grok" : {
+                  "type" : "conditional",
+                  "stats" : {
+                    "count" : 1282742,
+                    "time" : "9s",
+                    "time_in_millis" : 9070,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "compound:CompoundProcessor-script" : {
+                  "type" : "conditional",
+                  "stats" : {
+                    "count" : 996601,
+                    "time" : "6.2s",
+                    "time_in_millis" : 6234,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "compound:CompoundProcessor-remove" : {
+                  "type" : "conditional",
+                  "stats" : {
+                    "count" : 1282742,
+                    "time" : "2s",
+                    "time_in_millis" : 2058,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:logs-endpoint.events.network@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 2921236,
+                    "time" : "470ms",
+                    "time_in_millis" : 470,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "logs-endpoint.events.process-8.5.0" : {
+            "count" : 3883445,
+            "time" : "1m",
+            "time_in_millis" : 63499,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 3883445,
+                    "time" : "58.3s",
+                    "time_in_millis" : 58348,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:logs-endpoint.events.process@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 3883445,
+                    "time" : "980ms",
+                    "time_in_millis" : 980,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "logs-endpoint.events.file-8.5.0" : {
+            "count" : 3284536,
+            "time" : "52.9s",
+            "time_in_millis" : 52992,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 3284536,
+                    "time" : "49s",
+                    "time_in_millis" : 49032,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:logs-endpoint.events.file@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 3284536,
+                    "time" : "496ms",
+                    "time_in_millis" : 496,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "logs-endpoint.events.security-8.5.0" : {
+            "count" : 2045248,
+            "time" : "31.9s",
+            "time_in_millis" : 31921,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 2045248,
+                    "time" : "29.5s",
+                    "time_in_millis" : 29522,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:logs-endpoint.events.security@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 2045248,
+                    "time" : "373ms",
+                    "time_in_millis" : 373,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "logs-endpoint.events.registry-8.5.0" : {
+            "count" : 1545408,
+            "time" : "24.4s",
+            "time_in_millis" : 24495,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 1545408,
+                    "time" : "22.7s",
+                    "time_in_millis" : 22795,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:logs-endpoint.events.registry@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 1545408,
+                    "time" : "228ms",
+                    "time_in_millis" : 228,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "logs-endpoint.events.library-8.5.0" : {
+            "count" : 1452827,
+            "time" : "23.6s",
+            "time_in_millis" : 23622,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 1452827,
+                    "time" : "21.9s",
+                    "time_in_millis" : 21967,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:logs-endpoint.events.library@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 1452827,
+                    "time" : "242ms",
+                    "time_in_millis" : 242,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "synthetics-icmp-0.11.3" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "pipeline:synthetics-icmp@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "logs-endpoint.diagnostic.collection-8.5.0" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:logs-endpoint.diagnostic.collection@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "synthetics-browser.network-0.11.3" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "pipeline:synthetics-browser.network@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "metrics-endpoint.metrics-8.5.0" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:metrics-endpoint.metrics@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "logs-endpoint.actions-8.5.0" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:logs-endpoint.actions@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "logs-endpoint.action.responses-8.5.0" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:logs-endpoint.action.responses@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "metrics-endpoint.metadata-8.5.0" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:metrics-endpoint.metadata@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "synthetics-browser.screenshot-0.11.3" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "pipeline:synthetics-browser.screenshot@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "synthetics-browser-0.11.3" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "pipeline:synthetics-browser@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "metrics-endpoint.policy-8.5.0" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:metrics-endpoint.policy@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "synthetics-http-0.11.3" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "pipeline:synthetics-http@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "logs-endpoint.alerts-8.5.0" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:logs-endpoint.alerts@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "synthetics-tcp-0.11.3" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "pipeline:synthetics-tcp@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "522agFpcQvWMkzJOCc44MA" : {
+      "ingest" : {
+        "total" : {
+          "count" : 30266302,
+          "time" : "20.4m",
+          "time_in_millis" : 1225540,
+          "current" : 0,
+          "failed" : 0
+        },
+        "pipelines" : {
+          ".fleet_final_pipeline-1" : {
+            "count" : 15133151,
+            "time" : "3.9m",
+            "time_in_millis" : 236284,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "date:truncate-subseconds-event-ingested" : {
+                  "type" : "date",
+                  "stats" : {
+                    "count" : 15133151,
+                    "time" : "2.7m",
+                    "time_in_millis" : 165986,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "remove" : {
+                  "type" : "remove",
+                  "stats" : {
+                    "count" : 15133151,
+                    "time" : "16.9s",
+                    "time_in_millis" : 16950,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "set_security_user" : {
+                  "type" : "set_security_user",
+                  "stats" : {
+                    "count" : 15133151,
+                    "time" : "15.9s",
+                    "time_in_millis" : 15984,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "script:agent-id-status" : {
+                  "type" : "script",
+                  "stats" : {
+                    "count" : 15133151,
+                    "time" : "8.3s",
+                    "time_in_millis" : 8321,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "remove" : {
+                  "type" : "remove",
+                  "stats" : {
+                    "count" : 15133151,
+                    "time" : "4.9s",
+                    "time_in_millis" : 4978,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "logs-endpoint.events.network-8.5.0" : {
+            "count" : 2921507,
+            "time" : "2.3m",
+            "time_in_millis" : 141288,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 2921507,
+                    "time" : "44.4s",
+                    "time_in_millis" : 44463,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "geoip" : {
+                  "type" : "geoip",
+                  "stats" : {
+                    "count" : 2921507,
+                    "time" : "17.1s",
+                    "time_in_millis" : 17166,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "geoip" : {
+                  "type" : "geoip",
+                  "stats" : {
+                    "count" : 2921507,
+                    "time" : "11.3s",
+                    "time_in_millis" : 11320,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "geoip" : {
+                  "type" : "geoip",
+                  "stats" : {
+                    "count" : 2921507,
+                    "time" : "16.5s",
+                    "time_in_millis" : 16526,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "geoip" : {
+                  "type" : "geoip",
+                  "stats" : {
+                    "count" : 2921507,
+                    "time" : "12.3s",
+                    "time_in_millis" : 12341,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "rename" : {
+                  "type" : "rename",
+                  "stats" : {
+                    "count" : 2921507,
+                    "time" : "1.4s",
+                    "time_in_millis" : 1475,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "rename" : {
+                  "type" : "rename",
+                  "stats" : {
+                    "count" : 2921507,
+                    "time" : "847ms",
+                    "time_in_millis" : 847,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "rename" : {
+                  "type" : "rename",
+                  "stats" : {
+                    "count" : 2921507,
+                    "time" : "3.8s",
+                    "time_in_millis" : 3804,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "rename" : {
+                  "type" : "rename",
+                  "stats" : {
+                    "count" : 2921507,
+                    "time" : "3.2s",
+                    "time_in_millis" : 3253,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "compound:CompoundProcessor-grok" : {
+                  "type" : "conditional",
+                  "stats" : {
+                    "count" : 1282011,
+                    "time" : "9s",
+                    "time_in_millis" : 9042,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "compound:CompoundProcessor-script" : {
+                  "type" : "conditional",
+                  "stats" : {
+                    "count" : 996147,
+                    "time" : "5.5s",
+                    "time_in_millis" : 5520,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "compound:CompoundProcessor-remove" : {
+                  "type" : "conditional",
+                  "stats" : {
+                    "count" : 1282011,
+                    "time" : "1.9s",
+                    "time_in_millis" : 1917,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:logs-endpoint.events.network@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 2921507,
+                    "time" : "538ms",
+                    "time_in_millis" : 538,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "logs-endpoint.events.process-8.5.0" : {
+            "count" : 3883521,
+            "time" : "58.5s",
+            "time_in_millis" : 58553,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 3883521,
+                    "time" : "53.8s",
+                    "time_in_millis" : 53844,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:logs-endpoint.events.process@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 3883521,
+                    "time" : "923ms",
+                    "time_in_millis" : 923,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "logs-endpoint.events.file-8.5.0" : {
+            "count" : 3284432,
+            "time" : "49.2s",
+            "time_in_millis" : 49278,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 3284432,
+                    "time" : "45.6s",
+                    "time_in_millis" : 45651,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:logs-endpoint.events.file@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 3284432,
+                    "time" : "538ms",
+                    "time_in_millis" : 538,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "logs-endpoint.events.security-8.5.0" : {
+            "count" : 2045139,
+            "time" : "29.3s",
+            "time_in_millis" : 29329,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 2045139,
+                    "time" : "27.1s",
+                    "time_in_millis" : 27197,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:logs-endpoint.events.security@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 2045139,
+                    "time" : "403ms",
+                    "time_in_millis" : 403,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "logs-endpoint.events.registry-8.5.0" : {
+            "count" : 1545763,
+            "time" : "22.6s",
+            "time_in_millis" : 22663,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 1545763,
+                    "time" : "21s",
+                    "time_in_millis" : 21072,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:logs-endpoint.events.registry@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 1545763,
+                    "time" : "245ms",
+                    "time_in_millis" : 245,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "logs-endpoint.events.library-8.5.0" : {
+            "count" : 1452789,
+            "time" : "21.9s",
+            "time_in_millis" : 21985,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 1452789,
+                    "time" : "20.3s",
+                    "time_in_millis" : 20352,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:logs-endpoint.events.library@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 1452789,
+                    "time" : "252ms",
+                    "time_in_millis" : 252,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "logs-endpoint.diagnostic.collection-8.5.0" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:logs-endpoint.diagnostic.collection@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "synthetics-browser.network-0.11.3" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "pipeline:synthetics-browser.network@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "metrics-endpoint.metrics-8.5.0" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:metrics-endpoint.metrics@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "logs-endpoint.actions-8.5.0" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:logs-endpoint.actions@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "logs-endpoint.action.responses-8.5.0" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:logs-endpoint.action.responses@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "metrics-endpoint.metadata-8.5.0" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:metrics-endpoint.metadata@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "synthetics-browser.screenshot-0.11.3" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "pipeline:synthetics-browser.screenshot@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "synthetics-browser-0.11.3" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "pipeline:synthetics-browser@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "metrics-endpoint.policy-8.5.0" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:metrics-endpoint.policy@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "synthetics-http-0.11.3" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "pipeline:synthetics-http@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "logs-endpoint.alerts-8.5.0" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:logs-endpoint.alerts@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "synthetics-tcp-0.11.3" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "pipeline:synthetics-tcp@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "synthetics-icmp-0.11.3" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "pipeline:synthetics-icmp@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "eY40B_keS-GHpu9LM7DCVw" : {
+      "ingest" : {
+        "total" : {
+          "count" : 30265224,
+          "time" : "21.8m",
+          "time_in_millis" : 1313138,
+          "current" : 0,
+          "failed" : 0
+        },
+        "pipelines" : {
+          ".fleet_final_pipeline-1" : {
+            "count" : 15132612,
+            "time" : "4.5m",
+            "time_in_millis" : 274633,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "date:truncate-subseconds-event-ingested" : {
+                  "type" : "date",
+                  "stats" : {
+                    "count" : 15132612,
+                    "time" : "3m",
+                    "time_in_millis" : 185787,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "remove" : {
+                  "type" : "remove",
+                  "stats" : {
+                    "count" : 15132612,
+                    "time" : "21.2s",
+                    "time_in_millis" : 21234,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "set_security_user" : {
+                  "type" : "set_security_user",
+                  "stats" : {
+                    "count" : 15132612,
+                    "time" : "24.2s",
+                    "time_in_millis" : 24219,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "script:agent-id-status" : {
+                  "type" : "script",
+                  "stats" : {
+                    "count" : 15132612,
+                    "time" : "10.1s",
+                    "time_in_millis" : 10196,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "remove" : {
+                  "type" : "remove",
+                  "stats" : {
+                    "count" : 15132612,
+                    "time" : "6.7s",
+                    "time_in_millis" : 6739,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "logs-endpoint.events.network-8.5.0" : {
+            "count" : 2921833,
+            "time" : "2.4m",
+            "time_in_millis" : 147662,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 2921833,
+                    "time" : "47.1s",
+                    "time_in_millis" : 47172,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "geoip" : {
+                  "type" : "geoip",
+                  "stats" : {
+                    "count" : 2921833,
+                    "time" : "17.6s",
+                    "time_in_millis" : 17625,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "geoip" : {
+                  "type" : "geoip",
+                  "stats" : {
+                    "count" : 2921833,
+                    "time" : "11.9s",
+                    "time_in_millis" : 11948,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "geoip" : {
+                  "type" : "geoip",
+                  "stats" : {
+                    "count" : 2921833,
+                    "time" : "17.1s",
+                    "time_in_millis" : 17128,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "geoip" : {
+                  "type" : "geoip",
+                  "stats" : {
+                    "count" : 2921833,
+                    "time" : "12.4s",
+                    "time_in_millis" : 12432,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "rename" : {
+                  "type" : "rename",
+                  "stats" : {
+                    "count" : 2921833,
+                    "time" : "1.7s",
+                    "time_in_millis" : 1700,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "rename" : {
+                  "type" : "rename",
+                  "stats" : {
+                    "count" : 2921833,
+                    "time" : "831ms",
+                    "time_in_millis" : 831,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "rename" : {
+                  "type" : "rename",
+                  "stats" : {
+                    "count" : 2921833,
+                    "time" : "4.1s",
+                    "time_in_millis" : 4113,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "rename" : {
+                  "type" : "rename",
+                  "stats" : {
+                    "count" : 2921833,
+                    "time" : "3.4s",
+                    "time_in_millis" : 3495,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "compound:CompoundProcessor-grok" : {
+                  "type" : "conditional",
+                  "stats" : {
+                    "count" : 1282406,
+                    "time" : "8.9s",
+                    "time_in_millis" : 8904,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "compound:CompoundProcessor-script" : {
+                  "type" : "conditional",
+                  "stats" : {
+                    "count" : 996396,
+                    "time" : "5.8s",
+                    "time_in_millis" : 5895,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "compound:CompoundProcessor-remove" : {
+                  "type" : "conditional",
+                  "stats" : {
+                    "count" : 1282406,
+                    "time" : "2.2s",
+                    "time_in_millis" : 2226,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:logs-endpoint.events.network@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 2921833,
+                    "time" : "515ms",
+                    "time_in_millis" : 515,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "logs-endpoint.events.process-8.5.0" : {
+            "count" : 3883401,
+            "time" : "1m",
+            "time_in_millis" : 62176,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 3883401,
+                    "time" : "57s",
+                    "time_in_millis" : 57018,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:logs-endpoint.events.process@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 3883401,
+                    "time" : "924ms",
+                    "time_in_millis" : 924,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "logs-endpoint.events.file-8.5.0" : {
+            "count" : 3284187,
+            "time" : "51.9s",
+            "time_in_millis" : 51968,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 3284187,
+                    "time" : "48s",
+                    "time_in_millis" : 48034,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:logs-endpoint.events.file@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 3284187,
+                    "time" : "481ms",
+                    "time_in_millis" : 481,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "logs-endpoint.events.security-8.5.0" : {
+            "count" : 2045060,
+            "time" : "31.3s",
+            "time_in_millis" : 31343,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 2045060,
+                    "time" : "28.9s",
+                    "time_in_millis" : 28924,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:logs-endpoint.events.security@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 2045060,
+                    "time" : "397ms",
+                    "time_in_millis" : 397,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "logs-endpoint.events.registry-8.5.0" : {
+            "count" : 1545981,
+            "time" : "24.1s",
+            "time_in_millis" : 24157,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 1545981,
+                    "time" : "22.3s",
+                    "time_in_millis" : 22393,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:logs-endpoint.events.registry@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 1545981,
+                    "time" : "244ms",
+                    "time_in_millis" : 244,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "logs-endpoint.events.library-8.5.0" : {
+            "count" : 1452150,
+            "time" : "23.3s",
+            "time_in_millis" : 23318,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 1452150,
+                    "time" : "21.5s",
+                    "time_in_millis" : 21545,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:logs-endpoint.events.library@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 1452150,
+                    "time" : "251ms",
+                    "time_in_millis" : 251,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "synthetics-tcp-0.11.3" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "pipeline:synthetics-tcp@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "synthetics-icmp-0.11.3" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "pipeline:synthetics-icmp@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "logs-endpoint.diagnostic.collection-8.5.0" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:logs-endpoint.diagnostic.collection@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "synthetics-browser.network-0.11.3" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "pipeline:synthetics-browser.network@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "metrics-endpoint.metrics-8.5.0" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:metrics-endpoint.metrics@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "logs-endpoint.actions-8.5.0" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:logs-endpoint.actions@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "logs-endpoint.action.responses-8.5.0" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:logs-endpoint.action.responses@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "metrics-endpoint.metadata-8.5.0" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:metrics-endpoint.metadata@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "synthetics-browser.screenshot-0.11.3" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "pipeline:synthetics-browser.screenshot@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "synthetics-browser-0.11.3" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "pipeline:synthetics-browser@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "metrics-endpoint.policy-8.5.0" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:metrics-endpoint.policy@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "synthetics-http-0.11.3" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "pipeline:synthetics-http@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          },
+          "logs-endpoint.alerts-8.5.0" : {
+            "count" : 0,
+            "time" : "0s",
+            "time_in_millis" : 0,
+            "current" : 0,
+            "failed" : 0,
+            "processors" : [
+              {
+                "set" : {
+                  "type" : "set",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              },
+              {
+                "pipeline:logs-endpoint.alerts@custom" : {
+                  "type" : "pipeline",
+                  "stats" : {
+                    "count" : 0,
+                    "time" : "0s",
+                    "time_in_millis" : 0,
+                    "current" : 0,
+                    "failed" : 0
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}
