@@ -123,7 +123,7 @@ def main(diagnostic):
 
         print(title(f"Pipeline '{pipeline}' processors:"))
         print(pr)
-        print("{0:.0%}".format(pr['time_in_nanos'].sum() / p.loc[pipeline]["time_in_nanos"]))
+        print("{0:.0%}".format(pr['time_in_millis'].sum() / p.loc[pipeline]["time_in_millis"]))
         print()
 
 
