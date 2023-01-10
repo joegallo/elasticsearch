@@ -1,0 +1,348 @@
+{
+  "_nodes" : {
+    "total" : 3,
+    "successful" : 3,
+    "failed" : 0
+  },
+  "cluster_name" : "3b400f52c8cc4768a818b965818b4183",
+  "cluster_uuid" : "zWXjuEUHThGosTY-XyTQ4w",
+  "timestamp" : 1666820133672,
+  "status" : "green",
+  "indices" : {
+    "count" : 12,
+    "shards" : {
+      "total" : 24,
+      "primaries" : 12,
+      "replication" : 1.0,
+      "index" : {
+        "shards" : {
+          "min" : 2,
+          "max" : 2,
+          "avg" : 2.0
+        },
+        "primaries" : {
+          "min" : 1,
+          "max" : 1,
+          "avg" : 1.0
+        },
+        "replication" : {
+          "min" : 1.0,
+          "max" : 1.0,
+          "avg" : 1.0
+        }
+      }
+    },
+    "docs" : {
+      "count" : 10237,
+      "deleted" : 304
+    },
+    "store" : {
+      "size" : "85.3mb",
+      "size_in_bytes" : 89535016,
+      "total_data_set_size" : "85.3mb",
+      "total_data_set_size_in_bytes" : 89535016,
+      "reserved" : "0b",
+      "reserved_in_bytes" : 0
+    },
+    "fielddata" : {
+      "memory_size" : "0b",
+      "memory_size_in_bytes" : 0,
+      "evictions" : 0
+    },
+    "query_cache" : {
+      "memory_size" : "0b",
+      "memory_size_in_bytes" : 0,
+      "total_count" : 0,
+      "hit_count" : 0,
+      "miss_count" : 0,
+      "cache_size" : 0,
+      "cache_count" : 0,
+      "evictions" : 0
+    },
+    "completion" : {
+      "size" : "0b",
+      "size_in_bytes" : 0
+    },
+    "segments" : {
+      "count" : 83,
+      "memory" : "0b",
+      "memory_in_bytes" : 0,
+      "terms_memory" : "0b",
+      "terms_memory_in_bytes" : 0,
+      "stored_fields_memory" : "0b",
+      "stored_fields_memory_in_bytes" : 0,
+      "term_vectors_memory" : "0b",
+      "term_vectors_memory_in_bytes" : 0,
+      "norms_memory" : "0b",
+      "norms_memory_in_bytes" : 0,
+      "points_memory" : "0b",
+      "points_memory_in_bytes" : 0,
+      "doc_values_memory" : "0b",
+      "doc_values_memory_in_bytes" : 0,
+      "index_writer_memory" : "0b",
+      "index_writer_memory_in_bytes" : 0,
+      "version_map_memory" : "0b",
+      "version_map_memory_in_bytes" : 0,
+      "fixed_bit_set" : "2.8kb",
+      "fixed_bit_set_memory_in_bytes" : 2944,
+      "max_unsafe_auto_id_timestamp" : 1666819896146,
+      "file_sizes" : { }
+    },
+    "mappings" : {
+      "field_types" : [
+        {
+          "name" : "boolean",
+          "count" : 4,
+          "index_count" : 2,
+          "script_count" : 0
+        },
+        {
+          "name" : "constant_keyword",
+          "count" : 3,
+          "index_count" : 1,
+          "script_count" : 0
+        },
+        {
+          "name" : "date",
+          "count" : 13,
+          "index_count" : 4,
+          "script_count" : 0
+        },
+        {
+          "name" : "float",
+          "count" : 2,
+          "index_count" : 1,
+          "script_count" : 0
+        },
+        {
+          "name" : "ip",
+          "count" : 1,
+          "index_count" : 1,
+          "script_count" : 0
+        },
+        {
+          "name" : "keyword",
+          "count" : 78,
+          "index_count" : 4,
+          "script_count" : 0
+        },
+        {
+          "name" : "long",
+          "count" : 15,
+          "index_count" : 3,
+          "script_count" : 0
+        },
+        {
+          "name" : "nested",
+          "count" : 1,
+          "index_count" : 1,
+          "script_count" : 0
+        },
+        {
+          "name" : "object",
+          "count" : 30,
+          "index_count" : 4,
+          "script_count" : 0
+        },
+        {
+          "name" : "text",
+          "count" : 9,
+          "index_count" : 4,
+          "script_count" : 0
+        },
+        {
+          "name" : "version",
+          "count" : 1,
+          "index_count" : 1,
+          "script_count" : 0
+        }
+      ],
+      "runtime_field_types" : [ ]
+    },
+    "analysis" : {
+      "char_filter_types" : [ ],
+      "tokenizer_types" : [ ],
+      "filter_types" : [ ],
+      "analyzer_types" : [ ],
+      "built_in_char_filters" : [ ],
+      "built_in_tokenizers" : [ ],
+      "built_in_filters" : [ ],
+      "built_in_analyzers" : [ ]
+    },
+    "versions" : [
+      {
+        "version" : "8.2.3",
+        "index_count" : 12,
+        "primary_shard_count" : 12,
+        "total_primary_size" : "42.4mb",
+        "total_primary_bytes" : 44471508
+      }
+    ]
+  },
+  "nodes" : {
+    "count" : {
+      "total" : 3,
+      "coordinating_only" : 0,
+      "data" : 0,
+      "data_cold" : 0,
+      "data_content" : 2,
+      "data_frozen" : 0,
+      "data_hot" : 2,
+      "data_warm" : 0,
+      "ingest" : 2,
+      "master" : 3,
+      "ml" : 0,
+      "remote_cluster_client" : 2,
+      "transform" : 2,
+      "voting_only" : 1
+    },
+    "versions" : [
+      "8.2.3"
+    ],
+    "os" : {
+      "available_processors" : 6,
+      "allocated_processors" : 6,
+      "names" : [
+        {
+          "name" : "Linux",
+          "count" : 3
+        }
+      ],
+      "pretty_names" : [
+        {
+          "pretty_name" : "Ubuntu 20.04.4 LTS",
+          "count" : 3
+        }
+      ],
+      "architectures" : [
+        {
+          "arch" : "amd64",
+          "count" : 3
+        }
+      ],
+      "mem" : {
+        "total" : "17gb",
+        "total_in_bytes" : 18253611008,
+        "adjusted_total" : "17gb",
+        "adjusted_total_in_bytes" : 18253611008,
+        "free" : "6.8gb",
+        "free_in_bytes" : 7308840960,
+        "used" : "10.1gb",
+        "used_in_bytes" : 10944770048,
+        "free_percent" : 40,
+        "used_percent" : 60
+      }
+    },
+    "process" : {
+      "cpu" : {
+        "percent" : 17
+      },
+      "open_file_descriptors" : {
+        "min" : 428,
+        "max" : 523,
+        "avg" : 490
+      }
+    },
+    "jvm" : {
+      "max_uptime" : "2h",
+      "max_uptime_in_millis" : 7367229,
+      "versions" : [
+        {
+          "version" : "18.0.1.1",
+          "vm_name" : "OpenJDK 64-Bit Server VM",
+          "vm_version" : "18.0.1.1+2-6",
+          "vm_vendor" : "Oracle Corporation",
+          "bundled_jdk" : true,
+          "using_bundled_jdk" : true,
+          "count" : 3
+        }
+      ],
+      "mem" : {
+        "heap_used" : "2.2gb",
+        "heap_used_in_bytes" : 2384839616,
+        "heap_max" : "8.5gb",
+        "heap_max_in_bytes" : 9126805504
+      },
+      "threads" : 144
+    },
+    "fs" : {
+      "total" : "765gb",
+      "total_in_bytes" : 821412495360,
+      "free" : "764.9gb",
+      "free_in_bytes" : 821310156800,
+      "available" : "764.9gb",
+      "available_in_bytes" : 821310156800
+    },
+    "plugins" : [ ],
+    "network_types" : {
+      "transport_types" : {
+        "security4" : 3
+      },
+      "http_types" : {
+        "security4" : 3
+      }
+    },
+    "discovery_types" : {
+      "multi-node" : 3
+    },
+    "packaging_types" : [
+      {
+        "flavor" : "default",
+        "type" : "docker",
+        "count" : 3
+      }
+    ],
+    "ingest" : {
+      "number_of_pipelines" : 2,
+      "processor_stats" : {
+        "pipeline" : {
+          "count" : 10000,
+          "failed" : 0,
+          "current" : 0,
+          "time" : "25ms",
+          "time_in_millis" : 25
+        },
+        "set" : {
+          "count" : 10000,
+          "failed" : 0,
+          "current" : 0,
+          "time" : "10ms",
+          "time_in_millis" : 10
+        }
+      }
+    },
+    "indexing_pressure" : {
+      "memory" : {
+        "current" : {
+          "combined_coordinating_and_primary" : "0b",
+          "combined_coordinating_and_primary_in_bytes" : 0,
+          "coordinating" : "0b",
+          "coordinating_in_bytes" : 0,
+          "primary" : "0b",
+          "primary_in_bytes" : 0,
+          "replica" : "0b",
+          "replica_in_bytes" : 0,
+          "all" : "0b",
+          "all_in_bytes" : 0
+        },
+        "total" : {
+          "combined_coordinating_and_primary" : "0b",
+          "combined_coordinating_and_primary_in_bytes" : 0,
+          "coordinating" : "0b",
+          "coordinating_in_bytes" : 0,
+          "primary" : "0b",
+          "primary_in_bytes" : 0,
+          "replica" : "0b",
+          "replica_in_bytes" : 0,
+          "all" : "0b",
+          "all_in_bytes" : 0,
+          "coordinating_rejections" : 0,
+          "primary_rejections" : 0,
+          "replica_rejections" : 0
+        },
+        "limit" : "0b",
+        "limit_in_bytes" : 0
+      }
+    }
+  }
+}
