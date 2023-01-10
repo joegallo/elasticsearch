@@ -1,0 +1,629 @@
+{
+  "metrics-endpoint.metadata-8.7.0-next" : {
+    "description" : "Pipeline for setting event.ingested",
+    "processors" : [
+      {
+        "set" : {
+          "field" : "event.ingested",
+          "value" : "{{ _ingest.timestamp }}",
+          "ignore_failure" : true
+        }
+      },
+      {
+        "pipeline" : {
+          "name" : "metrics-endpoint.metadata@custom",
+          "ignore_missing_pipeline" : true
+        }
+      }
+    ],
+    "_meta" : {
+      "managed_by" : "fleet",
+      "managed" : true,
+      "package" : {
+        "name" : "endpoint"
+      }
+    }
+  },
+  "logs-endpoint.events.process-8.7.0-next" : {
+    "description" : "Pipeline for setting event.ingested",
+    "processors" : [
+      {
+        "set" : {
+          "field" : "event.ingested",
+          "value" : "{{ _ingest.timestamp }}",
+          "ignore_failure" : true
+        }
+      },
+      {
+        "pipeline" : {
+          "name" : "logs-endpoint.events.process@custom",
+          "ignore_missing_pipeline" : true
+        }
+      }
+    ],
+    "_meta" : {
+      "managed_by" : "fleet",
+      "managed" : true,
+      "package" : {
+        "name" : "endpoint"
+      }
+    }
+  },
+  "synthetics-browser.screenshot-0.11.5" : {
+    "processors" : [
+      {
+        "pipeline" : {
+          "name" : "synthetics-browser.screenshot@custom",
+          "ignore_missing_pipeline" : true
+        }
+      }
+    ],
+    "_meta" : {
+      "managed_by" : "fleet",
+      "managed" : true,
+      "package" : {
+        "name" : "synthetics"
+      }
+    }
+  },
+  "synthetics-icmp-0.11.5" : {
+    "processors" : [
+      {
+        "pipeline" : {
+          "name" : "synthetics-icmp@custom",
+          "ignore_missing_pipeline" : true
+        }
+      }
+    ],
+    "_meta" : {
+      "managed_by" : "fleet",
+      "managed" : true,
+      "package" : {
+        "name" : "synthetics"
+      }
+    }
+  },
+  "logs-endpoint.actions-8.7.0-next" : {
+    "description" : "Pipeline for setting event.ingested",
+    "processors" : [
+      {
+        "set" : {
+          "field" : "event.ingested",
+          "value" : "{{ _ingest.timestamp }}",
+          "ignore_failure" : true
+        }
+      },
+      {
+        "pipeline" : {
+          "name" : "logs-endpoint.actions@custom",
+          "ignore_missing_pipeline" : true
+        }
+      }
+    ],
+    "_meta" : {
+      "managed_by" : "fleet",
+      "managed" : true,
+      "package" : {
+        "name" : "endpoint"
+      }
+    }
+  },
+  "logs-endpoint.action.responses-8.7.0-next" : {
+    "description" : "Pipeline for setting event.ingested",
+    "processors" : [
+      {
+        "set" : {
+          "field" : "event.ingested",
+          "value" : "{{ _ingest.timestamp }}",
+          "ignore_failure" : true
+        }
+      },
+      {
+        "pipeline" : {
+          "name" : "logs-endpoint.action.responses@custom",
+          "ignore_missing_pipeline" : true
+        }
+      }
+    ],
+    "_meta" : {
+      "managed_by" : "fleet",
+      "managed" : true,
+      "package" : {
+        "name" : "endpoint"
+      }
+    }
+  },
+  "synthetics-http-0.11.5" : {
+    "processors" : [
+      {
+        "pipeline" : {
+          "name" : "synthetics-http@custom",
+          "ignore_missing_pipeline" : true
+        }
+      }
+    ],
+    "_meta" : {
+      "managed_by" : "fleet",
+      "managed" : true,
+      "package" : {
+        "name" : "synthetics"
+      }
+    }
+  },
+  "synthetics-browser-0.11.5" : {
+    "processors" : [
+      {
+        "pipeline" : {
+          "name" : "synthetics-browser@custom",
+          "ignore_missing_pipeline" : true
+        }
+      }
+    ],
+    "_meta" : {
+      "managed_by" : "fleet",
+      "managed" : true,
+      "package" : {
+        "name" : "synthetics"
+      }
+    }
+  },
+  "metrics-endpoint.policy-8.7.0-next" : {
+    "description" : "Pipeline for setting event.ingested",
+    "processors" : [
+      {
+        "set" : {
+          "field" : "event.ingested",
+          "value" : "{{ _ingest.timestamp }}",
+          "ignore_failure" : true
+        }
+      },
+      {
+        "pipeline" : {
+          "name" : "metrics-endpoint.policy@custom",
+          "ignore_missing_pipeline" : true
+        }
+      }
+    ],
+    "_meta" : {
+      "managed_by" : "fleet",
+      "managed" : true,
+      "package" : {
+        "name" : "endpoint"
+      }
+    }
+  },
+  ".fleet_final_pipeline-1" : {
+    "version" : 3,
+    "_meta" : {
+      "managed_by" : "fleet",
+      "managed" : true
+    },
+    "description" : "Final pipeline for processing all incoming Fleet Agent documents.\n",
+    "processors" : [
+      {
+        "date" : {
+          "description" : "Add time when event was ingested (and remove sub-seconds to improve storage efficiency)",
+          "tag" : "truncate-subseconds-event-ingested",
+          "field" : "_ingest.timestamp",
+          "target_field" : "event.ingested",
+          "formats" : [
+            "ISO8601"
+          ],
+          "output_format" : "date_time_no_millis",
+          "ignore_failure" : true
+        }
+      },
+      {
+        "remove" : {
+          "description" : "Remove any pre-existing untrusted values.",
+          "field" : [
+            "event.agent_id_status",
+            "_security"
+          ],
+          "ignore_missing" : true
+        }
+      },
+      {
+        "set_security_user" : {
+          "field" : "_security",
+          "properties" : [
+            "authentication_type",
+            "username",
+            "realm",
+            "api_key"
+          ]
+        }
+      },
+      {
+        "script" : {
+          "description" : "Add event.agent_id_status based on the API key metadata and the agent.id contained in the event.\n",
+          "tag" : "agent-id-status",
+          "source" : "boolean is_user_trusted(def ctx, def users) {\n  if (ctx?._security?.username == null) {\n    return false;\n  }\n\n  def user = null;\n  for (def item : users) {\n    if (item?.username == ctx._security.username) {\n      user = item;\n      break;\n    }\n  }\n\n  if (user == null || user?.realm == null || ctx?._security?.realm?.name == null) {\n    return false;\n  }\n\n  if (ctx._security.realm.name != user.realm) {\n    return false;\n  }\n\n  return true;\n}\n\nString verified(def ctx, def params) {\n  // No agent.id field to validate.\n  if (ctx?.agent?.id == null) {\n    return \"missing\";\n  }\n\n  // Check auth metadata from API key.\n  if (ctx?._security?.authentication_type == null\n      // Agents only use API keys.\n      || ctx._security.authentication_type != 'API_KEY'\n      // Verify the API key owner before trusting any metadata it contains.\n      || !is_user_trusted(ctx, params.trusted_users)\n      // Verify the API key has metadata indicating the assigned agent ID.\n      || ctx?._security?.api_key?.metadata?.agent_id == null) {\n    return \"auth_metadata_missing\";\n  }\n\n  // The API key can only be used represent the agent.id it was issued to.\n  if (ctx._security.api_key.metadata.agent_id != ctx.agent.id) {\n    // Potential masquerade attempt.\n    return \"mismatch\";\n  }\n\n  return \"verified\";\n}\n\nif (ctx?.event == null) {\n  ctx.event = [:];\n}\n\nctx.event.agent_id_status = verified(ctx, params);",
+          "params" : {
+            "trusted_users" : [
+              {
+                "username" : "elastic/fleet-server",
+                "realm" : "_service_account"
+              },
+              {
+                "username" : "cloud-internal-agent-server",
+                "realm" : "found"
+              },
+              {
+                "username" : "elastic",
+                "realm" : "reserved"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "remove" : {
+          "field" : "_security",
+          "ignore_missing" : true
+        }
+      }
+    ],
+    "on_failure" : [
+      {
+        "remove" : {
+          "field" : "_security",
+          "ignore_missing" : true,
+          "ignore_failure" : true
+        }
+      },
+      {
+        "append" : {
+          "field" : "error.message",
+          "value" : [
+            "failed in Fleet agent final_pipeline: {{ _ingest.on_failure_message }}"
+          ]
+        }
+      }
+    ]
+  },
+  "logs-endpoint.events.library-8.7.0-next" : {
+    "description" : "Pipeline for setting event.ingested",
+    "processors" : [
+      {
+        "set" : {
+          "field" : "event.ingested",
+          "value" : "{{ _ingest.timestamp }}",
+          "ignore_failure" : true
+        }
+      },
+      {
+        "pipeline" : {
+          "name" : "logs-endpoint.events.library@custom",
+          "ignore_missing_pipeline" : true
+        }
+      }
+    ],
+    "_meta" : {
+      "managed_by" : "fleet",
+      "managed" : true,
+      "package" : {
+        "name" : "endpoint"
+      }
+    }
+  },
+  "logs-endpoint.events.security-8.7.0-next" : {
+    "description" : "Pipeline for setting event.ingested",
+    "processors" : [
+      {
+        "set" : {
+          "field" : "event.ingested",
+          "value" : "{{ _ingest.timestamp }}",
+          "ignore_failure" : true
+        }
+      },
+      {
+        "pipeline" : {
+          "name" : "logs-endpoint.events.security@custom",
+          "ignore_missing_pipeline" : true
+        }
+      }
+    ],
+    "_meta" : {
+      "managed_by" : "fleet",
+      "managed" : true,
+      "package" : {
+        "name" : "endpoint"
+      }
+    }
+  },
+  "synthetics-browser.network-0.11.5" : {
+    "processors" : [
+      {
+        "pipeline" : {
+          "name" : "synthetics-browser.network@custom",
+          "ignore_missing_pipeline" : true
+        }
+      }
+    ],
+    "_meta" : {
+      "managed_by" : "fleet",
+      "managed" : true,
+      "package" : {
+        "name" : "synthetics"
+      }
+    }
+  },
+  "logs-endpoint.events.file-8.7.0-next" : {
+    "description" : "Pipeline for setting event.ingested",
+    "processors" : [
+      {
+        "set" : {
+          "field" : "event.ingested",
+          "value" : "{{ _ingest.timestamp }}",
+          "ignore_failure" : true
+        }
+      },
+      {
+        "pipeline" : {
+          "name" : "logs-endpoint.events.file@custom",
+          "ignore_missing_pipeline" : true
+        }
+      }
+    ],
+    "_meta" : {
+      "managed_by" : "fleet",
+      "managed" : true,
+      "package" : {
+        "name" : "endpoint"
+      }
+    }
+  },
+  "synthetics-tcp-0.11.5" : {
+    "processors" : [
+      {
+        "pipeline" : {
+          "name" : "synthetics-tcp@custom",
+          "ignore_missing_pipeline" : true
+        }
+      }
+    ],
+    "_meta" : {
+      "managed_by" : "fleet",
+      "managed" : true,
+      "package" : {
+        "name" : "synthetics"
+      }
+    }
+  },
+  "logs-endpoint.events.registry-8.7.0-next" : {
+    "description" : "Pipeline for setting event.ingested",
+    "processors" : [
+      {
+        "set" : {
+          "field" : "event.ingested",
+          "value" : "{{ _ingest.timestamp }}",
+          "ignore_failure" : true
+        }
+      },
+      {
+        "pipeline" : {
+          "name" : "logs-endpoint.events.registry@custom",
+          "ignore_missing_pipeline" : true
+        }
+      }
+    ],
+    "_meta" : {
+      "managed_by" : "fleet",
+      "managed" : true,
+      "package" : {
+        "name" : "endpoint"
+      }
+    }
+  },
+  "logs-endpoint.diagnostic.collection-8.7.0-next" : {
+    "description" : "Pipeline for setting event.ingested",
+    "processors" : [
+      {
+        "set" : {
+          "field" : "event.ingested",
+          "value" : "{{ _ingest.timestamp }}",
+          "ignore_failure" : true
+        }
+      },
+      {
+        "pipeline" : {
+          "name" : "logs-endpoint.diagnostic.collection@custom",
+          "ignore_missing_pipeline" : true
+        }
+      }
+    ],
+    "_meta" : {
+      "managed_by" : "fleet",
+      "managed" : true,
+      "package" : {
+        "name" : "endpoint"
+      }
+    }
+  },
+  "logs-endpoint.events.network-8.7.0-next" : {
+    "description" : "Pipeline for network events",
+    "processors" : [
+      {
+        "set" : {
+          "field" : "event.ingested",
+          "value" : "{{ _ingest.timestamp }}",
+          "ignore_failure" : true
+        }
+      },
+      {
+        "geoip" : {
+          "field" : "source.ip",
+          "target_field" : "source.geo",
+          "properties" : [
+            "continent_name",
+            "country_name",
+            "country_iso_code",
+            "region_iso_code",
+            "region_name",
+            "city_name",
+            "location"
+          ],
+          "ignore_missing" : true
+        }
+      },
+      {
+        "geoip" : {
+          "database_file" : "GeoLite2-ASN.mmdb",
+          "field" : "source.ip",
+          "target_field" : "source.as",
+          "properties" : [
+            "asn",
+            "organization_name"
+          ],
+          "ignore_missing" : true
+        }
+      },
+      {
+        "geoip" : {
+          "field" : "destination.ip",
+          "target_field" : "destination.geo",
+          "properties" : [
+            "continent_name",
+            "country_name",
+            "country_iso_code",
+            "region_iso_code",
+            "region_name",
+            "city_name",
+            "location"
+          ],
+          "ignore_missing" : true
+        }
+      },
+      {
+        "geoip" : {
+          "database_file" : "GeoLite2-ASN.mmdb",
+          "field" : "destination.ip",
+          "target_field" : "destination.as",
+          "properties" : [
+            "asn",
+            "organization_name"
+          ],
+          "ignore_missing" : true
+        }
+      },
+      {
+        "rename" : {
+          "field" : "source.as.asn",
+          "target_field" : "source.as.number",
+          "ignore_missing" : true
+        }
+      },
+      {
+        "rename" : {
+          "field" : "source.as.organization_name",
+          "target_field" : "source.as.organization.name",
+          "ignore_missing" : true
+        }
+      },
+      {
+        "rename" : {
+          "field" : "destination.as.asn",
+          "target_field" : "destination.as.number",
+          "ignore_missing" : true
+        }
+      },
+      {
+        "rename" : {
+          "field" : "destination.as.organization_name",
+          "target_field" : "destination.as.organization.name",
+          "ignore_missing" : true
+        }
+      },
+      {
+        "grok" : {
+          "if" : "ctx.network?.protocol == 'dns'",
+          "ignore_missing" : true,
+          "ignore_failure" : true,
+          "field" : "message",
+          "patterns" : [
+            "^DNS query is completed for the name .* type %{WORD:dns.question.Ext_temp.type}"
+          ]
+        }
+      },
+      {
+        "script" : {
+          "ignore_failure" : true,
+          "if" : "ctx.network?.protocol == 'dns' && ctx.dns?.question?.Ext_temp?.type != null && ctx.dns?.question?.type == null",
+          "source" : "Map typeMap = ['1': 'A', '2': 'NS', '3': 'MD', '4': 'MF', '5': 'CNAME', '6': 'SOA', '7': 'MB', '8': 'MG', '9': 'MR',\n  '10': 'NULL', '11': 'WKS', '12': 'PTR', '13': 'HINFO', '14': 'MINFO', '15': 'MX', '16': 'TXT', '17': 'RP', '18': 'AFSDB',\n  '19': 'X25', '20': 'ISDN', '21': 'RT', '22': 'NSAP', '23': 'NSAPPTR', '24': 'SIG', '25': 'KEY', '26': 'PX',\n  '27': 'GPOS', '28': 'AAAA', '29': 'LOC', '30': 'NXT', '31': 'EID', '32': 'NIMLOC', '33': 'SRV', '34': 'ATMA',\n  '35': 'NAPTR', '36': 'KX', '37': 'CERT', '38': 'A6', '39': 'DNAME', '40': 'SINK', '41': 'OPT', '42': 'APL',\n  '43': 'DS', '44': 'SSHFP', '45': 'ISECKEY', '46': 'RRSIG', '47': 'NSEC', '48': 'DNSKEY', '49': 'DHCID',\n  '50': 'NSEC3', '51': 'NSEC3PARAM', '52': 'TLSA', '53': 'SMIMEA', '55': 'HIP', '56': 'NINFO', '57': 'RKEY',\n  '58': 'TALINK', '59': 'CDS', '60': 'CDNSKEY', '61': 'OPENPGPKEY', '62': 'CSYNC', '63': 'ZONEMD', '64': 'SVCB',\n  '65': 'HTTPS', '99': 'SPF', '100': 'UINFO', '101': 'UID', '102': 'GID', '103': 'UNSPEC', '104': 'NID',\n  '105': 'L32', '106': 'L64', '107': 'LP', '108': 'EUI48', '109': 'EUI64', '249': 'TKEY', '250': 'TSIG',\n  '251': 'IXFR', '252': 'AXFR', '253': 'MAILB', '254': 'MAILA', '255': 'ANY','256': 'URI', '257': 'CAA',\n  '258': 'AVC'];\ndef type = typeMap[ctx.dns.question.Ext_temp.type]; if (type != null) {\n  ctx.dns.question.type = type;\n}"
+        }
+      },
+      {
+        "remove" : {
+          "if" : "ctx.network?.protocol == 'dns'",
+          "ignore_failure" : true,
+          "ignore_missing" : true,
+          "field" : "dns.question.Ext_temp"
+        }
+      },
+      {
+        "pipeline" : {
+          "name" : "logs-endpoint.events.network@custom",
+          "ignore_missing_pipeline" : true
+        }
+      }
+    ],
+    "_meta" : {
+      "managed_by" : "fleet",
+      "managed" : true,
+      "package" : {
+        "name" : "endpoint"
+      }
+    }
+  },
+  "logs-endpoint.alerts-8.7.0-next" : {
+    "description" : "Pipeline for setting event.ingested",
+    "processors" : [
+      {
+        "set" : {
+          "field" : "event.ingested",
+          "value" : "{{ _ingest.timestamp }}",
+          "ignore_failure" : true
+        }
+      },
+      {
+        "pipeline" : {
+          "name" : "logs-endpoint.alerts@custom",
+          "ignore_missing_pipeline" : true
+        }
+      }
+    ],
+    "_meta" : {
+      "managed_by" : "fleet",
+      "managed" : true,
+      "package" : {
+        "name" : "endpoint"
+      }
+    }
+  },
+  "metrics-endpoint.metrics-8.7.0-next" : {
+    "description" : "Pipeline for setting event.ingested",
+    "processors" : [
+      {
+        "set" : {
+          "field" : "event.ingested",
+          "value" : "{{ _ingest.timestamp }}",
+          "ignore_failure" : true
+        }
+      },
+      {
+        "pipeline" : {
+          "name" : "metrics-endpoint.metrics@custom",
+          "ignore_missing_pipeline" : true
+        }
+      }
+    ],
+    "_meta" : {
+      "managed_by" : "fleet",
+      "managed" : true,
+      "package" : {
+        "name" : "endpoint"
+      }
+    }
+  }
+}
