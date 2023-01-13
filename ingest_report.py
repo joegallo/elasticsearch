@@ -78,9 +78,9 @@ def total(data):
     df["time_in_nanos"] = ((df["ingest_time_in_millis"] * 1000000) / (df["count"] + 1)).apply(np.ceil).astype(np.int64)
 
     if t_index_time_in_millis == 0:
-        df["ingesting time %"] = "N/A"
+        df["ingest_time_%"] = "N/A"
     else:
-        df["ingesting time %"] = 100 * t_ingest_time_in_millis / (t_ingest_time_in_millis + t_index_time_in_millis)
+        df["ingest_time_%"] = 100 * t_ingest_time_in_millis / (t_ingest_time_in_millis + t_index_time_in_millis)
         df["index_time_in_millis"] = t_index_time_in_millis
 
     return df
