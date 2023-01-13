@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+
+import click
 import json
 import math
 import numpy as np
@@ -23,7 +25,7 @@ def _ingests(data):
 def _processors(pipeline):
     return [next(iter(processor.keys())) for processor in pipeline["processors"]]
 
-def pipelines(data):
+def pipelines_summary(data):
     ingests = _ingests(data)
 
     pipelines = set()
@@ -94,15 +96,31 @@ def processor(data, pipeline):
     df["percent"] = (df["time_in_millis"] * 100 / df["time_in_millis"].sum()).astype(np.float32)
     return df
 
-def main(diagnostic):
+def validate(diagnostic_directory):
+    version = os.path.join(diagnostic_directory, "version.json")
+    if not os.path.exists(version):
+        print("Missing the file `version.json` in the directory")
+        sys.exit(1)
+
+    nodes_stats = os.path.join(diagnostic_directory, "nodes_stats.json")
+    if not os.path.exists(nodes_stats):
+        print("Missing the file `nodes_stats.json` in the directory")
+        sys.exit(1)
+
+@click.command()
+@click.argument("diagnostic_directory")
+@click.option('--full', is_flag=True, default = False)
+def command(full, diagnostic_directory):
+    validate(diagnostic_directory)
+
     pd.set_option('display.max_rows', None)
     pd.set_option('display.max_colwidth', None)
     pd.set_option('display.float_format', '{:,.1f}%'.format)
 
-    with open(os.path.join(diagnostic, "nodes_stats.json")) as f:
+    with open(os.path.join(diagnostic_directory, "nodes_stats.json")) as f:
         data = json.load(f)
 
-    p = pipelines(data)
+    p = pipelines_summary(data)
     p = p.sort_values("time_in_millis", ascending=False)
     pt = p.sum().drop(["time_in_nanos","percent"])
     t = total(data)
@@ -112,11 +130,17 @@ def main(diagnostic):
     print()
 
     print(title("Pipeline Summary:"))
-    print(p.head(5))
+    if full:
+        print(p)
+    else:
+        print(p.head(5))
+
     print("{0:.0%}".format((pt / t.loc["total"])["time_in_millis"]))
     print()
 
-    for pipeline in p.index[0:5]:
+    pipelines = sorted(p.index) if full else p.index[0:5]
+
+    for pipeline in pipelines:
         pr = processor(data, pipeline)
         pr = pr.sort_values("time_in_millis", ascending=False)
         prt = pr.sum().drop(["index","time_in_nanos","percent"])
@@ -128,14 +152,4 @@ def main(diagnostic):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 1:
-        print("Run as ingest_report.py <path to some diagnostic>")
-        sys.exit(1)
-
-    diagnostic = sys.argv[1]
-    version = os.path.join(diagnostic, "version.json")
-    if not os.path.exists(version):
-        print("Run as ingest_report.py <path to some diagnostic>")
-        sys.exit(1)
-
-    main(diagnostic)
+    command()
