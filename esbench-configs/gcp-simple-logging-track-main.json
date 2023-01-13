@@ -1,0 +1,9 @@
+{
+  "track.name": "elastic/logs",
+  "track.params": {
+    "raw_data_volume_per_day": "5GB"
+  },
+  "elasticsearch.node.count": 3,
+  "elasticsearch.version":"snapshot.latest"
+}
+

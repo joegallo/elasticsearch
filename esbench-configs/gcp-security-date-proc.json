@@ -1,0 +1,6 @@
+{
+  "elasticsearch.version":"snapshot.latest",
+  "elasticsearch.remote.repo.url":"https://github.com/HiDAl/elasticsearch",
+  "elasticsearch.remote.repo.revision":"palcantar/optimize-date-processor"
+}
+

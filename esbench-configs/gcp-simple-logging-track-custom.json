@@ -1,0 +1,11 @@
+{
+  "track.name": "elastic/logs",
+  "track.params": {
+    "raw_data_volume_per_day": "5GB"
+  },
+  "elasticsearch.version":"snapshot.latest",
+  "elasticsearch.node.count": 3,
+  "elasticsearch.remote.repo.url":"https://github.com/HiDAl/elasticsearch",
+  "elasticsearch.remote.repo.revision":"palcantar/date-proc-cache"
+}
+
