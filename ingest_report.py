@@ -74,8 +74,8 @@ def total(data):
     arr[0, 0] = t_count
     arr[0, 1] = t_ingest_time_in_millis
 
-    df = pd.DataFrame(arr, index=["total"], columns=["count", "ingest_time_in_millis"])
-    df["time_in_nanos"] = ((df["ingest_time_in_millis"] * 1000000) / (df["count"] + 1)).apply(np.ceil).astype(np.int64)
+    df = pd.DataFrame(arr, index=["total"], columns=["count", "time_in_millis"])
+    df["time_in_nanos"] = ((df["time_in_millis"] * 1000000) / (df["count"] + 1)).apply(np.ceil).astype(np.int64)
 
     if t_index_time_in_millis == 0:
         df["ingest_time_%"] = "N/A"
