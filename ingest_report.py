@@ -65,7 +65,7 @@ def total(data):
 
     t_index_time_in_millis = 0
     nodes = data["nodes"]
-    for node in nodes: 
+    for node in nodes:
         if "indices" not in nodes[node]:
             break
 
@@ -125,7 +125,7 @@ def validate(diagnostic_directory):
 
 @click.command()
 @click.argument("diagnostic_directory")
-@click.option('--full', is_flag=True, default = False)
+@click.option('--full', is_flag=True, default=False)
 def command(full, diagnostic_directory):
     validate(diagnostic_directory)
 
