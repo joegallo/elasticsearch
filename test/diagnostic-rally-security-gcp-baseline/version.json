@@ -1,0 +1,17 @@
+{
+  "name" : "elasticsearch-0",
+  "cluster_name" : "default",
+  "cluster_uuid" : "4hJ9DFBhQhurA70SSejAyw",
+  "version" : {
+    "number" : "8.7.0-SNAPSHOT",
+    "build_flavor" : "default",
+    "build_type" : "tar",
+    "build_hash" : "e053f21780b79250adab851011fb41d5f0d3b600",
+    "build_date" : "2023-01-11T10:11:03.844425874Z",
+    "build_snapshot" : true,
+    "lucene_version" : "9.4.2",
+    "minimum_wire_compatibility_version" : "7.17.0",
+    "minimum_index_compatibility_version" : "7.0.0"
+  },
+  "tagline" : "You Know, for Search"
+}
