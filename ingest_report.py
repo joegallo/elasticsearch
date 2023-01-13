@@ -14,26 +14,6 @@ def title(str):
 def nanos_per(millis, count):
     return math.ceil(millis * 1000000 / count)
 
-def index_and_ingest_time_summary(data):
-    total_index_time = 0
-    total_ingest_time = 0
-    nodes = data["nodes"]
-    for node in nodes: 
-        if "indices" not in nodes[node]:
-            return "N/A (A full _nodes/stats report is needed)"
-
-        total_index_time = total_index_time + nodes[node]["indices"]["indexing"]["index_time_in_millis"]
-        total_ingest_time = total_ingest_time + nodes[node]["ingest"]["total"]["time_in_millis"]
-
-    arr = np.zeros((1, 3), dtype=np.int64)
-    df = pd.DataFrame(arr, index=["total"], columns=["ingesting %", "total_index_time_millis", "total_ingest_time_millis"])
-    
-    df["total_index_time_millis"] = total_index_time,
-    df["total_ingest_time_millis"] = total_ingest_time,
-    df["ingesting %"] = 100 * total_ingest_time / (total_ingest_time + total_index_time)
-
-    return df
-
 def _ingests(data):
     ingests = []
     for n in data["nodes"].keys():
@@ -74,19 +54,35 @@ def pipelines_summary(data):
 
 def total(data):
     ingests = _ingests(data)
+
     arr = np.zeros((1, 2), dtype=np.int64)
 
     t_count = 0
-    t_time_in_millis = 0
+    t_ingest_time_in_millis = 0
     for ingest in ingests:
         t_count += ingest["total"]["count"]
-        t_time_in_millis += ingest["total"]["time_in_millis"]
+        t_ingest_time_in_millis += ingest["total"]["time_in_millis"]
+
+    t_index_time_in_millis = 0
+    nodes = data["nodes"]
+    for node in nodes: 
+        if "indices" not in nodes[node]:
+            break
+
+        t_index_time_in_millis = t_index_time_in_millis + nodes[node]["indices"]["indexing"]["index_time_in_millis"]
 
     arr[0, 0] = t_count
-    arr[0, 1] = t_time_in_millis
+    arr[0, 1] = t_ingest_time_in_millis
 
-    df = pd.DataFrame(arr, index=["total"], columns=["count", "time_in_millis"])
-    df["time_in_nanos"] = ((df["time_in_millis"] * 1000000) / (df["count"] + 1)).apply(np.ceil).astype(np.int64)
+    df = pd.DataFrame(arr, index=["total"], columns=["count", "ingest_time_in_millis"])
+    df["time_in_nanos"] = ((df["ingest_time_in_millis"] * 1000000) / (df["count"] + 1)).apply(np.ceil).astype(np.int64)
+
+    if t_index_time_in_millis == 0:
+        df["ingesting time %"] = "N/A"
+    else:
+        df["ingesting time %"] = 100 * t_ingest_time_in_millis / (t_ingest_time_in_millis + t_index_time_in_millis)
+        df["index_time_in_millis"] = t_index_time_in_millis
+
     return df
 
 def processor(data, pipeline):
@@ -145,12 +141,8 @@ def command(full, diagnostic_directory):
     pt = p.sum().drop(["time_in_nanos","percent"])
     t = total(data)
 
-    print(title("Ingest Summary:"))
+    print(title("Ingest & Index Summary:"))
     print(t)
-    print()
-
-    print(title("Index & Ingest Summary:"))
-    print(index_and_ingest_time_summary(data))
     print()
 
     print(title("Pipeline Summary:"))
