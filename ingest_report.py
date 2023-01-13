@@ -14,6 +14,26 @@ def title(str):
 def nanos_per(millis, count):
     return math.ceil(millis * 1000000 / count)
 
+def index_and_ingest_time_summary(data):
+    total_index_time = 0
+    total_ingest_time = 0
+    nodes = data["nodes"]
+    for node in nodes: 
+        if "indices" not in nodes[node]:
+            return "N/A (A full _nodes/stats report is needed)"
+
+        total_index_time = total_index_time + nodes[node]["indices"]["indexing"]["index_time_in_millis"]
+        total_ingest_time = total_ingest_time + nodes[node]["ingest"]["total"]["time_in_millis"]
+
+    arr = np.zeros((1, 3), dtype=np.int64)
+    df = pd.DataFrame(arr, index=["total"], columns=["ingesting %", "total_index_time_millis", "total_ingest_time_millis"])
+    
+    df["total_index_time_millis"] = total_index_time,
+    df["total_ingest_time_millis"] = total_ingest_time,
+    df["ingesting %"] = 100 * total_ingest_time / (total_ingest_time + total_index_time)
+
+    return df
+
 def _ingests(data):
     ingests = []
     for n in data["nodes"].keys():
@@ -127,6 +147,10 @@ def command(full, diagnostic_directory):
 
     print(title("Ingest Summary:"))
     print(t)
+    print()
+
+    print(title("Index & Ingest Summary:"))
+    print(index_and_ingest_time_summary(data))
     print()
 
     print(title("Pipeline Summary:"))
