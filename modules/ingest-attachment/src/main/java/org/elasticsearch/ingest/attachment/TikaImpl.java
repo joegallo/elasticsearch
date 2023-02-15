@@ -8,6 +8,8 @@
 
 package org.elasticsearch.ingest.attachment;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -20,6 +22,7 @@ import org.elasticsearch.bootstrap.FilePermissionUtils;
 import org.elasticsearch.core.PathUtils;
 import org.elasticsearch.core.SuppressForbidden;
 import org.elasticsearch.jdk.JarHell;
+import org.slf4j.SLF4JServiceProviderAdaptor;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -41,6 +44,7 @@ import java.security.SecurityPermission;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.PropertyPermission;
 import java.util.Set;
 
@@ -50,6 +54,76 @@ import java.util.Set;
  * Do NOT make public
  */
 final class TikaImpl {
+
+    private static final Logger logger = LogManager.getLogger(TikaImpl.class);
+
+    static {
+        logger.info("Forcing slf4j initialization");
+        SLF4JServiceProviderAdaptor.wallhack();
+
+        try {
+            for (String className : List.of(
+                "org.apache.fontbox.cff.Type1CharString",
+                "org.apache.fontbox.cff.Type1CharStringParser",
+                "org.apache.fontbox.ttf.CmapSubtable",
+                "org.apache.fontbox.ttf.GlyphSubstitutionTable",
+                "org.apache.fontbox.ttf.KerningSubtable",
+                "org.apache.fontbox.ttf.KerningTable",
+                "org.apache.fontbox.ttf.OS2WindowsMetricsTable",
+                "org.apache.fontbox.ttf.PostScriptTable",
+                "org.apache.fontbox.ttf.TTFParser",
+                "org.apache.fontbox.util.autodetect.FontFileFinder",
+                "org.apache.pdfbox.contentstream.PDFStreamEngine",
+                "org.apache.pdfbox.contentstream.operator.DrawObject",
+                "org.apache.pdfbox.contentstream.operator.state.SetGraphicsStateParameters",
+                "org.apache.pdfbox.contentstream.operator.text.MoveText",
+                "org.apache.pdfbox.contentstream.operator.text.SetFontAndSize",
+                "org.apache.pdfbox.filter.ASCIIHexFilter",
+                "org.apache.pdfbox.filter.DCTFilter",
+                "org.apache.pdfbox.filter.Filter",
+                "org.apache.pdfbox.filter.FlateFilter",
+                "org.apache.pdfbox.filter.JBIG2Filter",
+                "org.apache.pdfbox.filter.LZWFilter",
+                "org.apache.pdfbox.filter.RunLengthDecodeFilter",
+                "org.apache.pdfbox.io.ScratchFile",
+                "org.apache.pdfbox.io.ScratchFileBuffer",
+                "org.apache.pdfbox.pdfparser.BaseParser",
+                "org.apache.pdfbox.pdfparser.COSParser",
+                "org.apache.pdfbox.pdfparser.PDFParser",
+                "org.apache.pdfbox.pdfparser.PDFStreamParser",
+                "org.apache.pdfbox.pdfparser.XrefTrailerResolver",
+                "org.apache.pdfbox.pdmodel.PDDocument",
+                "org.apache.pdfbox.pdmodel.PDDocumentCatalog",
+                "org.apache.pdfbox.pdmodel.PDPage",
+                "org.apache.pdfbox.pdmodel.PDPageTree",
+                "org.apache.pdfbox.pdmodel.common.PDStream",
+                "org.apache.pdfbox.pdmodel.font.FileSystemFontProvider",
+                "org.apache.pdfbox.pdmodel.font.FontMapperImpl",
+                "org.apache.pdfbox.pdmodel.font.PDFont",
+                "org.apache.pdfbox.pdmodel.font.PDFontFactory",
+                "org.apache.pdfbox.pdmodel.font.PDSimpleFont",
+                "org.apache.pdfbox.pdmodel.font.PDType1Font",
+                "org.apache.pdfbox.pdmodel.font.encoding.GlyphList",
+                "org.apache.pdfbox.pdmodel.graphics.color.PDColor",
+                "org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation",
+                "org.apache.pdfbox.text.LegacyPDFStreamEngine",
+                "org.apache.pdfbox.text.PDFTextStripper",
+                "org.apache.pdfbox.text.TextPosition",
+                "org.apache.tika.config.TikaConfig",
+                "org.apache.tika.detect.zip.DefaultZipContainerDetector",
+                "org.apache.tika.io.TemporaryResources",
+                "org.apache.tika.langdetect.tika.LanguageProfile",
+                "org.apache.tika.mime.MimeTypesReader",
+                "org.apache.tika.parser.html.HtmlParser",
+                "org.apache.tika.parser.hwp.HwpTextExtractorV5",
+                "org.apache.tika.renderer.pdf.pdfbox.PDFBoxRenderer"
+            )) {
+                Class.forName(className);
+            }
+        } catch (Exception e) {
+            logger.error("OH NO you broke it", e);
+        }
+    }
 
     /** Exclude some formats */
     private static final Set<MediaType> EXCLUDES = new HashSet<>(
