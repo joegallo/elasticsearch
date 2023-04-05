@@ -994,8 +994,8 @@ public final class IngestDocument {
         private final String[] pathElements;
         private final boolean ingestContext;
 
-        private FieldPath(String path) {
-            String newPath;
+        private FieldPath(final String path) {
+            final String newPath;
             if (path.startsWith(INGEST_KEY_PREFIX)) {
                 ingestContext = true;
                 newPath = path.substring(INGEST_KEY_PREFIX.length());
