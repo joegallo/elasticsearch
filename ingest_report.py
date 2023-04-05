@@ -126,12 +126,14 @@ def validate(diagnostic_directory):
 @click.command()
 @click.argument("diagnostic_directory")
 @click.option('--full', is_flag=True, default=False)
-def command(full, diagnostic_directory):
+@click.option('--top-processors', is_flag=True, default=False)
+def command(full, top_processors, diagnostic_directory):
     validate(diagnostic_directory)
 
     pd.set_option('display.max_rows', None)
     pd.set_option('display.max_colwidth', None)
     pd.set_option('display.float_format', '{:,.1f}%'.format)
+    pd.set_option('display.multi_sparse', False)
 
     with open(os.path.join(diagnostic_directory, "nodes_stats.json")) as f:
         data = json.load(f)
@@ -156,14 +158,33 @@ def command(full, diagnostic_directory):
 
     pipelines = sorted(p.index) if full else p.index[0:5]
 
-    for pipeline in pipelines:
-        pr = processor(data, pipeline)
-        pr = pr.sort_values("time_in_millis", ascending=False)
+    if top_processors:
+        print(title("Top Processors:"))
+        tpr = pd.concat(
+            [processor(data, pipeline) for pipeline in pipelines],
+            axis=0,
+            join="outer",
+            ignore_index=False,
+            keys=pipelines,
+            levels=None,
+            names=["pipeline", "processor"],
+            verify_integrity=False,
+            copy=True,
+        )
+        tpr["percent"] = (tpr["time_in_millis"] * 100 / tpr["time_in_millis"].sum()).astype(np.float32)
+        pipeline_processors = [p for p in tpr.index.get_level_values(1).tolist() if p.startswith("pipeline")]
+        tpr = tpr.drop(pipeline_processors, level=1) # pipeline processors aren't interesting
+        tpr = tpr.sort_values("time_in_millis", ascending=False)
+        print(tpr.head(10))
+    else:
+        for pipeline in pipelines:
+            pr = processor(data, pipeline)
+            pr = pr.sort_values("time_in_millis", ascending=False)
 
-        print(title(f"Pipeline '{pipeline}' processors:"))
-        print(pr)
-        print("{0:.0%}".format(pr['time_in_millis'].sum() / p.loc[pipeline]["time_in_millis"]))
-        print()
+            print(title(f"Pipeline '{pipeline}' processors:"))
+            print(pr)
+            print("{0:.0%}".format(pr['time_in_millis'].sum() / p.loc[pipeline]["time_in_millis"]))
+            print()
 
 
 if __name__ == "__main__":
