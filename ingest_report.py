@@ -159,7 +159,6 @@ def command(full, diagnostic_directory):
     for pipeline in pipelines:
         pr = processor(data, pipeline)
         pr = pr.sort_values("time_in_millis", ascending=False)
-        prt = pr.sum().drop(["index","time_in_nanos","percent"])
 
         print(title(f"Pipeline '{pipeline}' processors:"))
         print(pr)
