@@ -164,7 +164,7 @@ public final class IngestDocument {
      * or if the field that is found at the provided path is not of the expected type.
      */
     public <T> T getFieldValue(String path, Class<T> clazz, boolean ignoreMissing) {
-        FieldPath fieldPath = new FieldPath(path);
+        FieldPath fieldPath = FieldPath.of(path);
         Object context = fieldPath.initialContext(this);
         for (String pathElement : fieldPath.pathElements) {
             ResolveResult result = resolve(pathElement, path, context);
@@ -257,7 +257,7 @@ public final class IngestDocument {
      * @throws IllegalArgumentException if the path is null, empty or invalid.
      */
     public boolean hasField(String path, boolean failOutOfRange) {
-        FieldPath fieldPath = new FieldPath(path);
+        FieldPath fieldPath = FieldPath.of(path);
         Object context = fieldPath.initialContext(this);
         for (int i = 0; i < fieldPath.pathElements.length - 1; i++) {
             String pathElement = fieldPath.pathElements[i];
@@ -334,7 +334,7 @@ public final class IngestDocument {
      * @throws IllegalArgumentException if the path is null, empty, invalid or if the field doesn't exist.
      */
     public void removeField(String path) {
-        FieldPath fieldPath = new FieldPath(path);
+        FieldPath fieldPath = FieldPath.of(path);
         Object context = fieldPath.initialContext(this);
         for (int i = 0; i < fieldPath.pathElements.length - 1; i++) {
             ResolveResult result = resolve(fieldPath.pathElements[i], path, context);
@@ -553,7 +553,7 @@ public final class IngestDocument {
     }
 
     private void setFieldValue(String path, Object value, boolean append, boolean allowDuplicates) {
-        FieldPath fieldPath = new FieldPath(path);
+        FieldPath fieldPath = FieldPath.of(path);
         Object context = fieldPath.initialContext(this);
         for (int i = 0; i < fieldPath.pathElements.length - 1; i++) {
             String pathElement = fieldPath.pathElements[i];
@@ -984,13 +984,17 @@ public final class IngestDocument {
 
     private static final class FieldPath {
 
+        private static FieldPath of(String path) {
+            if (Strings.isEmpty(path)) {
+                throw new IllegalArgumentException("path cannot be null nor empty");
+            }
+            return new FieldPath(path);
+        }
+
         private final String[] pathElements;
         private final boolean ingestContext;
 
         private FieldPath(String path) {
-            if (Strings.isEmpty(path)) {
-                throw new IllegalArgumentException("path cannot be null nor empty");
-            }
             String newPath;
             if (path.startsWith(INGEST_KEY_PREFIX)) {
                 ingestContext = true;
