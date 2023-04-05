@@ -997,15 +997,17 @@ public final class IngestDocument {
         private FieldPath(final String path) {
             final String newPath;
             if (path.startsWith(INGEST_KEY_PREFIX)) {
+                // e.g. _ingest.somefield
                 ingestContext = true;
                 newPath = path.substring(INGEST_KEY_PREFIX.length());
-            } else {
+            } else if (path.startsWith(SOURCE_PREFIX)) {
+                // e.g. _source.somefield
                 ingestContext = false;
-                if (path.startsWith(SOURCE_PREFIX)) {
-                    newPath = path.substring(SOURCE_PREFIX.length());
-                } else {
-                    newPath = path;
-                }
+                newPath = path.substring(SOURCE_PREFIX.length());
+            } else {
+                // e.g. somefield
+                ingestContext = false;
+                newPath = path;
             }
             this.pathElements = newPath.split("\\.");
             if (pathElements.length == 1 && pathElements[0].isEmpty()) {
