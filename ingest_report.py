@@ -184,6 +184,7 @@ def command(full, top_processors, diagnostic_directory):
         tpr.index = tpr.index.str.replace(r":.*$", "", regex=True)
         tpr = tpr.groupby("processor").sum() # gross, need to re-group-by now that e.g. "date:foo" has become "date"
         tpr = tpr.drop(["index"], axis=1)
+        tpr = tpr[tpr['count'] > 0] # drop rows where count = 0
         tpr["time_in_nanos"] = ((tpr["time_in_millis"] * 1000000) / (tpr["count"] + 1)).apply(np.ceil).astype(np.int64)
         tpr["percent"] = (tpr["time_in_millis"] * 100 / tpr["time_in_millis"].sum()).astype(np.float32)
         tpr = tpr.sort_values("time_in_millis", ascending=False)
