@@ -28,7 +28,9 @@ import org.elasticsearch.transport.TransportService;
 import org.elasticsearch.xpack.core.enrich.action.EnrichStatsAction;
 import org.elasticsearch.xpack.core.enrich.action.EnrichStatsAction.Response.CacheStats;
 import org.elasticsearch.xpack.core.enrich.action.EnrichStatsAction.Response.CoordinatorStats;
+import org.elasticsearch.xpack.core.enrich.action.EnrichStatsAction.Response.ExecutingPolicy;
 import org.elasticsearch.xpack.enrich.EnrichCache;
+import org.elasticsearch.xpack.enrich.EnrichPolicyExecutor;
 
 import java.io.IOException;
 import java.util.List;
@@ -91,19 +93,33 @@ public class EnrichCoordinatorStatsAction extends ActionType<EnrichCoordinatorSt
 
     public static class NodeResponse extends BaseNodeResponse {
 
+        private final List<ExecutingPolicy> executingPolicies;
         private final CacheStats cacheStats;
         private final CoordinatorStats coordinatorStats;
 
-        NodeResponse(DiscoveryNode node, CacheStats cacheStats, CoordinatorStats coordinatorStats) {
+        NodeResponse(
+            DiscoveryNode node,
+            List<ExecutingPolicy> executingPolicies,
+            CacheStats cacheStats,
+            CoordinatorStats coordinatorStats
+        ) {
             super(node);
+            this.executingPolicies = executingPolicies;
             this.cacheStats = cacheStats;
             this.coordinatorStats = coordinatorStats;
         }
 
         NodeResponse(StreamInput in) throws IOException {
             super(in);
+            this.executingPolicies = in.getTransportVersion().onOrAfter(TransportVersion.V_8_9_0)
+                ? in.readList(ExecutingPolicy::new)
+                : List.of();
             this.cacheStats = in.getTransportVersion().onOrAfter(TransportVersion.V_7_16_0) ? new CacheStats(in) : null;
             this.coordinatorStats = new CoordinatorStats(in);
+        }
+
+        public List<ExecutingPolicy> getExecutingPolicies() {
+            return executingPolicies;
         }
 
         public CoordinatorStats getCoordinatorStats() {
@@ -117,6 +133,9 @@ public class EnrichCoordinatorStatsAction extends ActionType<EnrichCoordinatorSt
         @Override
         public void writeTo(StreamOutput out) throws IOException {
             super.writeTo(out);
+            if (out.getTransportVersion().onOrAfter(TransportVersion.V_8_9_0)) {
+                out.writeList(executingPolicies);
+            }
             if (out.getTransportVersion().onOrAfter(TransportVersion.V_7_16_0)) {
                 cacheStats.writeTo(out);
             }
@@ -177,7 +196,16 @@ public class EnrichCoordinatorStatsAction extends ActionType<EnrichCoordinatorSt
         @Override
         protected NodeResponse nodeOperation(NodeRequest request, Task task) {
             DiscoveryNode node = clusterService.localNode();
-            return new NodeResponse(node, enrichCache.getStats(node.getId()), coordinator.getStats(node.getId()));
+
+            final List<ExecutingPolicy> policyExecutionTasks = taskManager.getTasks()
+                .values()
+                .stream()
+                .filter(t -> t.getAction().equals(EnrichPolicyExecutor.TASK_ACTION))
+                .map(t -> t.taskInfo(node.getId(), true))
+                .map(t -> new ExecutingPolicy(t.description(), t))
+                .toList();
+
+            return new NodeResponse(node, policyExecutionTasks, enrichCache.getStats(node.getId()), coordinator.getStats(node.getId()));
         }
     }
 
