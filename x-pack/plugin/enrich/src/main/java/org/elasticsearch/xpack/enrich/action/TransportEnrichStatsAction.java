@@ -80,11 +80,6 @@ public class TransportEnrichStatsAction extends TransportMasterNodeAction<Enrich
                 return;
             }
 
-            final List<CoordinatorStats> coordinatorStats = response.getNodes()
-                .stream()
-                .map(EnrichCoordinatorStatsAction.NodeResponse::getCoordinatorStats)
-                .sorted(Comparator.comparing(CoordinatorStats::getNodeId))
-                .collect(Collectors.toList());
             final List<ExecutingPolicy> policyExecutionTasks = taskManager.getTasks()
                 .values()
                 .stream()
@@ -92,6 +87,11 @@ public class TransportEnrichStatsAction extends TransportMasterNodeAction<Enrich
                 .map(t -> t.taskInfo(clusterService.localNode().getId(), true))
                 .map(t -> new ExecutingPolicy(t.description(), t))
                 .sorted(Comparator.comparing(ExecutingPolicy::getName))
+                .collect(Collectors.toList());
+            final List<CoordinatorStats> coordinatorStats = response.getNodes()
+                .stream()
+                .map(EnrichCoordinatorStatsAction.NodeResponse::getCoordinatorStats)
+                .sorted(Comparator.comparing(CoordinatorStats::getNodeId))
                 .collect(Collectors.toList());
             final List<EnrichStatsAction.Response.CacheStats> cacheStats = response.getNodes()
                 .stream()
