@@ -28,7 +28,6 @@ import org.elasticsearch.xpack.enrich.EnrichPolicyExecutor;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class TransportEnrichStatsAction extends TransportMasterNodeAction<EnrichStatsAction.Request, EnrichStatsAction.Response> {
 
@@ -87,18 +86,18 @@ public class TransportEnrichStatsAction extends TransportMasterNodeAction<Enrich
                 .map(t -> t.taskInfo(clusterService.localNode().getId(), true))
                 .map(t -> new ExecutingPolicy(t.description(), t))
                 .sorted(Comparator.comparing(ExecutingPolicy::getName))
-                .collect(Collectors.toList());
+                .toList();
             final List<CoordinatorStats> coordinatorStats = response.getNodes()
                 .stream()
                 .map(EnrichCoordinatorStatsAction.NodeResponse::getCoordinatorStats)
                 .sorted(Comparator.comparing(CoordinatorStats::getNodeId))
-                .collect(Collectors.toList());
+                .toList();
             final List<EnrichStatsAction.Response.CacheStats> cacheStats = response.getNodes()
                 .stream()
                 .map(EnrichCoordinatorStatsAction.NodeResponse::getCacheStats)
                 .filter(Objects::nonNull)
                 .sorted(Comparator.comparing(EnrichStatsAction.Response.CacheStats::getNodeId))
-                .collect(Collectors.toList());
+                .toList();
             listener.onResponse(new EnrichStatsAction.Response(policyExecutionTasks, coordinatorStats, cacheStats));
         }, listener::onFailure);
         client.execute(EnrichCoordinatorStatsAction.INSTANCE, statsRequest, statsListener);
