@@ -26,6 +26,7 @@ import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportRequest;
 import org.elasticsearch.transport.TransportService;
 import org.elasticsearch.xpack.core.enrich.action.EnrichStatsAction;
+import org.elasticsearch.xpack.core.enrich.action.EnrichStatsAction.Response.CacheStats;
 import org.elasticsearch.xpack.core.enrich.action.EnrichStatsAction.Response.CoordinatorStats;
 import org.elasticsearch.xpack.enrich.EnrichCache;
 
@@ -90,10 +91,10 @@ public class EnrichCoordinatorStatsAction extends ActionType<EnrichCoordinatorSt
 
     public static class NodeResponse extends BaseNodeResponse {
 
-        private final EnrichStatsAction.Response.CacheStats cacheStats;
+        private final CacheStats cacheStats;
         private final CoordinatorStats coordinatorStats;
 
-        NodeResponse(DiscoveryNode node, EnrichStatsAction.Response.CacheStats cacheStats, CoordinatorStats coordinatorStats) {
+        NodeResponse(DiscoveryNode node, CacheStats cacheStats, CoordinatorStats coordinatorStats) {
             super(node);
             this.cacheStats = cacheStats;
             this.coordinatorStats = coordinatorStats;
@@ -101,9 +102,7 @@ public class EnrichCoordinatorStatsAction extends ActionType<EnrichCoordinatorSt
 
         NodeResponse(StreamInput in) throws IOException {
             super(in);
-            this.cacheStats = in.getTransportVersion().onOrAfter(TransportVersion.V_7_16_0)
-                ? new EnrichStatsAction.Response.CacheStats(in)
-                : null;
+            this.cacheStats = in.getTransportVersion().onOrAfter(TransportVersion.V_7_16_0) ? new CacheStats(in) : null;
             this.coordinatorStats = new CoordinatorStats(in);
         }
 
@@ -111,7 +110,7 @@ public class EnrichCoordinatorStatsAction extends ActionType<EnrichCoordinatorSt
             return coordinatorStats;
         }
 
-        public EnrichStatsAction.Response.CacheStats getCacheStats() {
+        public CacheStats getCacheStats() {
             return cacheStats;
         }
 
