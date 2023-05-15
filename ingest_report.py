@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import click
+import datetime
 import json
 import math
 import numpy as np
@@ -24,6 +25,16 @@ def _ingests(data):
 
 def _processors(pipeline):
     return [next(iter(processor.keys())) for processor in pipeline["processors"]]
+
+def version_and_date(version, data):
+    timestamp = 0
+    for n in data["nodes"].keys():
+        ts = data["nodes"][n]["timestamp"]
+        if ts > timestamp:
+            timestamp = ts
+
+    return [version["version"]["number"], datetime.datetime.utcfromtimestamp(timestamp / 1000).strftime("%Y-%m-%d %H:%M:%S")];
+
 
 def pipelines_summary(data):
     ingests = _ingests(data)
@@ -135,6 +146,9 @@ def command(full, top_processors, diagnostic_directory):
     pd.set_option('display.float_format', '{:,.1f}%'.format)
     pd.set_option('display.multi_sparse', False)
 
+    with open(os.path.join(diagnostic_directory, "version.json")) as f:
+        version = json.load(f)
+
     with open(os.path.join(diagnostic_directory, "nodes_stats.json")) as f:
         data = json.load(f)
 
@@ -143,7 +157,8 @@ def command(full, top_processors, diagnostic_directory):
     pt = p.sum().drop(["time_in_nanos","percent"])
     t = total(data)
 
-    print(title("Ingest & Index Summary:"))
+    v, d = version_and_date(version, data)
+    print(title("Ingest & Index Summary: ({} / {})".format(v, d)))
     print(t)
     print()
 
