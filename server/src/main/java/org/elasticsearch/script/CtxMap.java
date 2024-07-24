@@ -192,6 +192,17 @@ public class CtxMap<T extends Metadata> extends AbstractMap<String, Object> {
         return directSourceAccess() ? source.get(key) : (SOURCE.equals(key) ? source : null);
     }
 
+    @Override
+    public Object getOrDefault(Object key, Object defaultValue) {
+        if (key instanceof String str) {
+            if (metadata.isAvailable(str)) {
+                return metadata.getOrDefault(str, defaultValue);
+            }
+            return directSourceAccess() ? source.getOrDefault(key, defaultValue) : (SOURCE.equals(key) ? source : defaultValue);
+        }
+        return defaultValue;
+    }
+
     /**
      * Set of entries of the wrapped map that calls the appropriate validator before changing an entries value or removing an entry.
      *
