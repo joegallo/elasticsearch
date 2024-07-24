@@ -28,8 +28,8 @@ import java.util.Arrays;
 import java.util.Locale;
 
 public class InetAddresses {
-    private static int IPV4_PART_COUNT = 4;
-    private static int IPV6_PART_COUNT = 8;
+    private static final int IPV4_PART_COUNT = 4;
+    private static final int IPV6_PART_COUNT = 8;
 
     public static boolean isInetAddress(String ipString) {
         return ipStringToBytes(ipString) != null;
@@ -100,28 +100,34 @@ public class InetAddresses {
     }
 
     private static byte[] textToNumericFormatV4(String ipString) {
-        byte[] bytes = new byte[IPV4_PART_COUNT];
-        byte octet = 0;
-        byte digits = 0;
+        final byte[] bytes = new byte[IPV4_PART_COUNT];
+        int octet = 0;
+        int digits = 0;
+        int next = 0;
         for (int i = 0; i < ipString.length(); i++) {
             char c = ipString.charAt(i);
-            if (c == '.') {
+            if (c >= '0' && c <= '9') {
+                digits++;
+                if (digits > 1 && next == 0 /* octet contains leading 0 */) {
+                    return null;
+                }
+                next = next * 10 + (c - '0');
+                if (next > 255 /* octet is outside a byte range */) {
+                    return null;
+                }
+            } else if (c == '.') {
+                bytes[octet] = (byte) next;
                 octet++;
+                next = 0;
                 if (octet > 3 /* too many octets */ || digits == 0 /* empty octet */) {
                     return null;
                 }
                 digits = 0;
-            } else if (c >= '0' && c <= '9') {
-                digits++;
-                var next = bytes[octet] * 10 + (c - '0');
-                if (next > 255 /* octet is outside a byte range */ || (digits > 1 && bytes[octet] == 0) /* octet contains leading 0 */) {
-                    return null;
-                }
-                bytes[octet] = (byte) next;
             } else {
                 return null;
             }
         }
+        bytes[octet] = (byte) next;
         return octet != 3 ? null : bytes;
     }
 
@@ -136,7 +142,7 @@ public class InetAddresses {
         // This indicates that a run of zeroes has been skipped.
         int skipIndex = -1;
         for (int i = 1; i < parts.length - 1; i++) {
-            if (parts[i].length() == 0) {
+            if (parts[i].isEmpty()) {
                 if (skipIndex >= 0) {
                     return null;  // Can't have more than one ::
                 }
@@ -150,10 +156,10 @@ public class InetAddresses {
             // If we found a "::", then check if it also covers the endpoints.
             partsHi = skipIndex;
             partsLo = parts.length - skipIndex - 1;
-            if (parts[0].length() == 0 && --partsHi != 0) {
+            if (parts[0].isEmpty() && --partsHi != 0) {
                 return null;  // ^: requires ^::
             }
-            if (parts[parts.length - 1].length() == 0 && --partsLo != 0) {
+            if (parts[parts.length - 1].isEmpty() && --partsLo != 0) {
                 return null;  // :$ requires ::$
             }
         } else {
@@ -356,7 +362,7 @@ public class InetAddresses {
 
     /**
      * Convert a byte array into an InetAddress.
-     *
+     * <p>
      * {@link InetAddress#getByAddress} is documented as throwing a checked
      * exception "if IP address is of illegal length."  We replace it with
      * an unchecked exception, for use by callers who already know that addr
@@ -411,11 +417,11 @@ public class InetAddresses {
 
     /**
      * Given an address and prefix length, returns the string representation of the range in CIDR notation.
-     *
+     * <p>
      * See {@link #toAddrString} for details on how the address is represented.
      */
     public static String toCidrString(InetAddress address, int prefixLength) {
-        return new StringBuilder().append(toAddrString(address)).append("/").append(prefixLength).toString();
+        return toAddrString(address) + "/" + prefixLength;
     }
 
     /**
