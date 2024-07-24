@@ -82,6 +82,7 @@ public class GeoIpDownloaderTests extends ESTestCase {
 
     private HttpClient httpClient;
     private ClusterService clusterService;
+    private DatabaseExpirationService expirationService;
     private ThreadPool threadPool;
     private MockClient client;
     private GeoIpDownloader geoIpDownloader;
@@ -91,7 +92,6 @@ public class GeoIpDownloaderTests extends ESTestCase {
         httpClient = mock(HttpClient.class);
         when(httpClient.getBytes(anyString())).thenReturn("[]".getBytes(StandardCharsets.UTF_8));
         clusterService = mock(ClusterService.class);
-        threadPool = new ThreadPool(Settings.builder().put(Node.NODE_NAME_SETTING.getKey(), "test").build(), MeterRegistry.NOOP);
         when(clusterService.getClusterSettings()).thenReturn(
             new ClusterSettings(
                 Settings.EMPTY,
@@ -105,11 +105,14 @@ public class GeoIpDownloaderTests extends ESTestCase {
         );
         ClusterState state = createClusterState(new PersistentTasksCustomMetadata(1L, Map.of()));
         when(clusterService.state()).thenReturn(state);
+        expirationService = mock(DatabaseExpirationService.class);
+        threadPool = new ThreadPool(Settings.builder().put(Node.NODE_NAME_SETTING.getKey(), "test").build(), MeterRegistry.NOOP);
         client = new MockClient(threadPool);
         geoIpDownloader = new GeoIpDownloader(
             client,
             httpClient,
             clusterService,
+            expirationService,
             threadPool,
             Settings.EMPTY,
             1,
@@ -282,6 +285,7 @@ public class GeoIpDownloaderTests extends ESTestCase {
             client,
             httpClient,
             clusterService,
+            expirationService,
             threadPool,
             Settings.EMPTY,
             1,
@@ -333,6 +337,7 @@ public class GeoIpDownloaderTests extends ESTestCase {
             client,
             httpClient,
             clusterService,
+            expirationService,
             threadPool,
             Settings.EMPTY,
             1,
@@ -386,6 +391,7 @@ public class GeoIpDownloaderTests extends ESTestCase {
             client,
             httpClient,
             clusterService,
+            expirationService,
             threadPool,
             Settings.EMPTY,
             1,
@@ -436,6 +442,7 @@ public class GeoIpDownloaderTests extends ESTestCase {
             client,
             httpClient,
             clusterService,
+            expirationService,
             threadPool,
             Settings.EMPTY,
             1,
@@ -481,6 +488,7 @@ public class GeoIpDownloaderTests extends ESTestCase {
             client,
             httpClient,
             clusterService,
+            expirationService,
             threadPool,
             Settings.EMPTY,
             1,
@@ -511,6 +519,7 @@ public class GeoIpDownloaderTests extends ESTestCase {
             client,
             httpClient,
             clusterService,
+            expirationService,
             threadPool,
             Settings.EMPTY,
             1,
@@ -552,6 +561,7 @@ public class GeoIpDownloaderTests extends ESTestCase {
             client,
             httpClient,
             clusterService,
+            expirationService,
             threadPool,
             Settings.builder().put(ENDPOINT_SETTING.getKey(), "a.b").build(),
             1,

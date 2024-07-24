@@ -61,6 +61,7 @@ public class EnterpriseGeoIpDownloaderTaskExecutor extends PersistentTasksExecut
     private final Client client;
     private final HttpClient httpClient;
     private final ClusterService clusterService;
+    private final DatabaseExpirationService expirationService;
     private final ThreadPool threadPool;
     private final Settings settings;
     private volatile TimeValue pollInterval;
@@ -68,11 +69,18 @@ public class EnterpriseGeoIpDownloaderTaskExecutor extends PersistentTasksExecut
 
     private volatile SecureSettings cachedSecureSettings;
 
-    EnterpriseGeoIpDownloaderTaskExecutor(Client client, HttpClient httpClient, ClusterService clusterService, ThreadPool threadPool) {
+    EnterpriseGeoIpDownloaderTaskExecutor(
+        Client client,
+        HttpClient httpClient,
+        ClusterService clusterService,
+        DatabaseExpirationService expirationService,
+        ThreadPool threadPool
+    ) {
         super(ENTERPRISE_GEOIP_DOWNLOADER, threadPool.generic());
         this.client = new OriginSettingClient(client, IngestService.INGEST_ORIGIN);
         this.httpClient = httpClient;
         this.clusterService = clusterService;
+        this.expirationService = expirationService;
         this.threadPool = threadPool;
         this.settings = clusterService.getSettings();
         this.pollInterval = POLL_INTERVAL_SETTING.get(settings);
@@ -133,6 +141,7 @@ public class EnterpriseGeoIpDownloaderTaskExecutor extends PersistentTasksExecut
             client,
             httpClient,
             clusterService,
+            expirationService,
             threadPool,
             id,
             type,

@@ -64,6 +64,7 @@ public class GeoIpProcessorFactoryTests extends ESTestCase {
     private ConfigDatabases configDatabases;
     private DatabaseNodeService databaseNodeService;
     private ClusterService clusterService;
+    private DatabaseExpirationService expirationService;
 
     @Before
     public void loadDatabaseReaders() throws IOException {
@@ -78,7 +79,18 @@ public class GeoIpProcessorFactoryTests extends ESTestCase {
         geoipTmpDir = createTempDir();
         clusterService = mock(ClusterService.class);
         when(clusterService.state()).thenReturn(ClusterState.EMPTY_STATE);
-        databaseNodeService = new DatabaseNodeService(geoipTmpDir, client, cache, configDatabases, Runnable::run, clusterService);
+
+        expirationService = mock(DatabaseExpirationService.class);
+
+        databaseNodeService = new DatabaseNodeService(
+            geoipTmpDir,
+            client,
+            cache,
+            configDatabases,
+            Runnable::run,
+            clusterService,
+            expirationService
+        );
         databaseNodeService.initialize("nodeId", mock(ResourceWatcherService.class), mock(IngestService.class));
     }
 
@@ -343,7 +355,8 @@ public class GeoIpProcessorFactoryTests extends ESTestCase {
             cache,
             configDatabases,
             Runnable::run,
-            clusterService
+            clusterService,
+            expirationService
         );
         GeoIpProcessor.Factory factory = new GeoIpProcessor.Factory(databaseNodeService);
         for (DatabaseReaderLazyLoader lazyLoader : configDatabases.getConfigDatabases().values()) {
@@ -412,7 +425,8 @@ public class GeoIpProcessorFactoryTests extends ESTestCase {
             cache,
             configDatabases,
             Runnable::run,
-            clusterService
+            clusterService,
+            expirationService
         );
         databaseNodeService.initialize("nodeId", resourceWatcherService, mock(IngestService.class));
         GeoIpProcessor.Factory factory = new GeoIpProcessor.Factory(databaseNodeService);

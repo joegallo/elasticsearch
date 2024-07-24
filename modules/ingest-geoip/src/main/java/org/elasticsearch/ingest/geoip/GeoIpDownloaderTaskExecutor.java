@@ -97,12 +97,20 @@ public final class GeoIpDownloaderTaskExecutor extends PersistentTasksExecutor<G
     private volatile boolean eagerDownload;
     private volatile boolean atLeastOneGeoipProcessor;
     private final AtomicBoolean taskIsBootstrapped = new AtomicBoolean(false);
+    private final DatabaseExpirationService expirationService;
 
-    GeoIpDownloaderTaskExecutor(Client client, HttpClient httpClient, ClusterService clusterService, ThreadPool threadPool) {
+    GeoIpDownloaderTaskExecutor(
+        Client client,
+        HttpClient httpClient,
+        ClusterService clusterService,
+        DatabaseExpirationService expirationService,
+        ThreadPool threadPool
+    ) {
         super(GEOIP_DOWNLOADER, threadPool.generic());
         this.client = new OriginSettingClient(client, IngestService.INGEST_ORIGIN);
         this.httpClient = httpClient;
         this.clusterService = clusterService;
+        this.expirationService = expirationService;
         this.threadPool = threadPool;
         this.settings = clusterService.getSettings();
         this.persistentTasksService = new PersistentTasksService(clusterService, threadPool, client);
@@ -176,6 +184,7 @@ public final class GeoIpDownloaderTaskExecutor extends PersistentTasksExecutor<G
             client,
             httpClient,
             clusterService,
+            expirationService,
             threadPool,
             settings,
             id,

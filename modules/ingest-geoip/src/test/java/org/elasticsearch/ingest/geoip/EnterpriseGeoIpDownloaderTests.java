@@ -74,6 +74,7 @@ public class EnterpriseGeoIpDownloaderTests extends ESTestCase {
 
     private HttpClient httpClient;
     private ClusterService clusterService;
+    private DatabaseExpirationService expirationService;
     private ThreadPool threadPool;
     private MockClient client;
     private EnterpriseGeoIpDownloader geoIpDownloader;
@@ -85,17 +86,19 @@ public class EnterpriseGeoIpDownloaderTests extends ESTestCase {
             "e4a3411cdd7b21eaf18675da5a7f9f360d33c6882363b2c19c38715834c9e836  GeoIP2-City_20240709.tar.gz".getBytes(StandardCharsets.UTF_8)
         );
         clusterService = mock(ClusterService.class);
-        threadPool = new ThreadPool(Settings.builder().put(Node.NODE_NAME_SETTING.getKey(), "test").build(), MeterRegistry.NOOP);
         when(clusterService.getClusterSettings()).thenReturn(
             new ClusterSettings(Settings.EMPTY, Set.of(GeoIpDownloaderTaskExecutor.POLL_INTERVAL_SETTING))
         );
         ClusterState state = createClusterState(new PersistentTasksCustomMetadata(1L, Map.of()));
         when(clusterService.state()).thenReturn(state);
+        expirationService = mock(DatabaseExpirationService.class);
+        threadPool = new ThreadPool(Settings.builder().put(Node.NODE_NAME_SETTING.getKey(), "test").build(), MeterRegistry.NOOP);
         client = new MockClient(threadPool);
         geoIpDownloader = new EnterpriseGeoIpDownloader(
             client,
             httpClient,
             clusterService,
+            expirationService,
             threadPool,
             1,
             "",
@@ -289,6 +292,7 @@ public class EnterpriseGeoIpDownloaderTests extends ESTestCase {
             client,
             httpClient,
             clusterService,
+            expirationService,
             threadPool,
             1,
             "",
@@ -348,6 +352,7 @@ public class EnterpriseGeoIpDownloaderTests extends ESTestCase {
             client,
             httpClient,
             clusterService,
+            expirationService,
             threadPool,
             1,
             "",
@@ -416,6 +421,7 @@ public class EnterpriseGeoIpDownloaderTests extends ESTestCase {
             client,
             httpClient,
             clusterService,
+            expirationService,
             threadPool,
             1,
             "",

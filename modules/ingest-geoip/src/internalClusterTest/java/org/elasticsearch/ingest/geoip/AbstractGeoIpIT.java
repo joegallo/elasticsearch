@@ -27,6 +27,8 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 
+import static org.elasticsearch.ingest.geoip.DatabaseExpirationService.DATABASE_VALIDITY;
+
 public abstract class AbstractGeoIpIT extends ESIntegTestCase {
     private static final boolean useFixture = Booleans.parseBoolean(System.getProperty("geoip_use_service", "false")) == false;
 
@@ -75,12 +77,7 @@ public abstract class AbstractGeoIpIT extends ESIntegTestCase {
         public List<Setting<?>> getSettings() {
             return List.of(
                 Setting.simpleString("ingest.geoip.database_path", Setting.Property.NodeScope),
-                Setting.timeSetting(
-                    "ingest.geoip.database_validity",
-                    TimeValue.timeValueDays(3),
-                    Setting.Property.NodeScope,
-                    Setting.Property.Dynamic
-                )
+                Setting.timeSetting(DATABASE_VALIDITY, TimeValue.timeValueDays(3), Setting.Property.NodeScope, Setting.Property.Dynamic)
             );
         }
     }

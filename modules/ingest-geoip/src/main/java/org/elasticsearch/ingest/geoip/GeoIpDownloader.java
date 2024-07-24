@@ -88,6 +88,7 @@ public class GeoIpDownloader extends AllocatedPersistentTask {
     private volatile GeoIpDownloaderStats stats = GeoIpDownloaderStats.EMPTY;
     private final Supplier<TimeValue> pollIntervalSupplier;
     private final Supplier<Boolean> eagerDownloadSupplier;
+    private final DatabaseExpirationService expirationService;
     /*
      * This variable tells us whether we have at least one pipeline with a geoip processor. If there are no geoip processors then we do
      * not download geoip databases (unless configured to eagerly download). Access is not protected because it is set in the constructor
@@ -99,6 +100,7 @@ public class GeoIpDownloader extends AllocatedPersistentTask {
         Client client,
         HttpClient httpClient,
         ClusterService clusterService,
+        DatabaseExpirationService expirationService,
         ThreadPool threadPool,
         Settings settings,
         long id,
@@ -115,6 +117,7 @@ public class GeoIpDownloader extends AllocatedPersistentTask {
         this.client = client;
         this.httpClient = httpClient;
         this.clusterService = clusterService;
+        this.expirationService = expirationService;
         this.threadPool = threadPool;
         this.endpoint = ENDPOINT_SETTING.get(settings);
         this.pollIntervalSupplier = pollIntervalSupplier;
@@ -319,10 +322,11 @@ public class GeoIpDownloader extends AllocatedPersistentTask {
     }
 
     private void cleanDatabases() {
+        long now = System.currentTimeMillis();
         List<Tuple<String, Metadata>> expiredDatabases = state.getDatabases()
             .entrySet()
             .stream()
-            .filter(e -> e.getValue().isNewEnough(clusterService.state().metadata().settings()) == false)
+            .filter(e -> expirationService.isExpired(now, e.getValue()))
             .map(entry -> Tuple.tuple(entry.getKey(), entry.getValue()))
             .toList();
         expiredDatabases.forEach(e -> {

@@ -66,7 +66,8 @@ public class ReloadingDatabasesWhilePerformingGeoLookupsIT extends ESTestCase {
         Path geoIpTmpDir = createTempDir();
         ClusterService clusterService = mock(ClusterService.class);
         when(clusterService.state()).thenReturn(ClusterState.EMPTY_STATE);
-        DatabaseNodeService databaseNodeService = createRegistry(geoIpConfigDir, geoIpTmpDir, clusterService);
+        DatabaseExpirationService expirationService = mock(DatabaseExpirationService.class);
+        DatabaseNodeService databaseNodeService = createRegistry(geoIpConfigDir, geoIpTmpDir, clusterService, expirationService);
         GeoIpProcessor.Factory factory = new GeoIpProcessor.Factory(databaseNodeService);
         Files.copy(ConfigDatabases.class.getResourceAsStream("/GeoLite2-City-Test.mmdb"), geoIpTmpDir.resolve("GeoLite2-City.mmdb"));
         Files.copy(ConfigDatabases.class.getResourceAsStream("/GeoLite2-City-Test.mmdb"), geoIpTmpDir.resolve("GeoLite2-City-Test.mmdb"));
@@ -190,18 +191,24 @@ public class ReloadingDatabasesWhilePerformingGeoLookupsIT extends ESTestCase {
         IOUtils.rm(geoIpConfigDir, geoIpTmpDir);
     }
 
-    private static DatabaseNodeService createRegistry(Path geoIpConfigDir, Path geoIpTmpDir, ClusterService clusterService)
-        throws IOException {
+    private static DatabaseNodeService createRegistry(
+        Path geoIpConfigDir,
+        Path geoIpTmpDir,
+        ClusterService clusterService,
+        DatabaseExpirationService expirationService
+    ) throws IOException {
         GeoIpCache cache = new GeoIpCache(0);
         ConfigDatabases configDatabases = new ConfigDatabases(geoIpConfigDir, cache);
         copyDatabaseFiles(geoIpConfigDir, configDatabases);
+
         DatabaseNodeService databaseNodeService = new DatabaseNodeService(
             geoIpTmpDir,
             mock(Client.class),
             cache,
             configDatabases,
             Runnable::run,
-            clusterService
+            clusterService,
+            expirationService
         );
         databaseNodeService.initialize("nodeId", mock(ResourceWatcherService.class), mock(IngestService.class));
         return databaseNodeService;

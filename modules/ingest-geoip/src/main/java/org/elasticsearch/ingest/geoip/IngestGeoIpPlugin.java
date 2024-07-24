@@ -98,6 +98,7 @@ public class IngestGeoIpPlugin extends Plugin
 
     private final SetOnce<IngestService> ingestService = new SetOnce<>();
     private final SetOnce<DatabaseNodeService> databaseRegistry = new SetOnce<>();
+    private final SetOnce<DatabaseExpirationService> databaseExpirationService = new SetOnce<>();
     private GeoIpDownloaderTaskExecutor geoIpDownloaderTaskExecutor;
     private EnterpriseGeoIpDownloaderTaskExecutor enterpriseGeoIpDownloaderTaskExecutor;
 
@@ -117,6 +118,10 @@ public class IngestGeoIpPlugin extends Plugin
     public Map<String, Processor.Factory> getProcessors(Processor.Parameters parameters) {
         ingestService.set(parameters.ingestService);
 
+        DatabaseExpirationService expirationService = new DatabaseExpirationService(parameters.ingestService.getClusterService());
+        expirationService.init();
+        databaseExpirationService.set(expirationService);
+
         long cacheSize = CACHE_SIZE.get(parameters.env.settings());
         GeoIpCache geoIpCache = new GeoIpCache(cacheSize);
         DatabaseNodeService registry = new DatabaseNodeService(
@@ -124,7 +129,8 @@ public class IngestGeoIpPlugin extends Plugin
             parameters.client,
             geoIpCache,
             parameters.genericExecutor,
-            parameters.ingestService.getClusterService()
+            parameters.ingestService.getClusterService(),
+            expirationService
         );
         databaseRegistry.set(registry);
         return Map.of(GeoIpProcessor.TYPE, new GeoIpProcessor.Factory(registry));
@@ -143,6 +149,7 @@ public class IngestGeoIpPlugin extends Plugin
             services.client(),
             new HttpClient(),
             services.clusterService(),
+            databaseExpirationService.get(),
             services.threadPool()
         );
         geoIpDownloaderTaskExecutor.init();
@@ -151,6 +158,7 @@ public class IngestGeoIpPlugin extends Plugin
             services.client(),
             new HttpClient(),
             services.clusterService(),
+            databaseExpirationService.get(),
             services.threadPool()
         );
         enterpriseGeoIpDownloaderTaskExecutor.init();

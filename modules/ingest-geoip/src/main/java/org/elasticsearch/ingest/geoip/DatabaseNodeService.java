@@ -97,16 +97,20 @@ public final class DatabaseNodeService implements GeoIpDatabaseProvider, Closeab
     private final ConfigDatabases configDatabases;
     private final Consumer<Runnable> genericExecutor;
     private final ClusterService clusterService;
+    private final DatabaseExpirationService expirationService;
     private IngestService ingestService;
 
     private final ConcurrentMap<String, DatabaseReaderLazyLoader> databases = new ConcurrentHashMap<>();
+
+    private volatile GeoIpTaskState geoIpTaskState;
 
     DatabaseNodeService(
         Environment environment,
         Client client,
         GeoIpCache cache,
         Consumer<Runnable> genericExecutor,
-        ClusterService clusterService
+        ClusterService clusterService,
+        DatabaseExpirationService expirationService
     ) {
         this(
             environment.tmpFile(),
@@ -114,7 +118,8 @@ public final class DatabaseNodeService implements GeoIpDatabaseProvider, Closeab
             cache,
             new ConfigDatabases(environment, cache),
             genericExecutor,
-            clusterService
+            clusterService,
+            expirationService
         );
     }
 
@@ -124,7 +129,8 @@ public final class DatabaseNodeService implements GeoIpDatabaseProvider, Closeab
         GeoIpCache cache,
         ConfigDatabases configDatabases,
         Consumer<Runnable> genericExecutor,
-        ClusterService clusterService
+        ClusterService clusterService,
+        DatabaseExpirationService expirationService
     ) {
         this.client = client;
         this.cache = cache;
@@ -132,6 +138,7 @@ public final class DatabaseNodeService implements GeoIpDatabaseProvider, Closeab
         this.configDatabases = configDatabases;
         this.genericExecutor = genericExecutor;
         this.clusterService = clusterService;
+        this.expirationService = expirationService;
     }
 
     public void initialize(String nodeId, ResourceWatcherService resourceWatcher, IngestService ingestServiceArg) throws IOException {
@@ -177,22 +184,15 @@ public final class DatabaseNodeService implements GeoIpDatabaseProvider, Closeab
 
     @Override
     public Boolean isValid(String databaseFile) {
-        ClusterState currentState = clusterService.state();
-        assert currentState != null;
-
-        GeoIpTaskState state = getGeoIpTaskState(currentState);
-        if (state == null) {
-            return true;
-        }
-
-        GeoIpTaskState.Metadata metadata = state.getDatabases().get(databaseFile);
         // we never remove metadata from cluster state, if metadata is null we deal with built-in database, which is always valid
+        GeoIpTaskState.Metadata metadata = geoIpTaskState == null ? null : geoIpTaskState.getDatabases().get(databaseFile);
         if (metadata == null) {
             return true;
         }
 
-        boolean valid = metadata.isNewEnough(currentState.metadata().settings());
-        if (valid && metadata.isCloseToExpiration()) {
+        long now = System.currentTimeMillis();
+        boolean valid = expirationService.isExpired(now, metadata) == false;
+        if (valid && expirationService.isAlmostExpired(now, metadata)) {
             HeaderWarning.addWarning(
                 "database [{}] was not updated for over 25 days, geoip processor will stop working if there is no update for 30 days",
                 databaseFile
@@ -257,6 +257,9 @@ public final class DatabaseNodeService implements GeoIpDatabaseProvider, Closeab
             return;
         }
 
+        // update cached persistent state
+        geoIpTaskState = getGeoIpTaskState(state);
+
         IndexAbstraction databasesAbstraction = state.getMetadata().getIndicesLookup().get(GeoIpDownloader.DATABASES_INDEX);
         if (databasesAbstraction == null) {
             logger.trace("Not checking databases because geoip databases index does not exist");
@@ -274,6 +277,9 @@ public final class DatabaseNodeService implements GeoIpDatabaseProvider, Closeab
         // we'll consult each of the geoip downloaders to build up a list of database metadatas to work with
         List<Tuple<String, GeoIpTaskState.Metadata>> validMetadatas = new ArrayList<>();
 
+        // the time of this run for metadata validity/expiration purposes
+        final long now = System.currentTimeMillis();
+
         // process the geoip task state for the (ordinary) geoip downloader
         {
             GeoIpTaskState taskState = getGeoIpTaskState(state);
@@ -285,7 +291,7 @@ public final class DatabaseNodeService implements GeoIpDatabaseProvider, Closeab
                 taskState.getDatabases()
                     .entrySet()
                     .stream()
-                    .filter(e -> e.getValue().isNewEnough(state.getMetadata().settings()))
+                    .filter(e -> expirationService.isExpired(now, e.getValue()) == false)
                     .map(entry -> Tuple.tuple(entry.getKey(), entry.getValue()))
                     .toList()
             );
@@ -302,7 +308,7 @@ public final class DatabaseNodeService implements GeoIpDatabaseProvider, Closeab
                 taskState.getDatabases()
                     .entrySet()
                     .stream()
-                    .filter(e -> e.getValue().isNewEnough(state.getMetadata().settings()))
+                    .filter(e -> expirationService.isExpired(now, e.getValue()) == false)
                     .map(entry -> Tuple.tuple(entry.getKey(), entry.getValue()))
                     .toList()
             );

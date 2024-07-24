@@ -98,6 +98,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
     private final Client client;
     private final HttpClient httpClient;
     private final ClusterService clusterService;
+    private final DatabaseExpirationService expirationService;
     private final ThreadPool threadPool;
 
     // visible for testing
@@ -110,6 +111,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         Client client,
         HttpClient httpClient,
         ClusterService clusterService,
+        DatabaseExpirationService expirationService,
         ThreadPool threadPool,
         long id,
         String type,
@@ -124,6 +126,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         this.client = client;
         this.httpClient = httpClient;
         this.clusterService = clusterService;
+        this.expirationService = expirationService;
         this.threadPool = threadPool;
         this.pollIntervalSupplier = pollIntervalSupplier;
         this.credentialsBuilder = credentialsBuilder;
@@ -442,10 +445,11 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
     }
 
     private void cleanDatabases() {
+        long now = System.currentTimeMillis();
         List<Tuple<String, Metadata>> expiredDatabases = state.getDatabases()
             .entrySet()
             .stream()
-            .filter(e -> e.getValue().isNewEnough(clusterService.state().metadata().settings()) == false)
+            .filter(e -> expirationService.isExpired(now, e.getValue()))
             .map(entry -> Tuple.tuple(entry.getKey(), entry.getValue()))
             .toList();
         expiredDatabases.forEach(e -> {

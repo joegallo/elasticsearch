@@ -111,7 +111,7 @@ public class GeoIpDownloaderIT extends AbstractGeoIpIT {
             Settings.builder()
                 .putNull(GeoIpDownloaderTaskExecutor.ENABLED_SETTING.getKey())
                 .putNull(GeoIpDownloaderTaskExecutor.POLL_INTERVAL_SETTING.getKey())
-                .putNull("ingest.geoip.database_validity")
+                .putNull(DatabaseExpirationService.DATABASE_VALIDITY)
         );
         assertBusy(() -> {
             PersistentTasksCustomMetadata.PersistentTask<PersistentTaskParams> task = getTask();
@@ -161,7 +161,7 @@ public class GeoIpDownloaderIT extends AbstractGeoIpIT {
         putGeoIpPipeline();
         verifyUpdatedDatabase();
 
-        updateClusterSettings(Settings.builder().put("ingest.geoip.database_validity", TimeValue.timeValueMillis(1)));
+        updateClusterSettings(Settings.builder().put(DatabaseExpirationService.DATABASE_VALIDITY, TimeValue.timeValueMillis(1)));
         updateClusterSettings(
             Settings.builder().put(GeoIpDownloaderTaskExecutor.POLL_INTERVAL_SETTING.getKey(), TimeValue.timeValueDays(2))
         );
@@ -195,7 +195,7 @@ public class GeoIpDownloaderIT extends AbstractGeoIpIT {
             assertFalse(result.getIngestDocument().hasField("ip-asn"));
             assertFalse(result.getIngestDocument().hasField("ip-country"));
         });
-        updateClusterSettings(Settings.builder().putNull("ingest.geoip.database_validity"));
+        updateClusterSettings(Settings.builder().putNull(DatabaseExpirationService.DATABASE_VALIDITY));
         assertBusy(() -> {
             for (Path geoIpTmpDir : geoIpTmpDirs) {
                 try (Stream<Path> files = Files.list(geoIpTmpDir)) {
