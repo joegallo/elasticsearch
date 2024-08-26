@@ -15,7 +15,6 @@ import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.core.PathUtils;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.RandomDocumentPicks;
-import org.elasticsearch.ingest.geoip.Database.Property;
 import org.elasticsearch.test.ESTestCase;
 
 import java.io.IOException;
@@ -24,7 +23,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
@@ -37,13 +35,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 
 public class GeoIpProcessorTests extends ESTestCase {
-
-    private static final Set<Property> ALL_PROPERTIES = Set.of(Property.values());
-
-    private static final GeoDataLookup CITY_GEO_DATA_LOOKUP_ALL = GeoDataLookupFactory.get(Database.City)
-        .create(Database.City.properties());
-    private static final GeoDataLookup COUNTRY_GEO_DATA_LOOKUP_ALL = GeoDataLookupFactory.get(Database.Country)
-        .create(Database.Country.properties());
 
     private static GeoDataLookup geoDataLookupAll(final Database database) {
         return GeoDataLookupFactory.get(database).create(database.properties());
