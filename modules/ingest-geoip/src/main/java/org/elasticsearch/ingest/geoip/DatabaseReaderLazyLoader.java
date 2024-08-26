@@ -15,6 +15,7 @@ import com.maxmind.geoip2.model.AbstractResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.lucene.util.SetOnce;
+import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.common.CheckedBiFunction;
 import org.elasticsearch.common.CheckedSupplier;
 import org.elasticsearch.core.Booleans;
@@ -25,7 +26,6 @@ import org.elasticsearch.core.SuppressForbidden;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -165,14 +165,14 @@ class DatabaseReaderLazyLoader implements GeoIpDatabase, Closeable {
     @Override
     @Nullable
     public <T extends AbstractResponse> T getResponse(
-        InetAddress ipAddress,
-        CheckedBiFunction<Reader, InetAddress, Optional<T>, Exception> responseProvider
+        String ipAddress,
+        CheckedBiFunction<Reader, String, Optional<T>, Exception> responseProvider
     ) {
         return cache.putIfAbsent(ipAddress, databasePath.toString(), ip -> {
             try {
                 return responseProvider.apply(get(), ipAddress).orElse(null);
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                throw ExceptionsHelper.convertToRuntime(e);
             }
         });
     }

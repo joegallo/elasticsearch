@@ -24,6 +24,7 @@ import com.maxmind.geoip2.record.Continent;
 import com.maxmind.geoip2.record.Location;
 import com.maxmind.geoip2.record.Subdivision;
 
+import org.elasticsearch.common.network.InetAddresses;
 import org.elasticsearch.common.network.NetworkAddress;
 
 import java.io.IOException;
@@ -626,17 +627,18 @@ class MaxmindGeoDataLookups {
         }
 
         @Override
-        public final Map<String, Object> getGeoData(final GeoIpDatabase geoIpDatabase, final InetAddress ipAddress) throws IOException {
+        public final Map<String, Object> getGeoData(final GeoIpDatabase geoIpDatabase, final String ipAddress) throws IOException {
             return transformResponse(geoIpDatabase.getResponse(ipAddress, this::lookup));
         }
 
-        protected Optional<RESPONSE> lookup(Reader reader, InetAddress ipAddress) throws IOException {
-            DatabaseRecord<RESPONSE> record = reader.getRecord(ipAddress, clazz);
+        protected Optional<RESPONSE> lookup(Reader reader, String ipAddress) throws IOException {
+            InetAddress ip = InetAddresses.forString(ipAddress);
+            DatabaseRecord<RESPONSE> record = reader.getRecord(ip, clazz);
             RESPONSE result = record.getData();
             if (result == null) {
                 return Optional.empty();
             } else {
-                return Optional.of(buildResponse(result, NetworkAddress.format(ipAddress), record.getNetwork(), List.of("en")));
+                return Optional.of(buildResponse(result, NetworkAddress.format(ip), record.getNetwork(), List.of("en")));
             }
         }
 

@@ -11,7 +11,6 @@ package org.elasticsearch.ingest.geoip;
 import org.elasticsearch.common.CheckedSupplier;
 import org.elasticsearch.common.logging.DeprecationCategory;
 import org.elasticsearch.common.logging.DeprecationLogger;
-import org.elasticsearch.common.network.InetAddresses;
 import org.elasticsearch.core.Assertions;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.IngestDocument;
@@ -146,7 +145,7 @@ public final class GeoIpProcessor extends AbstractProcessor {
     }
 
     private Map<String, Object> getGeoData(GeoIpDatabase geoIpDatabase, String ip) throws IOException {
-        return geoDataLookup.getGeoData(geoIpDatabase, InetAddresses.forString(ip));
+        return geoDataLookup.getGeoData(geoIpDatabase, ip);
     }
 
     @Override

@@ -129,8 +129,8 @@ public class ConfigDatabasesTests extends ESTestCase {
 
             DatabaseReaderLazyLoader loader = configDatabases.getDatabase("GeoLite2-City.mmdb");
             assertThat(loader.getDatabaseType(), equalTo("GeoLite2-City"));
-            CityResponse cityResponse = loader.getResponse(InetAddresses.forString("89.160.20.128"), (reader, inetAddress) -> {
-                DatabaseRecord<CityResponse> record = reader.getRecord(inetAddress, CityResponse.class);
+            CityResponse cityResponse = loader.getResponse("89.160.20.128", (reader, ip) -> {
+                DatabaseRecord<CityResponse> record = reader.getRecord(InetAddresses.forString(ip), CityResponse.class);
                 CityResponse result = record.getData();
                 return Optional.of(new CityResponse(result, "", record.getNetwork(), List.of("en")));
             });
@@ -146,8 +146,8 @@ public class ConfigDatabasesTests extends ESTestCase {
             DatabaseReaderLazyLoader loader = configDatabases.getDatabase("GeoLite2-City.mmdb");
 
             assertThat(loader.getDatabaseType(), equalTo("GeoLite2-City"));
-            CityResponse cityResponse = loader.getResponse(InetAddresses.forString("89.160.20.128"), (reader, inetAddress) -> {
-                DatabaseRecord<CityResponse> record = reader.getRecord(inetAddress, CityResponse.class);
+            CityResponse cityResponse = loader.getResponse("89.160.20.128", (reader, ip) -> {
+                DatabaseRecord<CityResponse> record = reader.getRecord(InetAddresses.forString(ip), CityResponse.class);
                 CityResponse result = record.getData();
                 return Optional.of(new CityResponse(result, "", record.getNetwork(), List.of("en")));
             });

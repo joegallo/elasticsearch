@@ -15,7 +15,6 @@ import org.elasticsearch.common.CheckedBiFunction;
 import org.elasticsearch.core.Nullable;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.util.Optional;
 
 /**
@@ -38,8 +37,8 @@ public interface GeoIpDatabase {
      */
     @Nullable
     <RESPONSE extends AbstractResponse> RESPONSE getResponse(
-        InetAddress ipAddress,
-        CheckedBiFunction<Reader, InetAddress, Optional<RESPONSE>, Exception> responseProvider
+        String ipAddress,
+        CheckedBiFunction<Reader, String, Optional<RESPONSE>, Exception> responseProvider
     );
 
     /**

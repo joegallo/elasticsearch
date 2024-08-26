@@ -209,15 +209,15 @@ public class ReloadingDatabasesWhilePerformingGeoLookupsIT extends ESTestCase {
     private static void lazyLoadReaders(DatabaseNodeService databaseNodeService) throws IOException {
         if (databaseNodeService.get("GeoLite2-City.mmdb") != null) {
             databaseNodeService.get("GeoLite2-City.mmdb").getDatabaseType();
-            databaseNodeService.get("GeoLite2-City.mmdb").getResponse(InetAddresses.forString("2.125.160.216"), (reader, inetAddress) -> {
-                DatabaseRecord<CityResponse> record = reader.getRecord(inetAddress, CityResponse.class);
+            databaseNodeService.get("GeoLite2-City.mmdb").getResponse("2.125.160.216", (reader, ip) -> {
+                DatabaseRecord<CityResponse> record = reader.getRecord(InetAddresses.forString(ip), CityResponse.class);
                 CityResponse result = record.getData();
                 return Optional.of(new CityResponse(result, "", record.getNetwork(), List.of("en")));
             });
         }
         databaseNodeService.get("GeoLite2-City-Test.mmdb").getDatabaseType();
-        databaseNodeService.get("GeoLite2-City-Test.mmdb").getResponse(InetAddresses.forString("2.125.160.216"), (reader, inetAddress) -> {
-            DatabaseRecord<CityResponse> record = reader.getRecord(inetAddress, CityResponse.class);
+        databaseNodeService.get("GeoLite2-City-Test.mmdb").getResponse("2.125.160.216", (reader, ip) -> {
+            DatabaseRecord<CityResponse> record = reader.getRecord(InetAddresses.forString(ip), CityResponse.class);
             CityResponse result = record.getData();
             return Optional.of(new CityResponse(result, "", record.getNetwork(), List.of("en")));
         });
