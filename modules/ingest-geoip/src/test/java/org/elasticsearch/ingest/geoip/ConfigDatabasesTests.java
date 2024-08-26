@@ -8,7 +8,7 @@
 
 package org.elasticsearch.ingest.geoip;
 
-import com.maxmind.geoip2.DatabaseReader;
+import com.maxmind.db.DatabaseRecord;
 import com.maxmind.geoip2.model.CityResponse;
 
 import org.elasticsearch.common.network.InetAddresses;
@@ -23,6 +23,8 @@ import org.junit.Before;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Optional;
 
 import static org.elasticsearch.ingest.geoip.GeoIpTestUtils.copyDatabase;
 import static org.elasticsearch.ingest.geoip.GeoIpTestUtils.copyDefaultDatabases;
@@ -127,7 +129,11 @@ public class ConfigDatabasesTests extends ESTestCase {
 
             DatabaseReaderLazyLoader loader = configDatabases.getDatabase("GeoLite2-City.mmdb");
             assertThat(loader.getDatabaseType(), equalTo("GeoLite2-City"));
-            CityResponse cityResponse = loader.getResponse(InetAddresses.forString("89.160.20.128"), DatabaseReader::tryCity);
+            CityResponse cityResponse = loader.getResponse(InetAddresses.forString("89.160.20.128"), (reader, inetAddress) -> {
+                DatabaseRecord<CityResponse> record = reader.getRecord(inetAddress, CityResponse.class);
+                CityResponse result = record.getData();
+                return Optional.of(new CityResponse(result, "", record.getNetwork(), List.of("en")));
+            });
             assertThat(cityResponse.getCity().getName(), equalTo("Tumba"));
             assertThat(cache.count(), equalTo(1));
         }
@@ -138,8 +144,13 @@ public class ConfigDatabasesTests extends ESTestCase {
             assertThat(cache.count(), equalTo(0));
 
             DatabaseReaderLazyLoader loader = configDatabases.getDatabase("GeoLite2-City.mmdb");
+
             assertThat(loader.getDatabaseType(), equalTo("GeoLite2-City"));
-            CityResponse cityResponse = loader.getResponse(InetAddresses.forString("89.160.20.128"), DatabaseReader::tryCity);
+            CityResponse cityResponse = loader.getResponse(InetAddresses.forString("89.160.20.128"), (reader, inetAddress) -> {
+                DatabaseRecord<CityResponse> record = reader.getRecord(inetAddress, CityResponse.class);
+                CityResponse result = record.getData();
+                return Optional.of(new CityResponse(result, "", record.getNetwork(), List.of("en")));
+            });
             assertThat(cityResponse.getCity().getName(), equalTo("Linköping"));
             assertThat(cache.count(), equalTo(1));
         });

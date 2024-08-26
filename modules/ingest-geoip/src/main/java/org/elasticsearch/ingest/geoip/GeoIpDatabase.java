@@ -8,7 +8,7 @@
 
 package org.elasticsearch.ingest.geoip;
 
-import com.maxmind.geoip2.DatabaseReader;
+import com.maxmind.db.Reader;
 import com.maxmind.geoip2.model.AbstractResponse;
 
 import org.elasticsearch.common.CheckedBiFunction;
@@ -39,7 +39,7 @@ public interface GeoIpDatabase {
     @Nullable
     <RESPONSE extends AbstractResponse> RESPONSE getResponse(
         InetAddress ipAddress,
-        CheckedBiFunction<DatabaseReader, InetAddress, Optional<RESPONSE>, Exception> responseProvider
+        CheckedBiFunction<Reader, InetAddress, Optional<RESPONSE>, Exception> responseProvider
     );
 
     /**

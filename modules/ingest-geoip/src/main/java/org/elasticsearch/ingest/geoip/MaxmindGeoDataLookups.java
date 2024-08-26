@@ -8,8 +8,9 @@
 
 package org.elasticsearch.ingest.geoip;
 
+import com.maxmind.db.DatabaseRecord;
 import com.maxmind.db.Network;
-import com.maxmind.geoip2.DatabaseReader;
+import com.maxmind.db.Reader;
 import com.maxmind.geoip2.model.AbstractResponse;
 import com.maxmind.geoip2.model.AnonymousIpResponse;
 import com.maxmind.geoip2.model.AsnResponse;
@@ -28,6 +29,7 @@ import org.elasticsearch.common.network.NetworkAddress;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -40,7 +42,12 @@ class MaxmindGeoDataLookups {
 
     static class AnonymousIp extends AbstractBase<AnonymousIpResponse> {
         AnonymousIp(final Set<Database.Property> properties) {
-            super(DatabaseReader::tryAnonymousIp, properties);
+            super(properties, AnonymousIpResponse.class);
+        }
+
+        @Override
+        protected AnonymousIpResponse buildResponse(AnonymousIpResponse resp, String ipAddress, Network network, List<String> locales) {
+            return new AnonymousIpResponse(resp, ipAddress, network);
         }
 
         @Override
@@ -86,7 +93,12 @@ class MaxmindGeoDataLookups {
 
     static class Asn extends AbstractBase<AsnResponse> {
         Asn(Set<Database.Property> properties) {
-            super(DatabaseReader::tryAsn, properties);
+            super(properties, AsnResponse.class);
+        }
+
+        @Override
+        protected AsnResponse buildResponse(AsnResponse resp, String ipAddress, Network network, List<String> locales) {
+            return new AsnResponse(resp, ipAddress, network);
         }
 
         @Override
@@ -125,7 +137,12 @@ class MaxmindGeoDataLookups {
 
     static class City extends AbstractBase<CityResponse> {
         City(final Set<Database.Property> properties) {
-            super(DatabaseReader::tryCity, properties);
+            super(properties, CityResponse.class);
+        }
+
+        @Override
+        protected CityResponse buildResponse(CityResponse resp, String ipAddress, Network network, List<String> locales) {
+            return new CityResponse(resp, ipAddress, network, locales);
         }
 
         @Override
@@ -213,7 +230,17 @@ class MaxmindGeoDataLookups {
 
     static class ConnectionType extends AbstractBase<ConnectionTypeResponse> {
         ConnectionType(final Set<Database.Property> properties) {
-            super(DatabaseReader::tryConnectionType, properties);
+            super(properties, ConnectionTypeResponse.class);
+        }
+
+        @Override
+        protected ConnectionTypeResponse buildResponse(
+            ConnectionTypeResponse resp,
+            String ipAddress,
+            Network network,
+            List<String> locales
+        ) {
+            return new ConnectionTypeResponse(resp, ipAddress, network);
         }
 
         @Override
@@ -241,7 +268,12 @@ class MaxmindGeoDataLookups {
 
     static class Country extends AbstractBase<CountryResponse> {
         Country(final Set<Database.Property> properties) {
-            super(DatabaseReader::tryCountry, properties);
+            super(properties, CountryResponse.class);
+        }
+
+        @Override
+        protected CountryResponse buildResponse(CountryResponse resp, String ipAddress, Network network, List<String> locales) {
+            return new CountryResponse(resp, ipAddress, network, locales);
         }
 
         @Override
@@ -288,7 +320,12 @@ class MaxmindGeoDataLookups {
 
     static class Domain extends AbstractBase<DomainResponse> {
         Domain(final Set<Database.Property> properties) {
-            super(DatabaseReader::tryDomain, properties);
+            super(properties, DomainResponse.class);
+        }
+
+        @Override
+        protected DomainResponse buildResponse(DomainResponse resp, String ipAddress, Network network, List<String> locales) {
+            return new DomainResponse(resp, ipAddress, network);
         }
 
         @Override
@@ -316,7 +353,12 @@ class MaxmindGeoDataLookups {
 
     static class Enterprise extends AbstractBase<EnterpriseResponse> {
         Enterprise(final Set<Database.Property> properties) {
-            super(DatabaseReader::tryEnterprise, properties);
+            super(properties, EnterpriseResponse.class);
+        }
+
+        @Override
+        protected EnterpriseResponse buildResponse(EnterpriseResponse resp, String ipAddress, Network network, List<String> locales) {
+            return new EnterpriseResponse(resp, ipAddress, network, locales);
         }
 
         @Override
@@ -495,7 +537,12 @@ class MaxmindGeoDataLookups {
 
     static class Isp extends AbstractBase<IspResponse> {
         Isp(final Set<Database.Property> properties) {
-            super(DatabaseReader::tryIsp, properties);
+            super(properties, IspResponse.class);
+        }
+
+        @Override
+        protected IspResponse buildResponse(IspResponse resp, String ipAddress, Network network, List<String> locales) {
+            return new IspResponse(resp, ipAddress, network);
         }
 
         @Override
@@ -566,11 +613,11 @@ class MaxmindGeoDataLookups {
     private abstract static class AbstractBase<RESPONSE extends AbstractResponse> implements GeoDataLookup {
 
         protected final Set<Database.Property> properties;
-        private final DatabaseReaderResponseLookup<RESPONSE> databaseReaderResponseLookup;
+        protected final Class<RESPONSE> clazz;
 
-        AbstractBase(final DatabaseReaderResponseLookup<RESPONSE> databaseReaderResponseLookup, final Set<Database.Property> properties) {
-            this.databaseReaderResponseLookup = databaseReaderResponseLookup;
+        AbstractBase(final Set<Database.Property> properties, final Class<RESPONSE> clazz) {
             this.properties = Set.copyOf(properties);
+            this.clazz = clazz;
         }
 
         @Override
@@ -580,8 +627,20 @@ class MaxmindGeoDataLookups {
 
         @Override
         public final Map<String, Object> getGeoData(final GeoIpDatabase geoIpDatabase, final InetAddress ipAddress) throws IOException {
-            return transformResponse(ipAddress, geoIpDatabase.getResponse(ipAddress, databaseReaderResponseLookup::apply));
+            return transformResponse(ipAddress, geoIpDatabase.getResponse(ipAddress, this::lookup));
         }
+
+        protected Optional<RESPONSE> lookup(Reader reader, InetAddress ipAddress) throws IOException {
+            DatabaseRecord<RESPONSE> record = reader.getRecord(ipAddress, clazz);
+            RESPONSE result = record.getData();
+            if (result == null) {
+                return Optional.empty();
+            } else {
+                return Optional.of(buildResponse(result, NetworkAddress.format(ipAddress), record.getNetwork(), List.of("en")));
+            }
+        }
+
+        protected abstract RESPONSE buildResponse(RESPONSE resp, String ipAddress, Network network, List<String> locales);
 
         /**
          * Extract the configured properties from the retrieved response
@@ -590,14 +649,5 @@ class MaxmindGeoDataLookups {
          * @return a mapping of properties for the ip from the response
          */
         protected abstract Map<String, Object> transformResponse(InetAddress ipAddress, RESPONSE response);
-
-        /**
-         * @apiNote typically a method reference like {@code DatabaseReader::tryCity}
-         * @param <RESPONSE> the type of response to lookup
-         */
-        @FunctionalInterface
-        interface DatabaseReaderResponseLookup<RESPONSE extends AbstractResponse> {
-            Optional<RESPONSE> apply(DatabaseReader databaseReader, InetAddress ipAddress) throws Exception;
-        }
     }
 }

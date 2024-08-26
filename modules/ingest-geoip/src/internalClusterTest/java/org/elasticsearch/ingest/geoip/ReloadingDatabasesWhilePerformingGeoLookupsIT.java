@@ -8,7 +8,8 @@
 
 package org.elasticsearch.ingest.geoip;
 
-import com.maxmind.geoip2.DatabaseReader;
+import com.maxmind.db.DatabaseRecord;
+import com.maxmind.geoip2.model.CityResponse;
 
 import org.apache.lucene.tests.util.LuceneTestCase;
 import org.elasticsearch.client.internal.Client;
@@ -30,6 +31,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -207,10 +209,18 @@ public class ReloadingDatabasesWhilePerformingGeoLookupsIT extends ESTestCase {
     private static void lazyLoadReaders(DatabaseNodeService databaseNodeService) throws IOException {
         if (databaseNodeService.get("GeoLite2-City.mmdb") != null) {
             databaseNodeService.get("GeoLite2-City.mmdb").getDatabaseType();
-            databaseNodeService.get("GeoLite2-City.mmdb").getResponse(InetAddresses.forString("2.125.160.216"), DatabaseReader::tryCity);
+            databaseNodeService.get("GeoLite2-City.mmdb").getResponse(InetAddresses.forString("2.125.160.216"), (reader, inetAddress) -> {
+                DatabaseRecord<CityResponse> record = reader.getRecord(inetAddress, CityResponse.class);
+                CityResponse result = record.getData();
+                return Optional.of(new CityResponse(result, "", record.getNetwork(), List.of("en")));
+            });
         }
         databaseNodeService.get("GeoLite2-City-Test.mmdb").getDatabaseType();
-        databaseNodeService.get("GeoLite2-City-Test.mmdb").getResponse(InetAddresses.forString("2.125.160.216"), DatabaseReader::tryCity);
+        databaseNodeService.get("GeoLite2-City-Test.mmdb").getResponse(InetAddresses.forString("2.125.160.216"), (reader, inetAddress) -> {
+            DatabaseRecord<CityResponse> record = reader.getRecord(inetAddress, CityResponse.class);
+            CityResponse result = record.getData();
+            return Optional.of(new CityResponse(result, "", record.getNetwork(), List.of("en")));
+        });
     }
 
 }

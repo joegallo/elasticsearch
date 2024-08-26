@@ -8,7 +8,7 @@
 
 package org.elasticsearch.ingest.geoip;
 
-import com.maxmind.geoip2.DatabaseReader;
+import com.maxmind.db.Reader;
 
 import org.elasticsearch.common.CheckedSupplier;
 import org.elasticsearch.common.util.set.Sets;
@@ -783,8 +783,7 @@ public class GeoIpProcessorTests extends ESTestCase {
 
     private DatabaseReaderLazyLoader loader(final String path, final AtomicBoolean closed) {
         final Supplier<InputStream> databaseInputStreamSupplier = () -> GeoIpProcessor.class.getResourceAsStream(path);
-        final CheckedSupplier<DatabaseReader, IOException> loader = () -> new DatabaseReader.Builder(databaseInputStreamSupplier.get())
-            .build();
+        final CheckedSupplier<Reader, IOException> loader = () -> new Reader(databaseInputStreamSupplier.get());
         final GeoIpCache cache = new GeoIpCache(1000);
         return new DatabaseReaderLazyLoader(cache, PathUtils.get(path), null, loader) {
 
