@@ -464,7 +464,7 @@ class MaxmindGeoDataLookups {
                     }
                     case ISP_ORGANIZATION_NAME -> {
                         if (ispOrganization != null) {
-                            geoData.put("isp_organization", ispOrganization);
+                            geoData.put("isp_organization_name", ispOrganization);
                         }
                     }
                     case MOBILE_COUNTRY_CODE -> {
@@ -538,7 +538,7 @@ class MaxmindGeoDataLookups {
                     }
                     case ISP_ORGANIZATION_NAME -> {
                         if (ispOrganization != null) {
-                            geoData.put("isp_organization", ispOrganization);
+                            geoData.put("isp_organization_name", ispOrganization);
                         }
                     }
                     case MOBILE_COUNTRY_CODE -> {

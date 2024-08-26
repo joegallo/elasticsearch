@@ -27,7 +27,6 @@ import org.elasticsearch.cluster.health.ClusterStateHealth;
 import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.service.ClusterService;
-import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.util.CancellableSingleObjectCache;
@@ -40,6 +39,7 @@ import org.elasticsearch.index.seqno.RetentionLeaseStats;
 import org.elasticsearch.index.seqno.SeqNoStats;
 import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.indices.IndicesService;
+import org.elasticsearch.injection.guice.Inject;
 import org.elasticsearch.node.NodeService;
 import org.elasticsearch.tasks.CancellableTask;
 import org.elasticsearch.tasks.Task;
@@ -72,7 +72,8 @@ public class TransportClusterStatsAction extends TransportNodesAction<
         CommonStatsFlags.Flag.QueryCache,
         CommonStatsFlags.Flag.Completion,
         CommonStatsFlags.Flag.Segments,
-        CommonStatsFlags.Flag.DenseVector
+        CommonStatsFlags.Flag.DenseVector,
+        CommonStatsFlags.Flag.SparseVector
     );
 
     private final NodeService nodeService;
@@ -260,9 +261,7 @@ public class TransportClusterStatsAction extends TransportNodesAction<
 
         public ClusterStatsNodeRequest(StreamInput in) throws IOException {
             super(in);
-            if (in.getTransportVersion().before(TransportVersions.DROP_UNUSED_NODES_REQUESTS)) {
-                new ClusterStatsRequest(in);
-            }
+            skipLegacyNodesRequestHeader(TransportVersions.DROP_UNUSED_NODES_REQUESTS, in);
         }
 
         @Override
@@ -273,9 +272,7 @@ public class TransportClusterStatsAction extends TransportNodesAction<
         @Override
         public void writeTo(StreamOutput out) throws IOException {
             super.writeTo(out);
-            if (out.getTransportVersion().before(TransportVersions.DROP_UNUSED_NODES_REQUESTS)) {
-                new ClusterStatsRequest().writeTo(out);
-            }
+            sendLegacyNodesRequestHeader(TransportVersions.DROP_UNUSED_NODES_REQUESTS, out);
         }
     }
 

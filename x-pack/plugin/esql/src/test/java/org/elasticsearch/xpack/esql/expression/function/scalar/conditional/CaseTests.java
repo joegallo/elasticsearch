@@ -20,9 +20,8 @@ import org.elasticsearch.xpack.esql.core.expression.Expression.TypeResolution;
 import org.elasticsearch.xpack.esql.core.expression.Literal;
 import org.elasticsearch.xpack.esql.core.tree.Source;
 import org.elasticsearch.xpack.esql.core.type.DataType;
-import org.elasticsearch.xpack.esql.expression.function.AbstractFunctionTestCase;
+import org.elasticsearch.xpack.esql.expression.function.AbstractScalarFunctionTestCase;
 import org.elasticsearch.xpack.esql.expression.function.TestCaseSupplier;
-import org.elasticsearch.xpack.esql.type.EsqlDataTypes;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -31,10 +30,11 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static org.elasticsearch.compute.data.BlockUtils.toJavaObject;
+import static org.elasticsearch.xpack.esql.EsqlTestUtils.randomLiteral;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
 
-public class CaseTests extends AbstractFunctionTestCase {
+public class CaseTests extends AbstractScalarFunctionTestCase {
 
     public CaseTests(@Name("TestCase") Supplier<TestCaseSupplier.TestCase> testCaseSupplier) {
         this.testCase = testCaseSupplier.get();
@@ -45,6 +45,7 @@ public class CaseTests extends AbstractFunctionTestCase {
      */
     @ParametersFactory
     public static Iterable<Object[]> parameters() {
+        // TODO this needs lots of stuff flipped to parameters
         return parameterSuppliersFromTypedData(
             List.of(new TestCaseSupplier("keyword", List.of(DataType.BOOLEAN, DataType.KEYWORD, DataType.KEYWORD), () -> {
                 List<TestCaseSupplier.TypedData> typedData = List.of(
@@ -205,35 +206,6 @@ public class CaseTests extends AbstractFunctionTestCase {
     }
 
     @Override
-    protected void assertSimpleWithNulls(List<Object> data, Block value, int nullBlock) {
-        if (nullBlock == 0) {
-            if (data.size() == 2) {
-                assertThat(value.isNull(0), equalTo(true));
-            } else if (data.size() > 2) {
-                assertThat(toJavaObject(value, 0), equalTo(data.get(2)));
-            }
-            return;
-        }
-        if (((Boolean) data.get(0)).booleanValue()) {
-            if (nullBlock == 1) {
-                super.assertSimpleWithNulls(data, value, nullBlock);
-            } else {
-                assertThat(toJavaObject(value, 0), equalTo(data.get(1)));
-            }
-            return;
-        }
-        if (nullBlock == 2) {
-            super.assertSimpleWithNulls(data, value, nullBlock);
-        } else {
-            if (data.size() > 2) {
-                assertThat(toJavaObject(value, 0), equalTo(data.get(2)));
-            } else {
-                super.assertSimpleWithNulls(data, value, nullBlock);
-            }
-        }
-    }
-
-    @Override
     protected Expression build(Source source, List<Expression> args) {
         return new Case(Source.EMPTY, args.get(0), args.subList(1, args.size()));
     }
@@ -334,7 +306,7 @@ public class CaseTests extends AbstractFunctionTestCase {
             if (arg instanceof Expression e) {
                 return e;
             }
-            return new Literal(Source.synthetic(arg == null ? "null" : arg.toString()), arg, EsqlDataTypes.fromJava(arg));
+            return new Literal(Source.synthetic(arg == null ? "null" : arg.toString()), arg, DataType.fromJava(arg));
         }).toList();
         return new Case(Source.synthetic("<case>"), exps.get(0), exps.subList(1, exps.size()));
     }

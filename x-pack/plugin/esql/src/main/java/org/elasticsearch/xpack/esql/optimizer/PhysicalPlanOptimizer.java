@@ -8,8 +8,9 @@
 package org.elasticsearch.xpack.esql.optimizer;
 
 import org.elasticsearch.xpack.esql.VerificationException;
-import org.elasticsearch.xpack.esql.core.common.Failure;
+import org.elasticsearch.xpack.esql.common.Failure;
 import org.elasticsearch.xpack.esql.core.expression.Alias;
+import org.elasticsearch.xpack.esql.core.expression.Attribute;
 import org.elasticsearch.xpack.esql.core.expression.AttributeMap;
 import org.elasticsearch.xpack.esql.core.expression.AttributeSet;
 import org.elasticsearch.xpack.esql.core.expression.Expression;
@@ -21,7 +22,6 @@ import org.elasticsearch.xpack.esql.core.rule.Rule;
 import org.elasticsearch.xpack.esql.core.rule.RuleExecutor;
 import org.elasticsearch.xpack.esql.core.tree.Source;
 import org.elasticsearch.xpack.esql.core.util.Holder;
-import org.elasticsearch.xpack.esql.expression.predicate.operator.comparison.Equals;
 import org.elasticsearch.xpack.esql.plan.logical.Aggregate;
 import org.elasticsearch.xpack.esql.plan.logical.Eval;
 import org.elasticsearch.xpack.esql.plan.logical.Project;
@@ -46,8 +46,8 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
 /**
- * Performs global (coordinator) optimization of the physical plan.
- * Local (data-node) optimizations occur later by operating just on a plan fragment (subplan).
+ * This class is part of the planner. Performs global (coordinator) optimization of the physical plan. Local (data-node) optimizations
+ * occur later by operating just on a plan {@link FragmentExec} (subplan).
  */
 public class PhysicalPlanOptimizer extends ParameterizedRuleExecutor<PhysicalPlan, PhysicalOptimizerContext> {
     private static final Iterable<RuleExecutor.Batch<PhysicalPlan>> rules = initializeRules(true);
@@ -121,8 +121,10 @@ public class PhysicalPlanOptimizer extends ParameterizedRuleExecutor<PhysicalPla
                     }
                     if (p instanceof HashJoinExec join) {
                         attributes.removeAll(join.addedFields());
-                        for (Equals cond : join.conditions()) {
-                            attributes.remove(cond.right());
+                        for (Attribute rhs : join.rightFields()) {
+                            if (join.leftFields().stream().anyMatch(x -> x.semanticEquals(rhs)) == false) {
+                                attributes.remove(rhs);
+                            }
                         }
                     }
                     if (p instanceof EnrichExec ee) {
@@ -148,7 +150,7 @@ public class PhysicalPlanOptimizer extends ParameterizedRuleExecutor<PhysicalPla
                             // add a synthetic field (so it doesn't clash with the user defined one) to return a constant
                             // to avoid the block from being trimmed
                             if (output.isEmpty()) {
-                                var alias = new Alias(logicalFragment.source(), "<all-fields-projected>", null, Literal.NULL, null, true);
+                                var alias = new Alias(logicalFragment.source(), "<all-fields-projected>", Literal.NULL, null, true);
                                 List<Alias> fields = singletonList(alias);
                                 logicalFragment = new Eval(logicalFragment.source(), logicalFragment, fields);
                                 output = Expressions.asAttributes(fields);

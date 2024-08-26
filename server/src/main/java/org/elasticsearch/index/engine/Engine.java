@@ -23,6 +23,8 @@ import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.SegmentCommitInfo;
 import org.apache.lucene.index.SegmentInfos;
 import org.apache.lucene.index.SegmentReader;
+import org.apache.lucene.index.Terms;
+import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.QueryCache;
 import org.apache.lucene.search.QueryCachingPolicy;
@@ -59,11 +61,15 @@ import org.elasticsearch.core.UpdateForV9;
 import org.elasticsearch.index.IndexVersion;
 import org.elasticsearch.index.VersionType;
 import org.elasticsearch.index.mapper.DocumentParser;
+import org.elasticsearch.index.mapper.FieldNamesFieldMapper;
 import org.elasticsearch.index.mapper.LuceneDocument;
+import org.elasticsearch.index.mapper.Mapper;
 import org.elasticsearch.index.mapper.Mapping;
 import org.elasticsearch.index.mapper.MappingLookup;
 import org.elasticsearch.index.mapper.ParsedDocument;
 import org.elasticsearch.index.mapper.Uid;
+import org.elasticsearch.index.mapper.vectors.DenseVectorFieldMapper;
+import org.elasticsearch.index.mapper.vectors.SparseVectorFieldMapper;
 import org.elasticsearch.index.merge.MergeStats;
 import org.elasticsearch.index.seqno.SeqNoStats;
 import org.elasticsearch.index.seqno.SequenceNumbers;
@@ -71,6 +77,7 @@ import org.elasticsearch.index.shard.DenseVectorStats;
 import org.elasticsearch.index.shard.DocsStats;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.index.shard.ShardLongFieldRange;
+import org.elasticsearch.index.shard.SparseVectorStats;
 import org.elasticsearch.index.store.Store;
 import org.elasticsearch.index.translog.Translog;
 import org.elasticsearch.index.translog.TranslogStats;
@@ -121,6 +128,7 @@ public abstract class Engine implements Closeable {
     public static final String CAN_MATCH_SEARCH_SOURCE = "can_match";
     protected static final String DOC_STATS_SOURCE = "doc_stats";
     public static final long UNKNOWN_PRIMARY_TERM = -1L;
+    public static final String ROOT_DOC_FIELD_NAME = "__root_doc_for_nested";
 
     protected final ShardId shardId;
     protected final Logger logger;
@@ -234,19 +242,32 @@ public abstract class Engine implements Closeable {
     /**
      * Returns the {@link DenseVectorStats} for this engine
      */
-    public DenseVectorStats denseVectorStats() {
+    public DenseVectorStats denseVectorStats(MappingLookup mappingLookup) {
+        if (mappingLookup == null) {
+            return new DenseVectorStats(0);
+        }
+
+        List<String> fields = new ArrayList<>();
+        for (Mapper mapper : mappingLookup.fieldMappers()) {
+            if (mapper instanceof DenseVectorFieldMapper) {
+                fields.add(mapper.fullPath());
+            }
+        }
+        if (fields.isEmpty()) {
+            return new DenseVectorStats(0);
+        }
         try (Searcher searcher = acquireSearcher(DOC_STATS_SOURCE, SearcherScope.INTERNAL)) {
-            return denseVectorStats(searcher.getIndexReader());
+            return denseVectorStats(searcher.getIndexReader(), fields);
         }
     }
 
-    protected final DenseVectorStats denseVectorStats(IndexReader indexReader) {
+    protected final DenseVectorStats denseVectorStats(IndexReader indexReader, List<String> fields) {
         long valueCount = 0;
         // we don't wait for a pending refreshes here since it's a stats call instead we mark it as accessed only which will cause
         // the next scheduled refresh to go through and refresh the stats as well
         for (LeafReaderContext readerContext : indexReader.leaves()) {
             try {
-                valueCount += getDenseVectorValueCount(readerContext.reader());
+                valueCount += getDenseVectorValueCount(readerContext.reader(), fields);
             } catch (IOException e) {
                 logger.trace(() -> "failed to get dense vector stats for [" + readerContext + "]", e);
             }
@@ -254,9 +275,10 @@ public abstract class Engine implements Closeable {
         return new DenseVectorStats(valueCount);
     }
 
-    private long getDenseVectorValueCount(final LeafReader atomicReader) throws IOException {
+    private long getDenseVectorValueCount(final LeafReader atomicReader, List<String> fields) throws IOException {
         long count = 0;
-        for (FieldInfo info : atomicReader.getFieldInfos()) {
+        for (var field : fields) {
+            var info = atomicReader.getFieldInfos().fieldInfo(field);
             if (info.getVectorDimension() > 0) {
                 switch (info.getVectorEncoding()) {
                     case FLOAT32 -> {
@@ -268,6 +290,57 @@ public abstract class Engine implements Closeable {
                         count += values != null ? values.size() : 0;
                     }
                 }
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Returns the {@link SparseVectorStats} for this engine
+     */
+    public SparseVectorStats sparseVectorStats(MappingLookup mappingLookup) {
+        if (mappingLookup == null) {
+            return new SparseVectorStats(0);
+        }
+        List<BytesRef> fields = new ArrayList<>();
+        for (Mapper mapper : mappingLookup.fieldMappers()) {
+            if (mapper instanceof SparseVectorFieldMapper) {
+                fields.add(new BytesRef(mapper.fullPath()));
+            }
+        }
+        if (fields.isEmpty()) {
+            return new SparseVectorStats(0);
+        }
+        Collections.sort(fields);
+        try (Searcher searcher = acquireSearcher(DOC_STATS_SOURCE, SearcherScope.INTERNAL)) {
+            return sparseVectorStats(searcher.getIndexReader(), fields);
+        }
+    }
+
+    protected final SparseVectorStats sparseVectorStats(IndexReader indexReader, List<BytesRef> fields) {
+        long valueCount = 0;
+        // we don't wait for a pending refreshes here since it's a stats call instead we mark it as accessed only which will cause
+        // the next scheduled refresh to go through and refresh the stats as well
+        for (LeafReaderContext readerContext : indexReader.leaves()) {
+            try {
+                valueCount += getSparseVectorValueCount(readerContext.reader(), fields);
+            } catch (IOException e) {
+                logger.trace(() -> "failed to get sparse vector stats for [" + readerContext + "]", e);
+            }
+        }
+        return new SparseVectorStats(valueCount);
+    }
+
+    private long getSparseVectorValueCount(final LeafReader atomicReader, List<BytesRef> fields) throws IOException {
+        long count = 0;
+        Terms terms = atomicReader.terms(FieldNamesFieldMapper.NAME);
+        if (terms == null) {
+            return count;
+        }
+        TermsEnum termsEnum = terms.iterator();
+        for (var fieldName : fields) {
+            if (termsEnum.seekExact(fieldName)) {
+                count += termsEnum.docFreq();
             }
         }
         return count;
