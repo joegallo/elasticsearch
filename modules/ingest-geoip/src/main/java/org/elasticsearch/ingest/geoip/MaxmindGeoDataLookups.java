@@ -51,7 +51,7 @@ class MaxmindGeoDataLookups {
         }
 
         @Override
-        protected Map<String, Object> transformResponse(final InetAddress ipAddress, final AnonymousIpResponse response) {
+        protected Map<String, Object> transformResponse(final AnonymousIpResponse response) {
             if (response == null) {
                 return Map.of();
             }
@@ -66,7 +66,7 @@ class MaxmindGeoDataLookups {
             Map<String, Object> geoData = new HashMap<>();
             for (Database.Property property : this.properties) {
                 switch (property) {
-                    case IP -> geoData.put("ip", NetworkAddress.format(ipAddress));
+                    case IP -> geoData.put("ip", response.getIpAddress());
                     case HOSTING_PROVIDER -> {
                         geoData.put("hosting_provider", isHostingProvider);
                     }
@@ -102,7 +102,7 @@ class MaxmindGeoDataLookups {
         }
 
         @Override
-        protected Map<String, Object> transformResponse(final InetAddress ipAddress, final AsnResponse response) {
+        protected Map<String, Object> transformResponse(final AsnResponse response) {
             if (response == null) {
                 return Map.of();
             }
@@ -113,7 +113,7 @@ class MaxmindGeoDataLookups {
             Map<String, Object> geoData = new HashMap<>();
             for (Database.Property property : this.properties) {
                 switch (property) {
-                    case IP -> geoData.put("ip", NetworkAddress.format(ipAddress));
+                    case IP -> geoData.put("ip", response.getIpAddress());
                     case ASN -> {
                         if (asn != null) {
                             geoData.put("asn", asn);
@@ -146,7 +146,7 @@ class MaxmindGeoDataLookups {
         }
 
         @Override
-        protected Map<String, Object> transformResponse(final InetAddress ipAddress, final CityResponse response) {
+        protected Map<String, Object> transformResponse(final CityResponse response) {
             if (response == null) {
                 return Map.of();
             }
@@ -159,7 +159,7 @@ class MaxmindGeoDataLookups {
             Map<String, Object> geoData = new HashMap<>();
             for (Database.Property property : this.properties) {
                 switch (property) {
-                    case IP -> geoData.put("ip", NetworkAddress.format(ipAddress));
+                    case IP -> geoData.put("ip", response.getTraits().getIpAddress());
                     case COUNTRY_ISO_CODE -> {
                         String countryIsoCode = country.getIsoCode();
                         if (countryIsoCode != null) {
@@ -244,7 +244,7 @@ class MaxmindGeoDataLookups {
         }
 
         @Override
-        protected Map<String, Object> transformResponse(final InetAddress ipAddress, final ConnectionTypeResponse response) {
+        protected Map<String, Object> transformResponse(final ConnectionTypeResponse response) {
             if (response == null) {
                 return Map.of();
             }
@@ -254,7 +254,7 @@ class MaxmindGeoDataLookups {
             Map<String, Object> geoData = new HashMap<>();
             for (Database.Property property : this.properties) {
                 switch (property) {
-                    case IP -> geoData.put("ip", NetworkAddress.format(ipAddress));
+                    case IP -> geoData.put("ip", response.getIpAddress());
                     case CONNECTION_TYPE -> {
                         if (connectionType != null) {
                             geoData.put("connection_type", connectionType.toString());
@@ -277,7 +277,7 @@ class MaxmindGeoDataLookups {
         }
 
         @Override
-        protected Map<String, Object> transformResponse(final InetAddress ipAddress, final CountryResponse response) {
+        protected Map<String, Object> transformResponse(final CountryResponse response) {
             if (response == null) {
                 return Map.of();
             }
@@ -287,7 +287,7 @@ class MaxmindGeoDataLookups {
             Map<String, Object> geoData = new HashMap<>();
             for (Database.Property property : this.properties) {
                 switch (property) {
-                    case IP -> geoData.put("ip", NetworkAddress.format(ipAddress));
+                    case IP -> geoData.put("ip", response.getTraits().getIpAddress());
                     case COUNTRY_ISO_CODE -> {
                         String countryIsoCode = country.getIsoCode();
                         if (countryIsoCode != null) {
@@ -329,7 +329,7 @@ class MaxmindGeoDataLookups {
         }
 
         @Override
-        protected Map<String, Object> transformResponse(final InetAddress ipAddress, final DomainResponse response) {
+        protected Map<String, Object> transformResponse(final DomainResponse response) {
             if (response == null) {
                 return Map.of();
             }
@@ -339,7 +339,7 @@ class MaxmindGeoDataLookups {
             Map<String, Object> geoData = new HashMap<>();
             for (Database.Property property : this.properties) {
                 switch (property) {
-                    case IP -> geoData.put("ip", NetworkAddress.format(ipAddress));
+                    case IP -> geoData.put("ip", response.getIpAddress());
                     case DOMAIN -> {
                         if (domain != null) {
                             geoData.put("domain", domain);
@@ -362,7 +362,7 @@ class MaxmindGeoDataLookups {
         }
 
         @Override
-        protected Map<String, Object> transformResponse(final InetAddress ipAddress, final EnterpriseResponse response) {
+        protected Map<String, Object> transformResponse(final EnterpriseResponse response) {
             if (response == null) {
                 return Map.of();
             }
@@ -398,7 +398,7 @@ class MaxmindGeoDataLookups {
             Map<String, Object> geoData = new HashMap<>();
             for (Database.Property property : this.properties) {
                 switch (property) {
-                    case IP -> geoData.put("ip", NetworkAddress.format(ipAddress));
+                    case IP -> geoData.put("ip", response.getTraits().getIpAddress());
                     case COUNTRY_ISO_CODE -> {
                         String countryIsoCode = country.getIsoCode();
                         if (countryIsoCode != null) {
@@ -546,7 +546,7 @@ class MaxmindGeoDataLookups {
         }
 
         @Override
-        protected Map<String, Object> transformResponse(final InetAddress ipAddress, final IspResponse response) {
+        protected Map<String, Object> transformResponse(final IspResponse response) {
             if (response == null) {
                 return Map.of();
             }
@@ -562,7 +562,7 @@ class MaxmindGeoDataLookups {
             Map<String, Object> geoData = new HashMap<>();
             for (Database.Property property : this.properties) {
                 switch (property) {
-                    case IP -> geoData.put("ip", NetworkAddress.format(ipAddress));
+                    case IP -> geoData.put("ip", response.getIpAddress());
                     case ASN -> {
                         if (asn != null) {
                             geoData.put("asn", asn);
@@ -627,7 +627,7 @@ class MaxmindGeoDataLookups {
 
         @Override
         public final Map<String, Object> getGeoData(final GeoIpDatabase geoIpDatabase, final InetAddress ipAddress) throws IOException {
-            return transformResponse(ipAddress, geoIpDatabase.getResponse(ipAddress, this::lookup));
+            return transformResponse(geoIpDatabase.getResponse(ipAddress, this::lookup));
         }
 
         protected Optional<RESPONSE> lookup(Reader reader, InetAddress ipAddress) throws IOException {
@@ -644,10 +644,9 @@ class MaxmindGeoDataLookups {
 
         /**
          * Extract the configured properties from the retrieved response
-         * @param ipAddress the ip address that was used to retrieve the response
          * @param response the response that was retrieved
          * @return a mapping of properties for the ip from the response
          */
-        protected abstract Map<String, Object> transformResponse(InetAddress ipAddress, RESPONSE response);
+        protected abstract Map<String, Object> transformResponse(RESPONSE response);
     }
 }
