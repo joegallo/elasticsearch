@@ -36,10 +36,10 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * A collection of {@link GeoDataLookup} implementations for Maxmind databases
+ * A collection of {@link GeoDataLookup} implementations for MaxMind databases
  */
-class MaxmindGeoDataLookups {
-    private MaxmindGeoDataLookups() {}
+class MaxMindGeoDataLookups {
+    private MaxMindGeoDataLookups() {}
 
     static class AnonymousIp extends AbstractBase<AnonymousIpResponse> {
         AnonymousIp(final Set<Database.Property> properties) {
@@ -606,7 +606,7 @@ class MaxmindGeoDataLookups {
     }
 
     /**
-     * The {@code MaxmindGeoDataLookups.AbstractBase} is an abstract base implementation of {@link GeoDataLookup} that
+     * The {@code MaxMindGeoDataLookups.AbstractBase} is an abstract base implementation of {@link GeoDataLookup} that
      * provides common functionality for getting a specific kind of {@link AbstractResponse} from a {@link GeoIpDatabase}.
      *
      * @param <RESPONSE> the intermediate type of {@link AbstractResponse}

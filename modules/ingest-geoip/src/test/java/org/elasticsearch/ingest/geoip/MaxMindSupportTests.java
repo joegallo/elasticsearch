@@ -361,21 +361,21 @@ public class MaxMindSupportTests extends ESTestCase {
     private static final Map<Class<? extends AbstractResponse>, Class<? extends GeoDataLookup>> MAX_MIND_CLASS_TO_IMPLEMENTATION_CLASS = Map
         .of(
             CityResponse.class,
-            MaxmindGeoDataLookups.City.class,
+            MaxMindGeoDataLookups.City.class,
             CountryResponse.class,
-            MaxmindGeoDataLookups.Country.class,
+            MaxMindGeoDataLookups.Country.class,
             AsnResponse.class,
-            MaxmindGeoDataLookups.Asn.class,
+            MaxMindGeoDataLookups.Asn.class,
             AnonymousIpResponse.class,
-            MaxmindGeoDataLookups.AnonymousIp.class,
+            MaxMindGeoDataLookups.AnonymousIp.class,
             ConnectionTypeResponse.class,
-            MaxmindGeoDataLookups.ConnectionType.class,
+            MaxMindGeoDataLookups.ConnectionType.class,
             DomainResponse.class,
-            MaxmindGeoDataLookups.Domain.class,
+            MaxMindGeoDataLookups.Domain.class,
             EnterpriseResponse.class,
-            MaxmindGeoDataLookups.Enterprise.class,
+            MaxMindGeoDataLookups.Enterprise.class,
             IspResponse.class,
-            MaxmindGeoDataLookups.Isp.class
+            MaxMindGeoDataLookups.Isp.class
         );
 
     private static final Set<Class<? extends AbstractResponse>> KNOWN_UNSUPPORTED_RESPONSE_CLASSES = Set.of(IpRiskResponse.class);

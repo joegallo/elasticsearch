@@ -16,14 +16,14 @@ interface GeoDataLookupFactory<PROVIDER extends GeoDataLookup> {
 
     static GeoDataLookupFactory<?> get(final Database database) {
         return switch (database) {
-            case City -> MaxmindGeoDataLookups.City::new;
-            case Country -> MaxmindGeoDataLookups.Country::new;
-            case Asn -> MaxmindGeoDataLookups.Asn::new;
-            case AnonymousIp -> MaxmindGeoDataLookups.AnonymousIp::new;
-            case ConnectionType -> MaxmindGeoDataLookups.ConnectionType::new;
-            case Domain -> MaxmindGeoDataLookups.Domain::new;
-            case Enterprise -> MaxmindGeoDataLookups.Enterprise::new;
-            case Isp -> MaxmindGeoDataLookups.Isp::new;
+            case City -> MaxMindGeoDataLookups.City::new;
+            case Country -> MaxMindGeoDataLookups.Country::new;
+            case Asn -> MaxMindGeoDataLookups.Asn::new;
+            case AnonymousIp -> MaxMindGeoDataLookups.AnonymousIp::new;
+            case ConnectionType -> MaxMindGeoDataLookups.ConnectionType::new;
+            case Domain -> MaxMindGeoDataLookups.Domain::new;
+            case Enterprise -> MaxMindGeoDataLookups.Enterprise::new;
+            case Isp -> MaxMindGeoDataLookups.Isp::new;
         };
     }
 }
