@@ -9,7 +9,6 @@
 package org.elasticsearch.ingest.geoip;
 
 import com.maxmind.db.Reader;
-import com.maxmind.geoip2.model.AbstractResponse;
 
 import org.elasticsearch.common.CheckedBiFunction;
 import org.elasticsearch.core.Nullable;
@@ -33,13 +32,10 @@ public interface GeoIpDatabase {
      * @param ipAddress the address to lookup
      * @param responseProvider typically a method-reference like {@code DatabaseReader::tryCity}
      * @return a possibly-null response
-     * @param <RESPONSE> the subtype of {@link AbstractResponse} that will be returned
+     * @param <RESPONSE> the type of response that will be returned
      */
     @Nullable
-    <RESPONSE extends AbstractResponse> RESPONSE getResponse(
-        String ipAddress,
-        CheckedBiFunction<Reader, String, Optional<RESPONSE>, Exception> responseProvider
-    );
+    <RESPONSE> RESPONSE getResponse(String ipAddress, CheckedBiFunction<Reader, String, Optional<RESPONSE>, Exception> responseProvider);
 
     /**
      * Releases the current database object. Called after processing a single document. Databases should be closed or returned to a

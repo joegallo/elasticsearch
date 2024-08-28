@@ -10,7 +10,6 @@ package org.elasticsearch.ingest.geoip;
 
 import com.maxmind.db.NoCache;
 import com.maxmind.db.Reader;
-import com.maxmind.geoip2.model.AbstractResponse;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -164,10 +163,7 @@ class DatabaseReaderLazyLoader implements GeoIpDatabase, Closeable {
 
     @Override
     @Nullable
-    public <T extends AbstractResponse> T getResponse(
-        String ipAddress,
-        CheckedBiFunction<Reader, String, Optional<T>, Exception> responseProvider
-    ) {
+    public <T> T getResponse(String ipAddress, CheckedBiFunction<Reader, String, Optional<T>, Exception> responseProvider) {
         return cache.putIfAbsent(ipAddress, databasePath.toString(), ip -> {
             try {
                 return responseProvider.apply(get(), ipAddress).orElse(null);
