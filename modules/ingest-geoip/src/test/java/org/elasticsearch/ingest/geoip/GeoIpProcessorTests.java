@@ -63,7 +63,7 @@ public class GeoIpProcessorTests extends ESTestCase {
             randomAlphaOfLength(10),
             null,
             "source_field",
-            loader("/GeoLite2-City.mmdb"),
+            loader("GeoLite2-City.mmdb"),
             () -> true,
             "target_field",
             geoDataLookupAll(Database.City),
@@ -98,7 +98,7 @@ public class GeoIpProcessorTests extends ESTestCase {
             randomAlphaOfLength(10),
             null,
             "source_field",
-            loader("/GeoLite2-City.mmdb"),
+            loader("GeoLite2-City.mmdb"),
             () -> true,
             "target_field",
             geoDataLookupAll(Database.City),
@@ -120,7 +120,7 @@ public class GeoIpProcessorTests extends ESTestCase {
             randomAlphaOfLength(10),
             null,
             "source_field",
-            loader("/GeoLite2-City.mmdb"),
+            loader("GeoLite2-City.mmdb"),
             () -> true,
             "target_field",
             geoDataLookupAll(Database.City),
@@ -139,7 +139,7 @@ public class GeoIpProcessorTests extends ESTestCase {
             randomAlphaOfLength(10),
             null,
             "source_field",
-            loader("/GeoLite2-City.mmdb"),
+            loader("GeoLite2-City.mmdb"),
             () -> true,
             "target_field",
             geoDataLookupAll(Database.City),
@@ -161,7 +161,7 @@ public class GeoIpProcessorTests extends ESTestCase {
             randomAlphaOfLength(10),
             null,
             "source_field",
-            loader("/GeoLite2-City.mmdb"),
+            loader("GeoLite2-City.mmdb"),
             () -> true,
             "target_field",
             geoDataLookupAll(Database.City),
@@ -180,7 +180,7 @@ public class GeoIpProcessorTests extends ESTestCase {
             randomAlphaOfLength(10),
             null,
             "source_field",
-            loader("/GeoLite2-City.mmdb"),
+            loader("GeoLite2-City.mmdb"),
             () -> true,
             "target_field",
             geoDataLookupAll(Database.City),
@@ -219,7 +219,7 @@ public class GeoIpProcessorTests extends ESTestCase {
             randomAlphaOfLength(10),
             null,
             "source_field",
-            loader("/GeoLite2-City.mmdb"),
+            loader("GeoLite2-City.mmdb"),
             () -> true,
             "target_field",
             geoDataLookupAll(Database.City),
@@ -245,7 +245,7 @@ public class GeoIpProcessorTests extends ESTestCase {
             randomAlphaOfLength(10),
             null,
             "source_field",
-            loader("/GeoLite2-Country.mmdb"),
+            loader("GeoLite2-Country.mmdb"),
             () -> true,
             "target_field",
             geoDataLookupAll(Database.Country),
@@ -275,7 +275,7 @@ public class GeoIpProcessorTests extends ESTestCase {
             randomAlphaOfLength(10),
             null,
             "source_field",
-            loader("/GeoLite2-Country.mmdb"),
+            loader("GeoLite2-Country.mmdb"),
             () -> true,
             "target_field",
             geoDataLookupAll(Database.Country),
@@ -302,7 +302,7 @@ public class GeoIpProcessorTests extends ESTestCase {
             randomAlphaOfLength(10),
             null,
             "source_field",
-            loader("/GeoLite2-ASN.mmdb"),
+            loader("GeoLite2-ASN.mmdb"),
             () -> true,
             "target_field",
             geoDataLookupAll(Database.Asn),
@@ -332,7 +332,7 @@ public class GeoIpProcessorTests extends ESTestCase {
             randomAlphaOfLength(10),
             null,
             "source_field",
-            loader("/GeoIP2-Anonymous-IP-Test.mmdb"),
+            loader("GeoIP2-Anonymous-IP-Test.mmdb"),
             () -> true,
             "target_field",
             geoDataLookupAll(Database.AnonymousIp),
@@ -365,7 +365,7 @@ public class GeoIpProcessorTests extends ESTestCase {
             randomAlphaOfLength(10),
             null,
             "source_field",
-            loader("/GeoIP2-Connection-Type-Test.mmdb"),
+            loader("GeoIP2-Connection-Type-Test.mmdb"),
             () -> true,
             "target_field",
             geoDataLookupAll(Database.ConnectionType),
@@ -393,7 +393,7 @@ public class GeoIpProcessorTests extends ESTestCase {
             randomAlphaOfLength(10),
             null,
             "source_field",
-            loader("/GeoIP2-Domain-Test.mmdb"),
+            loader("GeoIP2-Domain-Test.mmdb"),
             () -> true,
             "target_field",
             geoDataLookupAll(Database.Domain),
@@ -421,7 +421,7 @@ public class GeoIpProcessorTests extends ESTestCase {
             randomAlphaOfLength(10),
             null,
             "source_field",
-            loader("/GeoIP2-Enterprise-Test.mmdb"),
+            loader("GeoIP2-Enterprise-Test.mmdb"),
             () -> true,
             "target_field",
             geoDataLookupAll(Database.Enterprise),
@@ -474,7 +474,7 @@ public class GeoIpProcessorTests extends ESTestCase {
             randomAlphaOfLength(10),
             null,
             "source_field",
-            loader("/GeoIP2-ISP-Test.mmdb"),
+            loader("GeoIP2-ISP-Test.mmdb"),
             () -> true,
             "target_field",
             geoDataLookupAll(Database.Isp),
@@ -507,7 +507,7 @@ public class GeoIpProcessorTests extends ESTestCase {
             randomAlphaOfLength(10),
             null,
             "source_field",
-            loader("/GeoLite2-City.mmdb"),
+            loader("GeoLite2-City.mmdb"),
             () -> true,
             "target_field",
             geoDataLookupAll(Database.City),
@@ -531,7 +531,7 @@ public class GeoIpProcessorTests extends ESTestCase {
             randomAlphaOfLength(10),
             null,
             "source_field",
-            loader("/GeoLite2-City.mmdb"),
+            loader("GeoLite2-City.mmdb"),
             () -> true,
             "target_field",
             geoDataLookupAll(Database.City),
@@ -552,7 +552,7 @@ public class GeoIpProcessorTests extends ESTestCase {
             randomAlphaOfLength(10),
             null,
             "source_field",
-            loader("/GeoLite2-City.mmdb"),
+            loader("GeoLite2-City.mmdb"),
             () -> true,
             "target_field",
             geoDataLookupAll(Database.City),
@@ -582,7 +582,7 @@ public class GeoIpProcessorTests extends ESTestCase {
             randomAlphaOfLength(10),
             null,
             "source_field",
-            loader("/GeoLite2-City.mmdb"),
+            loader("GeoLite2-City.mmdb"),
             () -> true,
             "target_field",
             geoDataLookupAll(Database.City),
@@ -612,7 +612,7 @@ public class GeoIpProcessorTests extends ESTestCase {
             randomAlphaOfLength(10),
             null,
             "source_field",
-            loader("/GeoLite2-City.mmdb"),
+            loader("GeoLite2-City.mmdb"),
             () -> true,
             "target_field",
             geoDataLookupAll(Database.City),
@@ -631,7 +631,7 @@ public class GeoIpProcessorTests extends ESTestCase {
 
     public void testListDatabaseReferenceCounting() throws Exception {
         AtomicBoolean closeCheck = new AtomicBoolean(false);
-        var loader = loader("/GeoLite2-City.mmdb", closeCheck);
+        var loader = loader("GeoLite2-City.mmdb", closeCheck);
         GeoIpProcessor processor = new GeoIpProcessor(randomAlphaOfLength(10), null, "source_field", () -> {
             loader.preLookup();
             return loader;
@@ -663,7 +663,7 @@ public class GeoIpProcessorTests extends ESTestCase {
             randomAlphaOfLength(10),
             null,
             "source_field",
-            loader("/GeoLite2-City.mmdb"),
+            loader("GeoLite2-City.mmdb"),
             () -> true,
             "target_field",
             geoDataLookupAll(Database.City),
@@ -691,7 +691,7 @@ public class GeoIpProcessorTests extends ESTestCase {
             randomAlphaOfLength(10),
             null,
             "source_field",
-            loader("/GeoLite2-City.mmdb"),
+            loader("GeoLite2-City.mmdb"),
             () -> true,
             "target_field",
             geoDataLookupAll(Database.City),
@@ -713,7 +713,7 @@ public class GeoIpProcessorTests extends ESTestCase {
             randomAlphaOfLength(10),
             null,
             "source_field",
-            loader("/GeoLite2-City.mmdb"),
+            loader("GeoLite2-City.mmdb"),
             () -> false,
             "target_field",
             geoDataLookupAll(Database.City),
@@ -776,12 +776,13 @@ public class GeoIpProcessorTests extends ESTestCase {
         assertIngestDocument(originalIngestDocument, ingestDocument);
     }
 
-    private CheckedSupplier<GeoIpDatabase, IOException> loader(final String path) {
-        var loader = loader(path, null);
+    private CheckedSupplier<GeoIpDatabase, IOException> loader(final String databaseName) {
+        var loader = loader(databaseName, null);
         return () -> loader;
     }
 
-    private DatabaseReaderLazyLoader loader(final String path, final AtomicBoolean closed) {
+    private DatabaseReaderLazyLoader loader(final String databaseName, final AtomicBoolean closed) {
+        final String path = "/" + databaseName;
         final Supplier<InputStream> databaseInputStreamSupplier = () -> GeoIpProcessor.class.getResourceAsStream(path);
         final CheckedSupplier<Reader, IOException> loader = () -> new Reader(databaseInputStreamSupplier.get());
         final GeoIpCache cache = new GeoIpCache(1000);
