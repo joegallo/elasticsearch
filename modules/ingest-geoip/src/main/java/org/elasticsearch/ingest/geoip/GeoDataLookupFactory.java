@@ -10,11 +10,10 @@ package org.elasticsearch.ingest.geoip;
 
 import java.util.Set;
 
-@FunctionalInterface
-interface GeoDataLookupFactory<PROVIDER extends GeoDataLookup> {
-    PROVIDER create(Set<Database.Property> properties);
+interface GeoDataLookupFactory {
+    GeoDataLookup create(Set<Database.Property> properties);
 
-    static GeoDataLookupFactory<?> get(final Database database) {
+    static GeoDataLookupFactory get(final Database database) {
         return switch (database) {
             case City -> MaxMindGeoDataLookups.City::new;
             case Country -> MaxMindGeoDataLookups.Country::new;
