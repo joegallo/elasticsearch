@@ -48,6 +48,20 @@ class IPinfoGeoDataLookups {
         public IPinfoCountry {}
     }
 
+    public record IPinfoGeolocation(
+        @MaxMindDbParameter(name = "city") String city,
+        @MaxMindDbParameter(name = "country") String country,
+        @MaxMindDbParameter(name = "latitude") String latitude,
+        @MaxMindDbParameter(name = "longitude") String longitude,
+        // @MaxMindDbParameter(name = "network") String network, // what do we want to do with this one?
+        @MaxMindDbParameter(name = "postal_code") String postalCode, // what do we want to do with this one?
+        @MaxMindDbParameter(name = "region") String region,
+        @MaxMindDbParameter(name = "timezone") String timezone
+    ) {
+        @MaxMindDbConstructor
+        public IPinfoGeolocation {}
+    }
+
     static class Asn extends AbstractBase<IPinfoASN> {
         Asn(Set<Database.Property> properties) {
             super(properties, IPinfoASN.class);
@@ -78,6 +92,60 @@ class IPinfoGeoDataLookups {
                     case NETWORK -> {
                         if (network != null) {
                             geoData.put("network", network);
+                        }
+                    }
+                }
+            }
+            return geoData;
+        }
+    }
+
+    static class City extends AbstractBase<IPinfoGeolocation> {
+        City(final Set<Database.Property> properties) {
+            super(properties, IPinfoGeolocation.class);
+        }
+
+        @Override
+        protected Map<String, Object> transformResponse(final Result<IPinfoGeolocation> result) {
+            IPinfoGeolocation response = result.result;
+
+            Map<String, Object> geoData = new HashMap<>();
+            for (Database.Property property : this.properties) {
+                switch (property) {
+                    case IP -> geoData.put("ip", result.ip);
+                    case COUNTRY_ISO_CODE -> {
+                        String countryIsoCode = response.country;
+                        if (countryIsoCode != null) {
+                            geoData.put("country_iso_code", countryIsoCode);
+                        }
+                    }
+                    case REGION_NAME -> {
+                        String subdivisionName = response.region;
+                        if (subdivisionName != null) {
+                            geoData.put("region_name", subdivisionName);
+                        }
+                    }
+                    case CITY_NAME -> {
+                        String cityName = response.city;
+                        if (cityName != null) {
+                            geoData.put("city_name", cityName);
+                        }
+                    }
+                    case TIMEZONE -> {
+                        String locationTimeZone = response.timezone;
+                        if (locationTimeZone != null) {
+                            geoData.put("timezone", locationTimeZone);
+                        }
+                    }
+                    case LOCATION -> {
+                        // todo bleh -- can we parse these in advance once?
+                        Double latitude = Double.parseDouble(response.latitude);
+                        Double longitude = Double.parseDouble(response.longitude);
+                        if (latitude != null && longitude != null) {
+                            Map<String, Object> locationObject = new HashMap<>();
+                            locationObject.put("lat", latitude);
+                            locationObject.put("lon", longitude);
+                            geoData.put("location", locationObject);
                         }
                     }
                 }

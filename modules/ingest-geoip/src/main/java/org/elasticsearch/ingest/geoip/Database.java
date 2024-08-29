@@ -162,12 +162,16 @@ enum Database {
         Database database = null;
         if (databaseType != null) {
             // DOUBLE YIKES: [database_file] Unsupported database type [\u0003ipinfo generic_country_free.] for file [country.mmdb]
+            // TRIPLE YIKES: [database_file] Unsupported database type [\u0004ipinfo ip_geolocation_sample] for file
+            // [ip_geolocation_sample.mmdb]
             // is this a problem with the file or with our parsing code?
             // yikes
             if (databaseType.contains("ipinfo ") && databaseType.contains("asn_free")) {
                 database = Database.Asn;
             } else if (databaseType.contains("ipinfo ") && databaseType.contains("country_free")) {
                 database = Database.Country;
+            } else if (databaseType.contains("ipinfo ") && databaseType.contains("ip_geolocation")) {
+                database = Database.City;
             }
             // yikes
             else if (databaseType.endsWith(Database.CITY_DB_SUFFIX)) {

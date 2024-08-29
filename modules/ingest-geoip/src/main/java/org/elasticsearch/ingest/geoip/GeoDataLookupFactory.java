@@ -21,6 +21,8 @@ interface GeoDataLookupFactory {
                 factory = IPinfoGeoDataLookups.Asn::new;
             } else if (databaseType.contains("ipinfo ") && databaseType.contains("country_free")) {
                 factory = IPinfoGeoDataLookups.Country::new;
+            } else if (databaseType.contains("ipinfo ") && databaseType.contains("ip_geolocation")) {
+                factory = IPinfoGeoDataLookups.City::new;
             }
             // yikes
             else if (databaseType.endsWith(Database.CITY_DB_SUFFIX)) {
