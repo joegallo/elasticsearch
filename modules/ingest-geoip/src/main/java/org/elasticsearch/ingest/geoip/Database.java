@@ -140,14 +140,14 @@ enum Database {
         )
     );
 
-    private static final String CITY_DB_SUFFIX = "-City";
-    private static final String COUNTRY_DB_SUFFIX = "-Country";
-    private static final String ASN_DB_SUFFIX = "-ASN";
-    private static final String ANONYMOUS_IP_DB_SUFFIX = "-Anonymous-IP";
-    private static final String CONNECTION_TYPE_DB_SUFFIX = "-Connection-Type";
-    private static final String DOMAIN_DB_SUFFIX = "-Domain";
-    private static final String ENTERPRISE_DB_SUFFIX = "-Enterprise";
-    private static final String ISP_DB_SUFFIX = "-ISP";
+    public static final String CITY_DB_SUFFIX = "-City";
+    public static final String COUNTRY_DB_SUFFIX = "-Country";
+    public static final String ASN_DB_SUFFIX = "-ASN";
+    public static final String ANONYMOUS_IP_DB_SUFFIX = "-Anonymous-IP";
+    public static final String CONNECTION_TYPE_DB_SUFFIX = "-Connection-Type";
+    public static final String DOMAIN_DB_SUFFIX = "-Domain";
+    public static final String ENTERPRISE_DB_SUFFIX = "-Enterprise";
+    public static final String ISP_DB_SUFFIX = "-ISP";
 
     /**
      * Parses the passed-in databaseType (presumably from the passed-in databaseFile) and return the Database instance that is

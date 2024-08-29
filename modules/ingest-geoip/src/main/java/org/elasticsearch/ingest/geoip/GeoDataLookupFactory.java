@@ -13,16 +13,32 @@ import java.util.Set;
 interface GeoDataLookupFactory {
     GeoDataLookup create(Set<Database.Property> properties);
 
-    static GeoDataLookupFactory get(final Database database) {
-        return switch (database) {
-            case City -> MaxMindGeoDataLookups.City::new;
-            case Country -> MaxMindGeoDataLookups.Country::new;
-            case Asn -> MaxMindGeoDataLookups.Asn::new;
-            case AnonymousIp -> MaxMindGeoDataLookups.AnonymousIp::new;
-            case ConnectionType -> MaxMindGeoDataLookups.ConnectionType::new;
-            case Domain -> MaxMindGeoDataLookups.Domain::new;
-            case Enterprise -> MaxMindGeoDataLookups.Enterprise::new;
-            case Isp -> MaxMindGeoDataLookups.Isp::new;
-        };
+    static GeoDataLookupFactory get(final String databaseType, final String databaseFile) {
+        GeoDataLookupFactory factory = null;
+        if (databaseType != null) {
+            if (databaseType.endsWith(Database.CITY_DB_SUFFIX)) {
+                factory = MaxMindGeoDataLookups.City::new;
+            } else if (databaseType.endsWith(Database.COUNTRY_DB_SUFFIX)) {
+                factory = MaxMindGeoDataLookups.Country::new;
+            } else if (databaseType.endsWith(Database.ASN_DB_SUFFIX)) {
+                factory = MaxMindGeoDataLookups.Asn::new;
+            } else if (databaseType.endsWith(Database.ANONYMOUS_IP_DB_SUFFIX)) {
+                factory = MaxMindGeoDataLookups.AnonymousIp::new;
+            } else if (databaseType.endsWith(Database.CONNECTION_TYPE_DB_SUFFIX)) {
+                factory = MaxMindGeoDataLookups.ConnectionType::new;
+            } else if (databaseType.endsWith(Database.DOMAIN_DB_SUFFIX)) {
+                factory = MaxMindGeoDataLookups.Domain::new;
+            } else if (databaseType.endsWith(Database.ENTERPRISE_DB_SUFFIX)) {
+                factory = MaxMindGeoDataLookups.Enterprise::new;
+            } else if (databaseType.endsWith(Database.ISP_DB_SUFFIX)) {
+                factory = MaxMindGeoDataLookups.Isp::new;
+            }
+        }
+
+        if (factory == null) {
+            throw new IllegalArgumentException("Unsupported database type [" + databaseType + "] for file [" + databaseFile + "]");
+        }
+
+        return factory;
     }
 }

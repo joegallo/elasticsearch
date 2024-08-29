@@ -266,7 +266,7 @@ public final class GeoIpProcessor extends AbstractProcessor {
                 throw newConfigurationException(TYPE, processorTag, "properties", e.getMessage());
             }
 
-            final GeoDataLookup geoDataLookup = GeoDataLookupFactory.get(database).create(properties);
+            final GeoDataLookup geoDataLookup = GeoDataLookupFactory.get(databaseType, databaseFile).create(properties);
 
             return new GeoIpProcessor(
                 processorTag,
