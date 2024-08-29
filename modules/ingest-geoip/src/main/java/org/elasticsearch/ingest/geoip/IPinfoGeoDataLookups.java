@@ -31,10 +31,9 @@ class IPinfoGeoDataLookups {
 
     public record IPinfoASN(
         @MaxMindDbParameter(name = "asn") String asn,
-        @MaxMindDbParameter(name = "domain") String domain,
+        @MaxMindDbParameter(name = "domain") String domain, // what do we want to do with this one?
         @MaxMindDbParameter(name = "name") String name
     ) {
-        @SuppressWarnings("checkstyle:RedundantModifier")
         @MaxMindDbConstructor
         public IPinfoASN {}
     }
@@ -45,7 +44,6 @@ class IPinfoGeoDataLookups {
         @MaxMindDbParameter(name = "country") String country,
         @MaxMindDbParameter(name = "country_name") String countryName
     ) {
-        @SuppressWarnings("checkstyle:RedundantModifier")
         @MaxMindDbConstructor
         public IPinfoCountry {}
     }
@@ -68,7 +66,7 @@ class IPinfoGeoDataLookups {
                     case IP -> geoData.put("ip", result.ip);
                     case ASN -> {
                         if (asn != null) {
-                            geoData.put("asn", asn);
+                            geoData.put("asn", asn); // todo bleh -- can we parse this in advance once? and make it a number?
                         }
                     }
                     case ORGANIZATION_NAME -> {
