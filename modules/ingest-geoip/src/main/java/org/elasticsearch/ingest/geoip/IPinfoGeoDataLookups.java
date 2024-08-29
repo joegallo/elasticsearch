@@ -66,7 +66,8 @@ class IPinfoGeoDataLookups {
                     case IP -> geoData.put("ip", result.ip);
                     case ASN -> {
                         if (asn != null) {
-                            geoData.put("asn", asn); // todo bleh -- can we parse this in advance once? and make it a number?
+                            // todo bleh -- can we parse this in advance once? and make it a number?
+                            geoData.put("asn", Long.parseLong(asn.replaceAll("AS", "")));
                         }
                     }
                     case ORGANIZATION_NAME -> {
