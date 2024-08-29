@@ -53,10 +53,6 @@ class MaxMindGeoDataLookups {
 
         @Override
         protected Map<String, Object> transformResponse(final AnonymousIpResponse response) {
-            if (response == null) {
-                return Map.of();
-            }
-
             boolean isHostingProvider = response.isHostingProvider();
             boolean isTorExitNode = response.isTorExitNode();
             boolean isAnonymousVpn = response.isAnonymousVpn();
@@ -104,9 +100,6 @@ class MaxMindGeoDataLookups {
 
         @Override
         protected Map<String, Object> transformResponse(final AsnResponse response) {
-            if (response == null) {
-                return Map.of();
-            }
             Long asn = response.getAutonomousSystemNumber();
             String organizationName = response.getAutonomousSystemOrganization();
             Network network = response.getNetwork();
@@ -148,9 +141,6 @@ class MaxMindGeoDataLookups {
 
         @Override
         protected Map<String, Object> transformResponse(final CityResponse response) {
-            if (response == null) {
-                return Map.of();
-            }
             com.maxmind.geoip2.record.Country country = response.getCountry();
             com.maxmind.geoip2.record.City city = response.getCity();
             Location location = response.getLocation();
@@ -246,10 +236,6 @@ class MaxMindGeoDataLookups {
 
         @Override
         protected Map<String, Object> transformResponse(final ConnectionTypeResponse response) {
-            if (response == null) {
-                return Map.of();
-            }
-
             ConnectionTypeResponse.ConnectionType connectionType = response.getConnectionType();
 
             Map<String, Object> geoData = new HashMap<>();
@@ -279,9 +265,6 @@ class MaxMindGeoDataLookups {
 
         @Override
         protected Map<String, Object> transformResponse(final CountryResponse response) {
-            if (response == null) {
-                return Map.of();
-            }
             com.maxmind.geoip2.record.Country country = response.getCountry();
             Continent continent = response.getContinent();
 
@@ -331,10 +314,6 @@ class MaxMindGeoDataLookups {
 
         @Override
         protected Map<String, Object> transformResponse(final DomainResponse response) {
-            if (response == null) {
-                return Map.of();
-            }
-
             String domain = response.getDomain();
 
             Map<String, Object> geoData = new HashMap<>();
@@ -364,10 +343,6 @@ class MaxMindGeoDataLookups {
 
         @Override
         protected Map<String, Object> transformResponse(final EnterpriseResponse response) {
-            if (response == null) {
-                return Map.of();
-            }
-
             com.maxmind.geoip2.record.Country country = response.getCountry();
             com.maxmind.geoip2.record.City city = response.getCity();
             Location location = response.getLocation();
@@ -548,10 +523,6 @@ class MaxMindGeoDataLookups {
 
         @Override
         protected Map<String, Object> transformResponse(final IspResponse response) {
-            if (response == null) {
-                return Map.of();
-            }
-
             String isp = response.getIsp();
             String ispOrganization = response.getOrganization();
             String mobileNetworkCode = response.getMobileNetworkCode();
@@ -627,8 +598,13 @@ class MaxMindGeoDataLookups {
         }
 
         @Override
-        public final Map<String, Object> getGeoData(final GeoIpDatabase geoIpDatabase, final String ipAddress) throws IOException {
-            return transformResponse(geoIpDatabase.getResponse(ipAddress, this::lookup));
+        public final Map<String, Object> getGeoData(final GeoIpDatabase geoIpDatabase, final String ipAddress) {
+            RESPONSE resp = geoIpDatabase.getResponse(ipAddress, this::lookup);
+            if (resp == null) {
+                return Map.of();
+            } else {
+                return transformResponse(resp);
+            }
         }
 
         protected Optional<RESPONSE> lookup(Reader reader, String ipAddress) throws IOException {

@@ -16,7 +16,14 @@ interface GeoDataLookupFactory {
     static GeoDataLookupFactory get(final String databaseType, final String databaseFile) {
         GeoDataLookupFactory factory = null;
         if (databaseType != null) {
-            if (databaseType.endsWith(Database.CITY_DB_SUFFIX)) {
+            // yikes
+            if (databaseType.contains("ipinfo ") && databaseType.contains("asn_free")) {
+                factory = IPinfoGeoDataLookups.Asn::new;
+            } else if (databaseType.contains("ipinfo ") && databaseType.contains("country_free")) {
+                factory = IPinfoGeoDataLookups.Country::new;
+            }
+            // yikes
+            else if (databaseType.endsWith(Database.CITY_DB_SUFFIX)) {
                 factory = MaxMindGeoDataLookups.City::new;
             } else if (databaseType.endsWith(Database.COUNTRY_DB_SUFFIX)) {
                 factory = MaxMindGeoDataLookups.Country::new;

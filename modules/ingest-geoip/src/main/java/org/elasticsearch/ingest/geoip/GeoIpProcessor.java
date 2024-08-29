@@ -11,7 +11,6 @@ package org.elasticsearch.ingest.geoip;
 import org.elasticsearch.common.CheckedSupplier;
 import org.elasticsearch.common.logging.DeprecationCategory;
 import org.elasticsearch.common.logging.DeprecationLogger;
-import org.elasticsearch.core.Assertions;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
@@ -189,16 +188,6 @@ public final class GeoIpProcessor extends AbstractProcessor {
             GeoIpDatabase loader = geoIpDatabaseProvider.getDatabase(databaseFile);
             if (loader == null) {
                 return null;
-            }
-
-            if (Assertions.ENABLED) {
-                // Only check whether the suffix has changed and not the entire database type.
-                // To sanity check whether a city db isn't overwriting with a country or asn db.
-                // For example overwriting a geoip lite city db with geoip city db is a valid change, but the db type is slightly different,
-                // by checking just the suffix this assertion doesn't fail.
-                String expectedSuffix = databaseType.substring(databaseType.lastIndexOf('-'));
-                assert loader.getDatabaseType().endsWith(expectedSuffix)
-                    : "database type [" + loader.getDatabaseType() + "] doesn't match with expected suffix [" + expectedSuffix + "]";
             }
             return loader;
         }
