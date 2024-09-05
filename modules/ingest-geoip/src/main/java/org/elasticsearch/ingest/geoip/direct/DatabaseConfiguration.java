@@ -33,7 +33,7 @@ import java.util.regex.Pattern;
  * That is, it has an id e.g. "my_db_config_1" and it says "download the file named XXXX from SomeCompany, and here's the
  * magic token to use to do that."
  */
-public record DatabaseConfiguration(String id, String name, Maxmind maxmind) implements Writeable, ToXContentObject {
+public record DatabaseConfiguration(String id, String name, Provider provider) implements Writeable, ToXContentObject {
 
     // id is a user selected signifier like 'my_domain_db'
     // name is the name of a file that can be downloaded (like 'GeoIP2-Domain')
@@ -45,7 +45,7 @@ public record DatabaseConfiguration(String id, String name, Maxmind maxmind) imp
         // these are invariants, not actual validation
         Objects.requireNonNull(id);
         Objects.requireNonNull(name);
-        Objects.requireNonNull(maxmind);
+        Objects.requireNonNull(provider);
     }
 
     /**
@@ -74,8 +74,25 @@ public record DatabaseConfiguration(String id, String name, Maxmind maxmind) imp
         // "GeoLite2-Country"
     );
 
+    public static final Set<String> IPINFO_NAMES = Set.of(
+        // see https://ipinfo.io/developers/database-filename-reference for details
+        // n.b. these strings are from https://ipinfo.io/account/data-downloads
+        // we might want to confirm the correct 'titling' with ipinfo themselves
+
+        "Free IP to ASN", // asn.mmdb
+        "Free IP to Country", // country.mmdb
+        "Free IP to Country + IP to ASN" // country_asn.mmdb
+    // etc
+    );
+
     private static final ParseField NAME = new ParseField("name");
+
+    // generally speaking, i think the maxind/ipinfo divide here seems like it's NamedWriteable shaped,
+    // so it might be worth examining that in greater detail -- this code right now is just intended to work
+    // as a proof-of-concept without necessarily being mergeable
+
     private static final ParseField MAXMIND = new ParseField("maxmind");
+    private static final ParseField IPINFO = new ParseField("ipinfo");
 
     private static final ConstructingObjectParser<DatabaseConfiguration, String> PARSER = new ConstructingObjectParser<>(
         "database",
@@ -89,11 +106,23 @@ public record DatabaseConfiguration(String id, String name, Maxmind maxmind) imp
 
     static {
         PARSER.declareString(ConstructingObjectParser.constructorArg(), NAME);
-        PARSER.declareObject(ConstructingObjectParser.constructorArg(), (parser, id) -> Maxmind.PARSER.apply(parser, null), MAXMIND);
+        PARSER.declareObject(
+            ConstructingObjectParser.optionalConstructorArg(),
+            (parser, id) -> Maxmind.PARSER.apply(parser, null),
+            MAXMIND
+        );
+        PARSER.declareObject(ConstructingObjectParser.optionalConstructorArg(), (parser, id) -> IpInfo.PARSER.apply(parser, null), IPINFO);
     }
 
     public DatabaseConfiguration(StreamInput in) throws IOException {
-        this(in.readString(), in.readString(), new Maxmind(in));
+        // todo 8.15.x only understands maxmind, we'll need a feature for this
+        // this(in.readString(), in.readString(), new Maxmind(in));
+        this(in.readString(), in.readString(), in.readString(), in);
+    }
+
+    // lols
+    public DatabaseConfiguration(String id, String name, String type, StreamInput in) throws IOException {
+        this(id, name, type.equals("maxmind") ? new Maxmind(in) : type.equals("ipinfo") ? new IpInfo(in) : null);
     }
 
     public static DatabaseConfiguration parse(XContentParser parser, String id) {
@@ -104,14 +133,33 @@ public record DatabaseConfiguration(String id, String name, Maxmind maxmind) imp
     public void writeTo(StreamOutput out) throws IOException {
         out.writeString(id);
         out.writeString(name);
-        maxmind.writeTo(out);
+        // todo 8.15.x only understands maxmind, we'll need a feature for this
+        // maxmind.writeTo(out);
+
+        if (provider instanceof Maxmind maxmind) {
+            out.writeString("maxmind");
+            maxmind.writeTo(out);
+        } else if (provider instanceof IpInfo ipInfo) {
+            out.writeString("ipinfo");
+            ipInfo.writeTo(out);
+        } else {
+            // illegal state exception or assert false or something
+            throw new RuntimeException("narp");
+        }
     }
 
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
         builder.startObject();
         builder.field("name", name);
-        builder.field("maxmind", maxmind);
+        if (provider instanceof Maxmind maxmind) {
+            builder.field("maxmind", maxmind);
+        } else if (provider instanceof IpInfo ipInfo) {
+            builder.field("ipinfo", ipInfo);
+        } else {
+            // illegal state exception or assert false or something
+            throw new RuntimeException("narp");
+        }
         builder.endObject();
         return builder;
     }
@@ -153,8 +201,17 @@ public record DatabaseConfiguration(String id, String name, Maxmind maxmind) imp
             err.addValidationError("invalid name [" + name + "]: cannot be empty");
         }
 
-        if (MAXMIND_NAMES.contains(name) == false) {
-            err.addValidationError("invalid name [" + name + "]: must be a supported name ([" + MAXMIND_NAMES + "])");
+        if (provider instanceof Maxmind) {
+            if (MAXMIND_NAMES.contains(name) == false) {
+                err.addValidationError("invalid name [" + name + "]: must be a supported name ([" + MAXMIND_NAMES + "])");
+            }
+        } else if (provider instanceof IpInfo) {
+            if (IPINFO_NAMES.contains(name) == false) {
+                err.addValidationError("invalid name [" + name + "]: must be a supported name ([" + IPINFO_NAMES + "])");
+            }
+        } else {
+            // illegal state exception or assert false or something
+            throw new RuntimeException("narp");
         }
 
         // important: the name must be unique across all configurations of this same type,
@@ -167,7 +224,9 @@ public record DatabaseConfiguration(String id, String name, Maxmind maxmind) imp
         return err.validationErrors().isEmpty() ? null : err;
     }
 
-    public record Maxmind(String accountId) implements Writeable, ToXContentObject {
+    public interface Provider extends Writeable, ToXContentObject {}
+
+    public record Maxmind(String accountId) implements Provider {
 
         public Maxmind {
             // this is an invariant, not actual validation
@@ -202,6 +261,33 @@ public record DatabaseConfiguration(String id, String name, Maxmind maxmind) imp
         public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
             builder.startObject();
             builder.field("account_id", accountId);
+            builder.endObject();
+            return builder;
+        }
+    }
+
+    public record IpInfo() implements Provider {
+
+        public IpInfo {}
+
+        private static final ConstructingObjectParser<IpInfo, Void> PARSER = new ConstructingObjectParser<>("database", false, (a, id) -> {
+            return new IpInfo();
+        });
+
+        public IpInfo(StreamInput in) throws IOException {
+            this();
+        }
+
+        public static IpInfo parse(XContentParser parser) {
+            return PARSER.apply(parser, null);
+        }
+
+        @Override
+        public void writeTo(StreamOutput out) throws IOException {}
+
+        @Override
+        public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
+            builder.startObject();
             builder.endObject();
             return builder;
         }

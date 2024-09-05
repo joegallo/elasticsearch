@@ -174,7 +174,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
                 if (existingDatabaseNames.contains(database.name() + ".mmdb") == false) {
                     logger.debug("A new database appeared [{}]", database.name());
 
-                    final String accountId = database.maxmind().accountId();
+                    final String accountId = ((DatabaseConfiguration.Maxmind) database.provider()).accountId(); // TODO AH HA
                     try (HttpClient.PasswordAuthenticationHolder holder = credentialsBuilder.apply(accountId)) {
                         if (holder == null) {
                             logger.warn("No credentials found to download database [{}], skipping download...", id);
@@ -225,7 +225,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
                 final String id = entry.getKey();
                 DatabaseConfiguration database = entry.getValue().database();
 
-                final String accountId = database.maxmind().accountId();
+                final String accountId = ((DatabaseConfiguration.Maxmind) database.provider()).accountId(); // TODO AH HA
                 try (HttpClient.PasswordAuthenticationHolder holder = credentialsBuilder.apply(accountId)) {
                     if (holder == null) {
                         logger.warn("No credentials found to download database [{}], skipping download...", id);

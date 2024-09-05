@@ -41,18 +41,18 @@ public class DatabaseConfigurationTests extends AbstractXContentSerializingTestC
     protected DatabaseConfiguration mutateInstance(DatabaseConfiguration instance) {
         switch (between(0, 2)) {
             case 0:
-                return new DatabaseConfiguration(instance.id() + randomAlphaOfLength(2), instance.name(), instance.maxmind());
+                return new DatabaseConfiguration(instance.id() + randomAlphaOfLength(2), instance.name(), instance.provider());
             case 1:
                 return new DatabaseConfiguration(
                     instance.id(),
                     randomValueOtherThan(instance.name(), () -> randomFrom(MAXMIND_NAMES)),
-                    instance.maxmind()
+                    instance.provider()
                 );
             case 2:
                 return new DatabaseConfiguration(
                     instance.id(),
                     instance.name(),
-                    new Maxmind(instance.maxmind().accountId() + randomAlphaOfLength(2))
+                    new Maxmind(((Maxmind) instance.provider()).accountId() + randomAlphaOfLength(2))
                 );
             default:
                 throw new AssertionError("failure, got illegal switch case");
