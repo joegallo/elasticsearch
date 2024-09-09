@@ -338,7 +338,7 @@ public final class DatabaseNodeService implements GeoIpDatabaseProvider, Closeab
     }
 
     void retrieveAndUpdateDatabase(String databaseName, GeoIpTaskState.Metadata metadata) throws IOException {
-        logger.trace("Retrieving database {}", databaseName);
+        logger.trace("retrieving database [{}]", databaseName);
         final String recordedMd5 = metadata.md5();
 
         // This acts as a lock, if this method for a specific db is executed later and downloaded for this db is still ongoing then
@@ -366,7 +366,7 @@ public final class DatabaseNodeService implements GeoIpDatabaseProvider, Closeab
         }
 
         final Path databaseTmpFile = Files.createFile(geoipTmpDirectory.resolve(databaseName + ".tmp"));
-        logger.debug("retrieve geoip database [{}] from [{}] to [{}]", databaseName, GeoIpDownloader.DATABASES_INDEX, databaseTmpGzFile);
+        logger.debug("retrieving database [{}] from [{}] to [{}]", databaseName, GeoIpDownloader.DATABASES_INDEX, databaseTmpGzFile);
         retrieveDatabase(
             databaseName,
             recordedMd5,
@@ -407,7 +407,7 @@ public final class DatabaseNodeService implements GeoIpDatabaseProvider, Closeab
                     Files.deleteIfExists(databaseTmpGzFile);
                 } catch (IOException ioe) {
                     ioe.addSuppressed(failure);
-                    logger.error("Unable to delete tmp database file after failure", ioe);
+                    logger.error("unable to delete tmp database file after failure", ioe);
                 }
             }
         );
@@ -415,7 +415,7 @@ public final class DatabaseNodeService implements GeoIpDatabaseProvider, Closeab
 
     void updateDatabase(String databaseFileName, String recordedMd5, Path file) {
         try {
-            logger.debug("starting reload of changed geoip database file [{}]", file);
+            logger.debug("starting reload of changed database file [{}]", file);
             DatabaseReaderLazyLoader loader = new DatabaseReaderLazyLoader(cache, file, recordedMd5);
             DatabaseReaderLazyLoader existing = databases.put(databaseFileName, loader);
             if (existing != null) {
@@ -445,7 +445,7 @@ public final class DatabaseNodeService implements GeoIpDatabaseProvider, Closeab
                     logger.debug("no pipelines found to reload");
                 }
             }
-            logger.info("successfully loaded geoip database file [{}]", file.getFileName());
+            logger.info("successfully loaded database file [{}]", file.getFileName());
         } catch (Exception e) {
             logger.error(() -> "failed to update database [" + databaseFileName + "]", e);
         }
