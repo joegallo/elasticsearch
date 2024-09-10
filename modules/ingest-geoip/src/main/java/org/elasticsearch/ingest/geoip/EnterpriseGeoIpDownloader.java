@@ -68,6 +68,7 @@ import static org.elasticsearch.ingest.geoip.EnterpriseGeoIpDownloaderTaskExecut
 public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
 
     private static final Logger logger = LogManager.getLogger(EnterpriseGeoIpDownloader.class);
+
     // a sha256 checksum followed by two spaces followed by an (ignored) file name
     private static final Pattern SHA256_CHECKSUM_PATTERN = Pattern.compile("(\\w{64})\\s\\s(.*)");
 
