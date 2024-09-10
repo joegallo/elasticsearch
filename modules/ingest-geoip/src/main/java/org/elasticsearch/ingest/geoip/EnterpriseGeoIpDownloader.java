@@ -349,9 +349,11 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         final String name = database.name();
         logger.debug("Processing database [{}] for configuration [{}]", name, database.id());
 
+        // reminder, we're passing the ipinfo token as the username part of http basic auth,
+        // see https://ipinfo.io/developers#authentication
+
         // curl -L https://ipinfo.io/data/free/asn.mmdb?token=$TOKEN -o asn.mmdb # not-gzipped mmdb bytes
         // curl -L "https://ipinfo.io/data/free/asn.mmdb/checksums?token=$TOKEN" # json
-        // curl -L https://ipinfo.io/data/standard_privacy.mmdb?token=$TOKEN -o privacy.mmdb
         // see https://ipinfo.io/developers/database-filename-reference for more
 
         // yikes and double yikes
@@ -361,16 +363,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         final String checksumJsonUrl = downloadUrl("ipinfo", "free/asn.mmdb/checksums", null);
         final String mmdbUrl = downloadUrl("ipinfo", "free/asn.mmdb", null);
 
-        // triple yikes, we don't actually use the auth as auth, we turn it into a token that's appended to the url as a parameter
-        if (auth.getUserName() != null) {
-            throw new IllegalArgumentException("narp!");
-        }
-        String token = "?token=" + new String(auth.getPassword()); // blast, now we're not heapdump clean ... TODO can this be avoided?
-        byte[] data = httpClient.getBytes(auth, checksumJsonUrl + token); // this throws if the auth is bad // TODO OUCH TOKEN
-        // does it throw something that includes the url? because now the url is sensitive. // quadruple yikes!
-        // exception during geoip databases update org.elasticsearch.ResourceNotFoundException:
-        // https://download.maxmind.com/geoip/databases/free/asn.mmdb?token=REDACTED not found
-        // yup, unfortunately it totally does, barf.
+        byte[] data = httpClient.getBytes(auth, checksumJsonUrl); // this throws if the auth is bad
         Map<String, Object> checksums;
         try (XContentParser parser = XContentType.JSON.xContent().createParser(XContentParserConfiguration.EMPTY, data)) {
             checksums = parser.map();
@@ -387,7 +380,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         // the name that comes from the enterprise downloader cluster state doesn't include the .mmdb extension,
         // but the downloading and indexing of database code expects it to be there, so we add it on here before further processing
         // ugh, i've died, we need to manufacture this filename from somewhere
-        processDatabase2("asn.mmdb", md5, mmdbUrl + token); // TODO OUCH TOKEN
+        processDatabase2(auth, "asn.mmdb", md5, mmdbUrl);
     }
 
     /**
@@ -431,7 +424,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
      * @param md5 The md5 to compare to the computed md5 of the downloaded tar.gz file
      * @param url The URL for the Maxmind endpoint from which the database's tar.gz will be downloaded
      */
-    private void processDatabase2(String name, String md5, String url) {
+    private void processDatabase2(PasswordAuthentication auth, String name, String md5, String url) {
         Metadata metadata = state.getDatabases().getOrDefault(name, Metadata.EMPTY);
         if (Objects.equals(metadata.md5(), md5)) {
             updateTimestamp(name, metadata);
@@ -439,7 +432,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         }
         logger.debug("downloading geoip database [{}]", name);
         long start = System.currentTimeMillis();
-        try (InputStream is = httpClient.get(url)) {
+        try (InputStream is = httpClient.get(auth, url)) {
             int firstChunk = metadata.lastChunk() + 1; // if there is no metadata, then Metadata.EMPTY + 1 = 0
             Tuple<Integer, String> tuple = indexChunks(name, is, firstChunk, null, md5, start);
             int lastChunk = tuple.v1();

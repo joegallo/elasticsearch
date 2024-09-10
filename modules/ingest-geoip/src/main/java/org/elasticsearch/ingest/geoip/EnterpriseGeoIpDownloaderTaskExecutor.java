@@ -123,8 +123,9 @@ public class EnterpriseGeoIpDownloaderTaskExecutor extends PersistentTasksExecut
 
             return new HttpClient.PasswordAuthenticationHolder(username, passwordChars);
         } else if (type.equals("ipinfo")) {
-            final char[] passwordChars = "60a7592c6eceb9".toCharArray();
-            return new HttpClient.PasswordAuthenticationHolder(null /* unused */, passwordChars);
+            // ipinfo uses the token as the username component of basic auth
+            // see https://ipinfo.io/developers#authentication
+            return new HttpClient.PasswordAuthenticationHolder("60a7592c6eceb9", new char[] {});
         } else {
             // illegal state exception or assert false or something
             throw new RuntimeException("narp");
