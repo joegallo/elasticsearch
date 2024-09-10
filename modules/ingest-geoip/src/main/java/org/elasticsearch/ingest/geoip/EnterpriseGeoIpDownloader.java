@@ -57,6 +57,7 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static org.elasticsearch.ingest.geoip.EnterpriseGeoIpDownloaderTaskExecutor.IPINFO_SETTINGS_PREFIX;
 import static org.elasticsearch.ingest.geoip.EnterpriseGeoIpDownloaderTaskExecutor.MAXMIND_SETTINGS_PREFIX;
 
 /**
@@ -77,13 +78,19 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
 
     // for overriding in tests
     static String DEFAULT_MAXMIND_ENDPOINT = System.getProperty(
-        MAXMIND_SETTINGS_PREFIX + "endpoint.default",
+        MAXMIND_SETTINGS_PREFIX + "endpoint.default", //
         "https://download.maxmind.com/geoip/databases"
     );
     // n.b. a future enhancement might be to allow for a MAXMIND_ENDPOINT_SETTING, but
     // at the moment this is an unsupported system property for use in tests (only)
 
-    static String DEFAULT_IPINFO_ENDPOINT = "https://ipinfo.io/data";
+    // for overriding in tests
+    static String DEFAULT_IPINFO_ENDPOINT = System.getProperty(
+        IPINFO_SETTINGS_PREFIX + "endpoint.default", //
+        "https://ipinfo.io/data"
+    );
+    // n.b. a future enhancement might be to allow for an IPINFO_ENDPOINT_SETTING, but
+    // at the moment this is an unsupported system property for use in tests (only)
 
     static String downloadUrl(final String type, final String name, final String suffix) {
         if (type.equals("maxmind")) {
