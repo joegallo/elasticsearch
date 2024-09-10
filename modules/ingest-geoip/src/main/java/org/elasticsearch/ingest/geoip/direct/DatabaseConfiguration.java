@@ -15,6 +15,7 @@ import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
 import org.elasticsearch.xcontent.ConstructingObjectParser;
+import org.elasticsearch.xcontent.ObjectParser;
 import org.elasticsearch.xcontent.ParseField;
 import org.elasticsearch.xcontent.ToXContentObject;
 import org.elasticsearch.xcontent.XContentBuilder;
@@ -100,7 +101,15 @@ public record DatabaseConfiguration(String id, String name, Provider provider) i
         (a, id) -> {
             String name = (String) a[0];
             Maxmind maxmind = (Maxmind) a[1];
-            return new DatabaseConfiguration(id, name, maxmind);
+            IpInfo ipinfo = (IpInfo) a[2];
+            if (maxmind != null && ipinfo == null) {
+                return new DatabaseConfiguration(id, name, maxmind);
+            } else if (maxmind == null && ipinfo != null) {
+                return new DatabaseConfiguration(id, name, ipinfo);
+            } else {
+                // illegal state exception or assert false or something
+                throw new RuntimeException("narp");
+            }
         }
     );
 
@@ -235,7 +244,9 @@ public record DatabaseConfiguration(String id, String name, Provider provider) i
 
         private static final ParseField ACCOUNT_ID = new ParseField("account_id");
 
-        private static final ConstructingObjectParser<Maxmind, Void> PARSER = new ConstructingObjectParser<>("database", false, (a, id) -> {
+        // down the road we'd also want to accept the license_key (securely) via the json definition
+
+        private static final ConstructingObjectParser<Maxmind, Void> PARSER = new ConstructingObjectParser<>("maxmind", false, (a, id) -> {
             String accountId = (String) a[0];
             return new Maxmind(accountId);
         });
@@ -270,9 +281,8 @@ public record DatabaseConfiguration(String id, String name, Provider provider) i
 
         public IpInfo {}
 
-        private static final ConstructingObjectParser<IpInfo, Void> PARSER = new ConstructingObjectParser<>("database", false, (a, id) -> {
-            return new IpInfo();
-        });
+        // this'll become a ConstructingObjectParser once we accept the token (securely) in the json definition
+        private static final ObjectParser<IpInfo, Void> PARSER = new ObjectParser<>("action", IpInfo::new);
 
         public IpInfo(StreamInput in) throws IOException {
             this();

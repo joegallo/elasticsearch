@@ -37,6 +37,8 @@ import org.elasticsearch.persistent.PersistentTasksCustomMetadata.PersistentTask
 import org.elasticsearch.tasks.TaskId;
 import org.elasticsearch.threadpool.Scheduler;
 import org.elasticsearch.threadpool.ThreadPool;
+import org.elasticsearch.xcontent.XContentParser;
+import org.elasticsearch.xcontent.XContentParserConfiguration;
 import org.elasticsearch.xcontent.XContentType;
 
 import java.io.IOException;
@@ -50,7 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -66,7 +68,11 @@ import static org.elasticsearch.ingest.geoip.EnterpriseGeoIpDownloaderTaskExecut
 public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
 
     private static final Logger logger = LogManager.getLogger(EnterpriseGeoIpDownloader.class);
-    private static final Pattern CHECKSUM_PATTERN = Pattern.compile("(\\w{64})\\s\\s(.*)");
+    // a sha256 checksum followed by two spaces followed by an (ignored) file name
+    private static final Pattern SHA256_CHECKSUM_PATTERN = Pattern.compile("(\\w{64})\\s\\s(.*)");
+
+    // an md5 checksum
+    private static final Pattern MD5_CHECKSUM_PATTERN = Pattern.compile("(\\w{32})");
 
     // for overriding in tests
     static String DEFAULT_MAXMIND_ENDPOINT = System.getProperty(
@@ -76,20 +82,45 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
     // n.b. a future enhancement might be to allow for a MAXMIND_ENDPOINT_SETTING, but
     // at the moment this is an unsupported system property for use in tests (only)
 
-    static String downloadUrl(final String name, final String suffix) {
-        String endpointPattern = DEFAULT_MAXMIND_ENDPOINT;
-        if (endpointPattern.contains("%")) {
-            throw new IllegalArgumentException("Invalid endpoint [" + endpointPattern + "]");
-        }
-        if (endpointPattern.endsWith("/") == false) {
-            endpointPattern += "/";
-        }
-        endpointPattern += "%s/download?suffix=%s";
+    static String DEFAULT_IPINFO_ENDPOINT = "https://ipinfo.io/data";
 
-        // at this point the pattern looks like this (in the default case):
-        // https://download.maxmind.com/geoip/databases/%s/download?suffix=%s
+    static String downloadUrl(final String type, final String name, final String suffix) {
+        if (type.equals("maxmind")) {
+            String endpointPattern = DEFAULT_MAXMIND_ENDPOINT;
+            if (endpointPattern.contains("%")) {
+                throw new IllegalArgumentException("Invalid endpoint [" + endpointPattern + "]");
+            }
+            if (endpointPattern.endsWith("/") == false) {
+                endpointPattern += "/";
+            }
+            endpointPattern += "%s/download?suffix=%s";
 
-        return Strings.format(endpointPattern, name, suffix);
+            // at this point the pattern looks like this (in the default case):
+            // https://download.maxmind.com/geoip/databases/%s/download?suffix=%s
+
+            return Strings.format(endpointPattern, name, suffix);
+        } else if (type.equals("ipinfo")) {
+            // curl -L https://ipinfo.io/data/free/asn.mmdb?token=$TOKEN -o asn.mmdb # not-gzipped mmdb bytes
+            // curl -L "https://ipinfo.io/data/free/asn.mmdb/checksums?token=$TOKEN" # json
+            // curl -L https://ipinfo.io/data/standard_privacy.mmdb?token=$TOKEN -o privacy.mmdb
+            // see https://ipinfo.io/developers/database-filename-reference for more
+            String endpointPattern = DEFAULT_IPINFO_ENDPOINT;
+            if (endpointPattern.contains("%")) {
+                throw new IllegalArgumentException("Invalid endpoint [" + endpointPattern + "]");
+            }
+            if (endpointPattern.endsWith("/") == false) {
+                endpointPattern += "/";
+            }
+
+            if (suffix != null) {
+                throw new IllegalArgumentException("narp");
+            }
+
+            return endpointPattern + name;
+        } else {
+            // illegal state exception or assert false or something
+            throw new RuntimeException("narp");
+        }
     }
 
     static final String DATABASES_INDEX = ".geoip_databases";
@@ -104,7 +135,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
     protected volatile EnterpriseGeoIpTaskState state;
     private volatile Scheduler.ScheduledCancellable scheduled;
     private final Supplier<TimeValue> pollIntervalSupplier;
-    private final Function<String, HttpClient.PasswordAuthenticationHolder> credentialsBuilder;
+    private final BiFunction<String, String, HttpClient.PasswordAuthenticationHolder> credentialsBuilder;
 
     EnterpriseGeoIpDownloader(
         Client client,
@@ -118,7 +149,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         TaskId parentTask,
         Map<String, String> headers,
         Supplier<TimeValue> pollIntervalSupplier,
-        Function<String, HttpClient.PasswordAuthenticationHolder> credentialsBuilder
+        BiFunction<String, String, HttpClient.PasswordAuthenticationHolder> credentialsBuilder
     ) {
         super(id, type, action, description, parentTask, headers);
         this.client = client;
@@ -174,14 +205,28 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
                 if (existingDatabaseNames.contains(database.name() + ".mmdb") == false) {
                     logger.debug("A new database appeared [{}]", database.name());
 
-                    final String accountId = ((DatabaseConfiguration.Maxmind) database.provider()).accountId(); // TODO AH HA
-                    try (HttpClient.PasswordAuthenticationHolder holder = credentialsBuilder.apply(accountId)) {
-                        if (holder == null) {
-                            logger.warn("No credentials found to download database [{}], skipping download...", id);
-                        } else {
-                            processDatabase(holder.get(), database);
-                            addedSomething = true;
+                    if (database.provider() instanceof DatabaseConfiguration.Maxmind maxmind) {
+                        final String accountId = maxmind.accountId(); // TODO AH HA
+                        try (HttpClient.PasswordAuthenticationHolder holder = credentialsBuilder.apply("maxmind", accountId)) {
+                            if (holder == null) {
+                                logger.warn("No credentials found to download database [{}], skipping download...", id);
+                            } else {
+                                processDatabase(holder.get(), database);
+                                addedSomething = true;
+                            }
                         }
+                    } else if (database.provider() instanceof DatabaseConfiguration.IpInfo) {
+                        try (HttpClient.PasswordAuthenticationHolder holder = credentialsBuilder.apply("ipinfo", null)) {
+                            if (holder == null) {
+                                logger.warn("No credentials found to download database [{}], skipping download...", id);
+                            } else {
+                                processDatabase2(holder.get(), database);
+                                addedSomething = true;
+                            }
+                        }
+                    } else {
+                        // illegal state exception or assert false or something
+                        throw new RuntimeException("narp");
                     }
                 }
             }
@@ -206,7 +251,8 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
             for (Tuple<String, Metadata> metaTuple : metas) {
                 String name = metaTuple.v1();
                 Metadata meta = metaTuple.v2();
-                if (databases.contains(name) == false) {
+                // UGH, here's another spot where the lack of a name<->file mapping is going to hurt us. everything is pain.
+                if (databases.contains(name) == false && false /* skip this for now because ugh */) {
                     logger.debug("Dropping [{}], databases was {}", name, databases);
                     _state = _state.remove(name);
                     deleteOldChunks(name, meta.lastChunk() + 1);
@@ -225,16 +271,32 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
                 final String id = entry.getKey();
                 DatabaseConfiguration database = entry.getValue().database();
 
-                final String accountId = ((DatabaseConfiguration.Maxmind) database.provider()).accountId(); // TODO AH HA
-                try (HttpClient.PasswordAuthenticationHolder holder = credentialsBuilder.apply(accountId)) {
-                    if (holder == null) {
-                        logger.warn("No credentials found to download database [{}], skipping download...", id);
-                    } else {
-                        processDatabase(holder.get(), database);
+                if (database.provider() instanceof DatabaseConfiguration.Maxmind maxmind) {
+                    final String accountId = maxmind.accountId(); // TODO AH HA
+                    try (HttpClient.PasswordAuthenticationHolder holder = credentialsBuilder.apply("maxmind", accountId)) {
+                        if (holder == null) {
+                            logger.warn("No credentials found to download database [{}], skipping download...", id);
+                        } else {
+                            processDatabase(holder.get(), database);
+                        }
+                    } catch (Exception e) {
+                        accumulator = ExceptionsHelper.useOrSuppress(accumulator, ExceptionsHelper.convertToRuntime(e));
                     }
-                } catch (Exception e) {
-                    accumulator = ExceptionsHelper.useOrSuppress(accumulator, ExceptionsHelper.convertToRuntime(e));
+                } else if (database.provider() instanceof DatabaseConfiguration.IpInfo) {
+                    try (HttpClient.PasswordAuthenticationHolder holder = credentialsBuilder.apply("ipinfo", null)) {
+                        if (holder == null) {
+                            logger.warn("No credentials found to download database [{}], skipping download...", id);
+                        } else {
+                            processDatabase2(holder.get(), database);
+                        }
+                    } catch (Exception e) {
+                        accumulator = ExceptionsHelper.useOrSuppress(accumulator, ExceptionsHelper.convertToRuntime(e));
+                    }
+                } else {
+                    // illegal state exception or assert false or something
+                    throw new RuntimeException("narp");
                 }
+
             }
             if (accumulator != null) {
                 throw accumulator;
@@ -260,11 +322,11 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         final String name = database.name();
         logger.debug("Processing database [{}] for configuration [{}]", name, database.id());
 
-        final String sha256Url = downloadUrl(name, "tar.gz.sha256");
-        final String tgzUrl = downloadUrl(name, "tar.gz");
+        final String sha256Url = downloadUrl("maxmind", name, "tar.gz.sha256");
+        final String tgzUrl = downloadUrl("maxmind", name, "tar.gz");
 
         String result = new String(httpClient.getBytes(auth, sha256Url), StandardCharsets.UTF_8).trim(); // this throws if the auth is bad
-        var matcher = CHECKSUM_PATTERN.matcher(result);
+        var matcher = SHA256_CHECKSUM_PATTERN.matcher(result);
         boolean match = matcher.matches();
         if (match == false) {
             throw new RuntimeException("Unexpected sha256 response from [" + sha256Url + "]");
@@ -273,6 +335,51 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         // the name that comes from the enterprise downloader cluster state doesn't include the .mmdb extension,
         // but the downloading and indexing of database code expects it to be there, so we add it on here before further processing
         processDatabase(auth, name + ".mmdb", sha256, tgzUrl);
+    }
+
+    void processDatabase2(PasswordAuthentication auth, DatabaseConfiguration database) throws IOException {
+        final String name = database.name();
+        logger.debug("Processing database [{}] for configuration [{}]", name, database.id());
+
+        // curl -L https://ipinfo.io/data/free/asn.mmdb?token=$TOKEN -o asn.mmdb # not-gzipped mmdb bytes
+        // curl -L "https://ipinfo.io/data/free/asn.mmdb/checksums?token=$TOKEN" # json
+        // curl -L https://ipinfo.io/data/standard_privacy.mmdb?token=$TOKEN -o privacy.mmdb
+        // see https://ipinfo.io/developers/database-filename-reference for more
+
+        // yikes and double yikes
+        // note that we're disregarding the 'name' here, because it doesn't help us -- we're going to have to figure out
+        // where to encode this...
+
+        final String checksumJsonUrl = downloadUrl("ipinfo", "free/asn.mmdb/checksums", null);
+        final String mmdbUrl = downloadUrl("ipinfo", "free/asn.mmdb", null);
+
+        // triple yikes, we don't actually use the auth as auth, we turn it into a token that's appended to the url as a parameter
+        if (auth.getUserName() != null) {
+            throw new IllegalArgumentException("narp!");
+        }
+        String token = "?token=" + new String(auth.getPassword()); // blast, now we're not heapdump clean ... TODO can this be avoided?
+        byte[] data = httpClient.getBytes(auth, checksumJsonUrl + token); // this throws if the auth is bad // TODO OUCH TOKEN
+        // does it throw something that includes the url? because now the url is sensitive. // quadruple yikes!
+        // exception during geoip databases update org.elasticsearch.ResourceNotFoundException:
+        // https://download.maxmind.com/geoip/databases/free/asn.mmdb?token=REDACTED not found
+        // yup, unfortunately it totally does, barf.
+        Map<String, Object> checksums;
+        try (XContentParser parser = XContentType.JSON.xContent().createParser(XContentParserConfiguration.EMPTY, data)) {
+            checksums = parser.map();
+        }
+        @SuppressWarnings("unchecked")
+        String md5 = ((Map<String, String>) checksums.get("checksums")).get("md5");
+        logger.info("checksum was [{}]", md5);
+
+        var matcher = MD5_CHECKSUM_PATTERN.matcher(md5);
+        boolean match = matcher.matches();
+        if (match == false) {
+            throw new RuntimeException("Unexpected md5 response from [" + checksumJsonUrl + "]");
+        }
+        // the name that comes from the enterprise downloader cluster state doesn't include the .mmdb extension,
+        // but the downloading and indexing of database code expects it to be there, so we add it on here before further processing
+        // ugh, i've died, we need to manufacture this filename from somewhere
+        processDatabase2("asn.mmdb", md5, mmdbUrl + token); // TODO OUCH TOKEN
     }
 
     /**
@@ -305,6 +412,37 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
             }
         } catch (Exception e) {
             logger.error(() -> "error downloading database [" + name + "]", e);
+        }
+    }
+
+    /**
+     * This method fetches the tar.gz file for the given database from the Maxmind endpoint, then indexes that tar.gz
+     * file into the .geoip_databases Elasticsearch index, deleting any old versions of the database tar.gz from the index if they exist.
+     *
+     * The name of the database to be downloaded from Maxmind and indexed into an Elasticsearch index
+     * @param md5 The md5 to compare to the computed md5 of the downloaded tar.gz file
+     * @param url The URL for the Maxmind endpoint from which the database's tar.gz will be downloaded
+     */
+    private void processDatabase2(String name, String md5, String url) {
+        Metadata metadata = state.getDatabases().getOrDefault(name, Metadata.EMPTY);
+        if (Objects.equals(metadata.md5(), md5)) {
+            updateTimestamp(name, metadata);
+            return;
+        }
+        logger.debug("downloading geoip database [{}]", name);
+        long start = System.currentTimeMillis();
+        try (InputStream is = httpClient.get(url)) {
+            int firstChunk = metadata.lastChunk() + 1; // if there is no metadata, then Metadata.EMPTY + 1 = 0
+            Tuple<Integer, String> tuple = indexChunks(name, is, firstChunk, null, md5, start);
+            int lastChunk = tuple.v1();
+            if (lastChunk > firstChunk) {
+                state = state.put(name, new Metadata(start, firstChunk, lastChunk - 1, md5, start));
+                updateTaskState();
+                logger.info("successfully downloaded geoip database [{}]", name);
+                deleteOldChunks(name, firstChunk);
+            }
+        } catch (Exception e) {
+            logger.error(() -> "error downloading geoip database [" + name + "]", e);
         }
     }
 
