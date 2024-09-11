@@ -61,6 +61,8 @@ public class EnterpriseGeoIpDownloaderTaskExecutor extends PersistentTasksExecut
         null
     );
 
+    public static final Setting<SecureString> IPINFO_TOKEN_SETTING = SecureSetting.secureString(IPINFO_SETTINGS_PREFIX + "token", null);
+
     private final Client client;
     private final HttpClient httpClient;
     private final ClusterService clusterService;
@@ -125,7 +127,15 @@ public class EnterpriseGeoIpDownloaderTaskExecutor extends PersistentTasksExecut
         } else if (type.equals("ipinfo")) {
             // ipinfo uses the token as the username component of basic auth
             // see https://ipinfo.io/developers#authentication
-            return new HttpClient.PasswordAuthenticationHolder("60a7592c6eceb9", new char[] {});
+            final String token;
+
+            if (cachedSecureSettings.getSettingNames().contains(MAXMIND_LICENSE_KEY_SETTING.getKey())) {
+                token = cachedSecureSettings.getString(MAXMIND_LICENSE_KEY_SETTING.getKey()).toString();
+            } else {
+                token = null;
+            }
+
+            return new HttpClient.PasswordAuthenticationHolder(token, new char[] {});
         } else {
             // illegal state exception or assert false or something
             throw new RuntimeException("narp");
@@ -188,7 +198,7 @@ public class EnterpriseGeoIpDownloaderTaskExecutor extends PersistentTasksExecut
         // `SecureSettings` are available here! cache them as they will be needed
         // whenever dynamic cluster settings change and we have to rebuild the accounts
         try {
-            this.cachedSecureSettings = extractSecureSettings(settings, List.of(MAXMIND_LICENSE_KEY_SETTING));
+            this.cachedSecureSettings = extractSecureSettings(settings, List.of(MAXMIND_LICENSE_KEY_SETTING, IPINFO_TOKEN_SETTING));
         } catch (GeneralSecurityException e) {
             // rethrow as a runtime exception, there's logging higher up the call chain around ReloadablePlugin
             throw new ElasticsearchException("Exception while reloading enterprise geoip download task executor", e);
