@@ -54,7 +54,15 @@ enum Database {
         Set.of(Property.CONTINENT_NAME, Property.COUNTRY_NAME, Property.COUNTRY_ISO_CODE)
     ),
     Asn(
-        Set.of(Property.IP, Property.ASN, Property.ORGANIZATION_NAME, Property.NETWORK),
+        Set.of(
+            Property.IP,
+            Property.ASN,
+            Property.ORGANIZATION_NAME,
+            Property.NETWORK, //
+            Property.DOMAIN,
+            Property.COUNTRY_ISO_CODE,
+            Property.TYPE
+        ),
         Set.of(Property.IP, Property.ASN, Property.ORGANIZATION_NAME, Property.NETWORK)
     ),
     AnonymousIp(
@@ -272,7 +280,8 @@ enum Database {
         MOBILE_COUNTRY_CODE,
         MOBILE_NETWORK_CODE,
         CONNECTION_TYPE,
-        USER_TYPE;
+        USER_TYPE,
+        TYPE;
 
         /**
          * Parses a string representation of a property into an actual Property instance. Not all properties that exist are

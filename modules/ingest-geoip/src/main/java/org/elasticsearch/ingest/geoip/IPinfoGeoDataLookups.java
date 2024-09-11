@@ -15,6 +15,7 @@ import com.maxmind.db.Reader;
 
 import org.elasticsearch.common.network.InetAddresses;
 import org.elasticsearch.common.network.NetworkAddress;
+import org.elasticsearch.core.Nullable;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -30,12 +31,23 @@ class IPinfoGeoDataLookups {
     private IPinfoGeoDataLookups() {}
 
     public record IPinfoASN(
-        @MaxMindDbParameter(name = "asn") String asn,
-        @MaxMindDbParameter(name = "domain") String domain, // what do we want to do with this one?
-        @MaxMindDbParameter(name = "name") String name
+        Long asn, //
+        @Nullable String country, // what do we want to do with this one?; // not present in the free asn database
+        String domain, // what do we want to do with this one?
+        String name, //
+        @Nullable String type // what do we want to do with this one?; // not present in the free asn database
     ) {
+        @SuppressWarnings("checkstyle:RedundantModifier")
         @MaxMindDbConstructor
-        public IPinfoASN {}
+        public IPinfoASN(
+            @MaxMindDbParameter(name = "asn") String asn,
+            @Nullable @MaxMindDbParameter(name = "country") String country,
+            @MaxMindDbParameter(name = "domain") String domain,
+            @MaxMindDbParameter(name = "name") String name,
+            @Nullable @MaxMindDbParameter(name = "type") String type
+        ) {
+            this(Long.parseLong(asn.replaceAll("AS", "")), country, domain, name, type);
+        }
     }
 
     public record IPinfoCountry(
@@ -70,7 +82,7 @@ class IPinfoGeoDataLookups {
         @Override
         protected Map<String, Object> transformResponse(final Result<IPinfoASN> result) {
             IPinfoASN response = result.result;
-            String asn = response.asn; // barf, this is a string, we want it to be a number
+            long asn = response.asn;
             String organizationName = response.name;
             String network = result.network;
 
@@ -79,10 +91,7 @@ class IPinfoGeoDataLookups {
                 switch (property) {
                     case IP -> geoData.put("ip", result.ip);
                     case ASN -> {
-                        if (asn != null) {
-                            // todo bleh -- can we parse this in advance once? and make it a number?
-                            geoData.put("asn", Long.parseLong(asn.replaceAll("AS", "")));
-                        }
+                        geoData.put("asn", asn);
                     }
                     case ORGANIZATION_NAME -> {
                         if (organizationName != null) {
@@ -92,6 +101,21 @@ class IPinfoGeoDataLookups {
                     case NETWORK -> {
                         if (network != null) {
                             geoData.put("network", network);
+                        }
+                    }
+                    case COUNTRY_ISO_CODE -> {
+                        if (response.country != null) {
+                            geoData.put("country_iso_code", response.country);
+                        }
+                    }
+                    case DOMAIN -> {
+                        if (response.domain != null) {
+                            geoData.put("domain", response.domain);
+                        }
+                    }
+                    case TYPE -> {
+                        if (response.type != null) {
+                            geoData.put("type", response.type);
                         }
                     }
                 }
