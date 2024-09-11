@@ -91,6 +91,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
     );
     // n.b. a future enhancement might be to allow for an IPINFO_ENDPOINT_SETTING, but
     // at the moment this is an unsupported system property for use in tests (only)
+    // at the moment this is an unsupported system property for use in tests (only)
 
     static String downloadUrl(final String type, final String name, final String suffix) {
         if (type.equals("maxmind")) {
@@ -259,8 +260,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
             for (Tuple<String, Metadata> metaTuple : metas) {
                 String name = metaTuple.v1();
                 Metadata meta = metaTuple.v2();
-                // UGH, here's another spot where the lack of a name<->file mapping is going to hurt us. everything is pain.
-                if (databases.contains(name) == false && false /* skip this for now because ugh */) {
+                if (databases.contains(name) == false) {
                     logger.debug("Dropping [{}], databases was {}", name, databases);
                     _state = _state.remove(name);
                     deleteOldChunks(name, meta.lastChunk() + 1);
@@ -356,12 +356,10 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         // curl -L "https://ipinfo.io/data/free/asn.mmdb/checksums?token=$TOKEN" # json
         // see https://ipinfo.io/developers/database-filename-reference for more
 
-        // yikes and double yikes
-        // note that we're disregarding the 'name' here, because it doesn't help us -- we're going to have to figure out
-        // where to encode this...
+        // we'll need to record (somewhere) that some files are in 'free/' and many are not.
 
-        final String checksumJsonUrl = downloadUrl("ipinfo", "free/asn.mmdb/checksums", null);
-        final String mmdbUrl = downloadUrl("ipinfo", "free/asn.mmdb", null);
+        final String checksumJsonUrl = downloadUrl("ipinfo", "free/" + name + ".mmdb/checksums", null);
+        final String mmdbUrl = downloadUrl("ipinfo", "free/" + name + ".mmdb", null);
 
         byte[] data = httpClient.getBytes(auth, checksumJsonUrl); // this throws if the auth is bad
         Map<String, Object> checksums;
@@ -379,8 +377,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         }
         // the name that comes from the enterprise downloader cluster state doesn't include the .mmdb extension,
         // but the downloading and indexing of database code expects it to be there, so we add it on here before further processing
-        // ugh, i've died, we need to manufacture this filename from somewhere
-        processDatabase2(auth, "asn.mmdb", md5, mmdbUrl);
+        processDatabase2(auth, name + ".mmdb", md5, mmdbUrl);
     }
 
     /**

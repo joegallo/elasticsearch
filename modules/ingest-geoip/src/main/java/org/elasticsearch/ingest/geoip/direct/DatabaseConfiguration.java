@@ -80,9 +80,9 @@ public record DatabaseConfiguration(String id, String name, Provider provider) i
         // n.b. these strings are from https://ipinfo.io/account/data-downloads
         // we might want to confirm the correct 'titling' with ipinfo themselves
 
-        "Free IP to ASN", // asn.mmdb
-        "Free IP to Country", // country.mmdb
-        "Free IP to Country + IP to ASN" // country_asn.mmdb
+        "asn", // free
+        "country", // free
+        "country_asn" // free
     // etc
     );
 

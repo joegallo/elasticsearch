@@ -129,11 +129,13 @@ public class EnterpriseGeoIpDownloaderTaskExecutor extends PersistentTasksExecut
             // see https://ipinfo.io/developers#authentication
             final String token;
 
-            if (cachedSecureSettings.getSettingNames().contains(MAXMIND_LICENSE_KEY_SETTING.getKey())) {
-                token = cachedSecureSettings.getString(MAXMIND_LICENSE_KEY_SETTING.getKey()).toString();
+            if (cachedSecureSettings.getSettingNames().contains(IPINFO_TOKEN_SETTING.getKey())) {
+                token = cachedSecureSettings.getString(IPINFO_TOKEN_SETTING.getKey()).toString();
             } else {
                 token = null;
             }
+
+            logger.info("YOYOYOYOYOYOYOYOYO [{}]", token);
 
             return new HttpClient.PasswordAuthenticationHolder(token, new char[] {});
         } else {

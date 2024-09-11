@@ -128,7 +128,8 @@ public class IngestGeoIpPlugin extends Plugin
             parameters.ingestService.getClusterService()
         );
         databaseRegistry.set(registry);
-        return Map.of(GeoIpProcessor.TYPE, new GeoIpProcessor.Factory(registry));
+        GeoIpProcessor.Factory factory = new GeoIpProcessor.Factory(registry);
+        return Map.of(GeoIpProcessor.TYPE, factory, "ip-enrich", factory);
     }
 
     @Override
