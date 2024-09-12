@@ -124,10 +124,15 @@ def processor(data, pipeline):
     return df
 
 def validate(diagnostic_directory):
-    version = os.path.join(diagnostic_directory, "version.json")
-    if not os.path.exists(version):
+    version_file = os.path.join(diagnostic_directory, "version.json")
+    if not os.path.exists(version_file):
         print("Missing the file `version.json` in the directory")
         sys.exit(1)
+
+    with open(version_file) as f:
+        version_info = json.load(f)["version"]
+        print(title("ES version: %s (%s)" % (version_info["number"], version_info["build_hash"])))
+        print()
 
     nodes_stats = os.path.join(diagnostic_directory, "nodes_stats.json")
     if not os.path.exists(nodes_stats):
