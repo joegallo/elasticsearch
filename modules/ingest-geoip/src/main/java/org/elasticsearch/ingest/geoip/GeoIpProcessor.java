@@ -170,12 +170,13 @@ public final class GeoIpProcessor extends AbstractProcessor {
 
     /**
      * Retrieves and verifies a {@link GeoIpDatabase} instance for each execution of the {@link GeoIpProcessor}. Guards against missing
-     * custom databases, and ensures that database instances are of the proper type before use.
+     * custom databases, and ensures that database instances are of the proper type before use. (Hmmm... not this last bit anymore, huh?)
      */
+    // it really seems like this class isn't holding its weight anymore
     public static final class DatabaseVerifyingSupplier implements CheckedSupplier<GeoIpDatabase, IOException> {
         private final GeoIpDatabaseProvider geoIpDatabaseProvider;
         private final String databaseFile;
-        private final String databaseType;
+        private final String databaseType; // TODO HUH... this is interesting.
 
         public DatabaseVerifyingSupplier(GeoIpDatabaseProvider geoIpDatabaseProvider, String databaseFile, String databaseType) {
             this.geoIpDatabaseProvider = geoIpDatabaseProvider;
