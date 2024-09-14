@@ -263,7 +263,7 @@ public final class GeoIpProcessor extends AbstractProcessor {
                 description,
                 ipField,
                 new DatabaseVerifyingSupplier(ipDatabaseProvider, databaseFile, databaseType),
-                () -> ipDatabaseProvider.isValid(databaseFile),
+                () -> ipDatabaseProvider.isValid(databaseFile), // this is the only call to isValid out there what is all this stufffffff
                 targetField,
                 ipDataLookup,
                 ignoreMissing,
