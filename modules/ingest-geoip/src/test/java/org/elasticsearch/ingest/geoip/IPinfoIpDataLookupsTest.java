@@ -54,7 +54,7 @@ public class IPinfoIpDataLookupsTest extends ESTestCase {
         configDatabases.initialize(resourceWatcherService);
 
         {
-            DatabaseReaderLazyLoader loader = configDatabases.getDatabase("asn.mmdb");
+            ReaderLazyLoader loader = configDatabases.getDatabase("asn.mmdb");
             IpDataLookup asn = new IPinfoIpDataLookups.Asn(Set.of(Database.Property.values()));
             Map<String, Object> data = asn.get(loader, "64.67.15.209");
             assertThat(
@@ -72,7 +72,7 @@ public class IPinfoIpDataLookupsTest extends ESTestCase {
         }
 
         {
-            DatabaseReaderLazyLoader loader = configDatabases.getDatabase("asn_sample.mmdb");
+            ReaderLazyLoader loader = configDatabases.getDatabase("asn_sample.mmdb");
             IpDataLookup asn = new IPinfoIpDataLookups.Asn(Set.of(Database.Property.values()));
             Map<String, Object> data = asn.get(loader, "24.248.118.0");
             assertThat(

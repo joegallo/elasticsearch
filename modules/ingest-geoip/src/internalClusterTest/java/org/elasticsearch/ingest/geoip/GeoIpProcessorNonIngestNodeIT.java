@@ -113,7 +113,7 @@ public class GeoIpProcessorNonIngestNodeIT extends AbstractGeoIpIT {
 
     private void assertDatabaseLoadStatus(final String node, final boolean loaded) {
         final DatabaseNodeService databaseNodeService = internalCluster().getInstance(DatabaseNodeService.class, node);
-        for (final DatabaseReaderLazyLoader loader : databaseNodeService.getAllDatabases()) {
+        for (final ReaderLazyLoader loader : databaseNodeService.getAllDatabases()) {
             if (loaded) {
                 assertNotNull(loader.databaseReader.get());
             } else {

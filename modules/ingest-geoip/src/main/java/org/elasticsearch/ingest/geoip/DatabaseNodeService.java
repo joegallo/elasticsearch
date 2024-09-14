@@ -100,7 +100,7 @@ public final class DatabaseNodeService implements IpDatabaseProvider, Closeable 
     private final ClusterService clusterService;
     private IngestService ingestService;
 
-    private final ConcurrentMap<String, DatabaseReaderLazyLoader> databases = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, ReaderLazyLoader> databases = new ConcurrentHashMap<>();
 
     DatabaseNodeService(
         Environment environment,
@@ -204,11 +204,11 @@ public final class DatabaseNodeService implements IpDatabaseProvider, Closeable 
     }
 
     // for testing only:
-    DatabaseReaderLazyLoader getDatabaseReaderLazyLoader(String name) {
+    ReaderLazyLoader getReaderLazyLoader(String name) {
         // There is a need for reference counting in order to avoid using an instance
         // that gets closed while using it. (this can happen during a database update)
         while (true) {
-            DatabaseReaderLazyLoader instance = databases.get(name);
+            ReaderLazyLoader instance = databases.get(name);
             if (instance == null) {
                 instance = configDatabases.getDatabase(name);
             }
@@ -222,17 +222,17 @@ public final class DatabaseNodeService implements IpDatabaseProvider, Closeable 
 
     @Override
     public IpDatabase getDatabase(String name) {
-        return getDatabaseReaderLazyLoader(name);
+        return getReaderLazyLoader(name);
     }
 
-    List<DatabaseReaderLazyLoader> getAllDatabases() {
-        List<DatabaseReaderLazyLoader> all = new ArrayList<>(configDatabases.getConfigDatabases().values());
+    List<ReaderLazyLoader> getAllDatabases() {
+        List<ReaderLazyLoader> all = new ArrayList<>(configDatabases.getConfigDatabases().values());
         this.databases.forEach((key, value) -> all.add(value));
         return all;
     }
 
     // for testing only:
-    DatabaseReaderLazyLoader get(String key) {
+    ReaderLazyLoader get(String key) {
         return databases.get(key);
     }
 
@@ -313,7 +313,7 @@ public final class DatabaseNodeService implements IpDatabaseProvider, Closeable 
         validMetadatas.forEach(e -> {
             String name = e.v1();
             GeoIpTaskState.Metadata metadata = e.v2();
-            DatabaseReaderLazyLoader reference = databases.get(name);
+            ReaderLazyLoader reference = databases.get(name);
             String remoteMd5 = metadata.md5();
             String localMd5 = reference != null ? reference.getMd5() : null;
             if (Objects.equals(localMd5, remoteMd5)) {
@@ -360,7 +360,7 @@ public final class DatabaseNodeService implements IpDatabaseProvider, Closeable 
         // Thread 2 may have updated the databases map after thread 1 detects that there is no entry (or md5 mismatch) for a database.
         // If thread 2 then also removes the tmp file before thread 1 attempts to create it then we're about to retrieve the same database
         // twice. This check is here to avoid this:
-        DatabaseReaderLazyLoader lazyLoader = databases.get(databaseName);
+        ReaderLazyLoader lazyLoader = databases.get(databaseName);
         if (lazyLoader != null && recordedMd5.equals(lazyLoader.getMd5())) {
             logger.debug("deleting tmp file because database [{}] has already been updated.", databaseName);
             Files.delete(retrievedFile);
@@ -424,8 +424,8 @@ public final class DatabaseNodeService implements IpDatabaseProvider, Closeable 
     void updateDatabase(String databaseFileName, String recordedMd5, Path file) {
         try {
             logger.debug("starting reload of changed database file [{}]", file);
-            DatabaseReaderLazyLoader loader = new DatabaseReaderLazyLoader(cache, file, recordedMd5);
-            DatabaseReaderLazyLoader existing = databases.put(databaseFileName, loader);
+            ReaderLazyLoader loader = new ReaderLazyLoader(cache, file, recordedMd5);
+            ReaderLazyLoader existing = databases.put(databaseFileName, loader);
             if (existing != null) {
                 existing.close();
             } else {
@@ -463,7 +463,7 @@ public final class DatabaseNodeService implements IpDatabaseProvider, Closeable 
         for (String staleEntry : staleEntries) {
             try {
                 logger.debug("database [{}] no longer exists, cleaning up...", staleEntry);
-                DatabaseReaderLazyLoader existing = databases.remove(staleEntry);
+                ReaderLazyLoader existing = databases.remove(staleEntry);
                 assert existing != null;
                 existing.close(true);
             } catch (Exception e) {

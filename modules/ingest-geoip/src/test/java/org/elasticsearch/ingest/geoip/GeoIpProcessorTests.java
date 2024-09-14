@@ -783,12 +783,12 @@ public class GeoIpProcessorTests extends ESTestCase {
         return () -> loader;
     }
 
-    private DatabaseReaderLazyLoader loader(final String databaseName, final AtomicBoolean closed) {
+    private ReaderLazyLoader loader(final String databaseName, final AtomicBoolean closed) {
         final String path = "/" + databaseName;
         final Supplier<InputStream> databaseInputStreamSupplier = () -> GeoIpProcessor.class.getResourceAsStream(path);
         final CheckedSupplier<Reader, IOException> loader = () -> new Reader(databaseInputStreamSupplier.get());
         final GeoIpCache cache = new GeoIpCache(1000);
-        return new DatabaseReaderLazyLoader(cache, PathUtils.get(path), null, loader) {
+        return new ReaderLazyLoader(cache, PathUtils.get(path), null, loader) {
 
             @Override
             long databaseFileSize() throws IOException {
