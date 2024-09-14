@@ -25,10 +25,10 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * A collection of {@link GeoDataLookup} implementations for IPinfo databases
+ * A collection of {@link IpDataLookup} implementations for IPinfo databases
  */
-class IPinfoGeoDataLookups {
-    private IPinfoGeoDataLookups() {}
+class IPinfoIpDataLookups {
+    private IPinfoIpDataLookups() {}
 
     public record IPinfoASN(
         Long asn, //
@@ -224,12 +224,12 @@ class IPinfoGeoDataLookups {
     public record Result<T>(T result, String ip, String network) {}
 
     /**
-     * The {@code MaxMindGeoDataLookups.AbstractBase} is an abstract base implementation of {@link GeoDataLookup} that
-     * provides common functionality for getting a specific kind of IPinfoBaseClass from a {@link GeoIpDatabase}.
+     * The {@code MaxMindGeoDataLookups.AbstractBase} is an abstract base implementation of {@link IpDataLookup} that
+     * provides common functionality for getting a specific kind of IPinfoBaseClass from a {@link IpDatabase}.
      *
      * @param <RESPONSE> the intermediate type of IPinfoBaseClass
      */
-    private abstract static class AbstractBase<RESPONSE /*extends some IPinfoBaseClass*/> implements GeoDataLookup {
+    private abstract static class AbstractBase<RESPONSE /*extends some IPinfoBaseClass*/> implements IpDataLookup {
 
         protected final Set<Database.Property> properties;
         protected final Class<RESPONSE> clazz;
@@ -245,8 +245,8 @@ class IPinfoGeoDataLookups {
         }
 
         @Override
-        public final Map<String, Object> getGeoData(final GeoIpDatabase geoIpDatabase, final String ipAddress) {
-            Result<RESPONSE> resp = geoIpDatabase.getResponse(ipAddress, this::lookup);
+        public final Map<String, Object> get(final IpDatabase ipDatabase, final String ipAddress) {
+            Result<RESPONSE> resp = ipDatabase.getResponse(ipAddress, this::lookup);
             if (resp == null || resp.result == null) {
                 return Map.of();
             } else {

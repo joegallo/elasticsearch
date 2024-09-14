@@ -37,7 +37,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * no memory is being wasted on the database reader.
  */
 // okay this is the actual database, my goodness
-class DatabaseReaderLazyLoader implements GeoIpDatabase, Closeable {
+class DatabaseReaderLazyLoader implements IpDatabase, Closeable {
 
     private static final boolean LOAD_DATABASE_ON_HEAP = Booleans.parseBoolean(System.getProperty("es.geoip.load_db_on_heap", "false"));
 

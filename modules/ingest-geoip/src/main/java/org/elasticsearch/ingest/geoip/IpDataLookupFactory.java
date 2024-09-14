@@ -10,37 +10,37 @@ package org.elasticsearch.ingest.geoip;
 
 import java.util.Set;
 
-interface GeoDataLookupFactory {
-    GeoDataLookup create(Set<Database.Property> properties);
+interface IpDataLookupFactory {
+    IpDataLookup create(Set<Database.Property> properties);
 
-    static GeoDataLookupFactory get(final String databaseType, final String databaseFile) {
-        GeoDataLookupFactory factory = null;
+    static IpDataLookupFactory get(final String databaseType, final String databaseFile) {
+        IpDataLookupFactory factory = null;
         if (databaseType != null) {
             // yikes
             if (databaseType.contains("ipinfo ") && databaseType.contains("asn_free")) {
-                factory = IPinfoGeoDataLookups.Asn::new;
+                factory = IPinfoIpDataLookups.Asn::new;
             } else if (databaseType.contains("ipinfo ") && databaseType.contains("country_free")) {
-                factory = IPinfoGeoDataLookups.Country::new;
+                factory = IPinfoIpDataLookups.Country::new;
             } else if (databaseType.contains("ipinfo ") && databaseType.contains("ip_geolocation")) {
-                factory = IPinfoGeoDataLookups.City::new;
+                factory = IPinfoIpDataLookups.City::new;
             }
             // yikes
             else if (databaseType.endsWith(Database.CITY_DB_SUFFIX)) {
-                factory = MaxMindGeoDataLookups.City::new;
+                factory = MaxMindIpDataLookups.City::new;
             } else if (databaseType.endsWith(Database.COUNTRY_DB_SUFFIX)) {
-                factory = MaxMindGeoDataLookups.Country::new;
+                factory = MaxMindIpDataLookups.Country::new;
             } else if (databaseType.endsWith(Database.ASN_DB_SUFFIX)) {
-                factory = MaxMindGeoDataLookups.Asn::new;
+                factory = MaxMindIpDataLookups.Asn::new;
             } else if (databaseType.endsWith(Database.ANONYMOUS_IP_DB_SUFFIX)) {
-                factory = MaxMindGeoDataLookups.AnonymousIp::new;
+                factory = MaxMindIpDataLookups.AnonymousIp::new;
             } else if (databaseType.endsWith(Database.CONNECTION_TYPE_DB_SUFFIX)) {
-                factory = MaxMindGeoDataLookups.ConnectionType::new;
+                factory = MaxMindIpDataLookups.ConnectionType::new;
             } else if (databaseType.endsWith(Database.DOMAIN_DB_SUFFIX)) {
-                factory = MaxMindGeoDataLookups.Domain::new;
+                factory = MaxMindIpDataLookups.Domain::new;
             } else if (databaseType.endsWith(Database.ENTERPRISE_DB_SUFFIX)) {
-                factory = MaxMindGeoDataLookups.Enterprise::new;
+                factory = MaxMindIpDataLookups.Enterprise::new;
             } else if (databaseType.endsWith(Database.ISP_DB_SUFFIX)) {
-                factory = MaxMindGeoDataLookups.Isp::new;
+                factory = MaxMindIpDataLookups.Isp::new;
             }
         }
 

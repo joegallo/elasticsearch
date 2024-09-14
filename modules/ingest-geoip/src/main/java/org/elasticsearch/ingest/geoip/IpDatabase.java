@@ -19,7 +19,7 @@ import java.util.Optional;
 /**
  * Provides a uniform interface for interacting with various GeoIP databases.
  */
-public interface GeoIpDatabase {
+public interface IpDatabase {
 
     /**
      * @return the database type as it is detailed in the database file metadata

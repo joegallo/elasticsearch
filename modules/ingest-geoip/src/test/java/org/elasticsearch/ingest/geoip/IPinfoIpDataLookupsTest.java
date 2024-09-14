@@ -26,7 +26,7 @@ import static java.util.Map.entry;
 import static org.elasticsearch.ingest.geoip.GeoIpTestUtils.copyDatabase;
 import static org.hamcrest.Matchers.equalTo;
 
-public class IPinfoGeoDataLookupsTest extends ESTestCase {
+public class IPinfoIpDataLookupsTest extends ESTestCase {
 
     private ThreadPool threadPool;
     private ResourceWatcherService resourceWatcherService;
@@ -55,8 +55,8 @@ public class IPinfoGeoDataLookupsTest extends ESTestCase {
 
         {
             DatabaseReaderLazyLoader loader = configDatabases.getDatabase("asn.mmdb");
-            GeoDataLookup asn = new IPinfoGeoDataLookups.Asn(Set.of(Database.Property.values()));
-            Map<String, Object> data = asn.getGeoData(loader, "64.67.15.209");
+            IpDataLookup asn = new IPinfoIpDataLookups.Asn(Set.of(Database.Property.values()));
+            Map<String, Object> data = asn.get(loader, "64.67.15.209");
             assertThat(
                 data,
                 equalTo(
@@ -73,8 +73,8 @@ public class IPinfoGeoDataLookupsTest extends ESTestCase {
 
         {
             DatabaseReaderLazyLoader loader = configDatabases.getDatabase("asn_sample.mmdb");
-            GeoDataLookup asn = new IPinfoGeoDataLookups.Asn(Set.of(Database.Property.values()));
-            Map<String, Object> data = asn.getGeoData(loader, "24.248.118.0");
+            IpDataLookup asn = new IPinfoIpDataLookups.Asn(Set.of(Database.Property.values()));
+            Map<String, Object> data = asn.get(loader, "24.248.118.0");
             assertThat(
                 data,
                 equalTo(

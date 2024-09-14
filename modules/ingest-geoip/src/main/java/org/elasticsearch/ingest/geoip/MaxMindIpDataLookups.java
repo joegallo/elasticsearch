@@ -36,10 +36,10 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * A collection of {@link GeoDataLookup} implementations for MaxMind databases
+ * A collection of {@link IpDataLookup} implementations for MaxMind databases
  */
-class MaxMindGeoDataLookups {
-    private MaxMindGeoDataLookups() {}
+class MaxMindIpDataLookups {
+    private MaxMindIpDataLookups() {}
 
     static class AnonymousIp extends AbstractBase<AnonymousIpResponse> {
         AnonymousIp(final Set<Database.Property> properties) {
@@ -577,12 +577,12 @@ class MaxMindGeoDataLookups {
     }
 
     /**
-     * The {@code MaxMindGeoDataLookups.AbstractBase} is an abstract base implementation of {@link GeoDataLookup} that
-     * provides common functionality for getting a specific kind of {@link AbstractResponse} from a {@link GeoIpDatabase}.
+     * The {@code MaxMindGeoDataLookups.AbstractBase} is an abstract base implementation of {@link IpDataLookup} that
+     * provides common functionality for getting a specific kind of {@link AbstractResponse} from a {@link IpDatabase}.
      *
      * @param <RESPONSE> the intermediate type of {@link AbstractResponse}
      */
-    private abstract static class AbstractBase<RESPONSE extends AbstractResponse> implements GeoDataLookup {
+    private abstract static class AbstractBase<RESPONSE extends AbstractResponse> implements IpDataLookup {
 
         protected final Set<Database.Property> properties;
         protected final Class<RESPONSE> clazz;
@@ -598,8 +598,8 @@ class MaxMindGeoDataLookups {
         }
 
         @Override
-        public final Map<String, Object> getGeoData(final GeoIpDatabase geoIpDatabase, final String ipAddress) {
-            RESPONSE resp = geoIpDatabase.getResponse(ipAddress, this::lookup);
+        public final Map<String, Object> get(final IpDatabase ipDatabase, final String ipAddress) {
+            RESPONSE resp = ipDatabase.getResponse(ipAddress, this::lookup);
             if (resp == null) {
                 return Map.of();
             } else {

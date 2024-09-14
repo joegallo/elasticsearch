@@ -37,9 +37,9 @@ import static org.hamcrest.Matchers.nullValue;
 
 public class GeoIpProcessorTests extends ESTestCase {
 
-    private static GeoDataLookup lookupFor(final String databaseName) {
+    private static IpDataLookup lookupFor(final String databaseName) {
         String type = databaseName.replaceAll(".mmdb", "").replaceAll("-Test", "");
-        return GeoDataLookupFactory.get(type, databaseName).create(Set.of(Database.Property.values()));
+        return IpDataLookupFactory.get(type, databaseName).create(Set.of(Database.Property.values()));
     }
 
     public void testDatabasePropertyInvariants() {
@@ -778,7 +778,7 @@ public class GeoIpProcessorTests extends ESTestCase {
         assertIngestDocument(originalIngestDocument, ingestDocument);
     }
 
-    private CheckedSupplier<GeoIpDatabase, IOException> loader(final String databaseName) {
+    private CheckedSupplier<IpDatabase, IOException> loader(final String databaseName) {
         var loader = loader(databaseName, null);
         return () -> loader;
     }

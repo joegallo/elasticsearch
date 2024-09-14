@@ -39,8 +39,8 @@ public final class GeoIpProcessor extends AbstractProcessor {
     private final String field;
     private final Supplier<Boolean> isValid;
     private final String targetField;
-    private final CheckedSupplier<GeoIpDatabase, IOException> supplier;
-    private final GeoDataLookup geoDataLookup;
+    private final CheckedSupplier<IpDatabase, IOException> supplier;
+    private final IpDataLookup ipDataLookup;
     private final boolean ignoreMissing;
     private final boolean firstOnly;
     private final String databaseFile;
@@ -53,7 +53,7 @@ public final class GeoIpProcessor extends AbstractProcessor {
      * @param supplier      a supplier of a geo-IP database reader; ideally this is lazily-loaded once on first use
      * @param isValid       a supplier that determines if the available database files are up-to-date and license compliant
      * @param targetField   the target field
-     * @param geoDataLookup a lookup capable of retrieving a result from an available geo-IP database reader
+     * @param ipDataLookup a lookup capable of retrieving a result from an available geo-IP database reader
      * @param ignoreMissing true if documents with a missing value for the field should be ignored
      * @param firstOnly     true if only first result should be returned in case of array
      * @param databaseFile  the name of the database file being queried; used only for tagging documents if the database is unavailable
@@ -62,10 +62,10 @@ public final class GeoIpProcessor extends AbstractProcessor {
         final String tag,
         final String description,
         final String field,
-        final CheckedSupplier<GeoIpDatabase, IOException> supplier,
+        final CheckedSupplier<IpDatabase, IOException> supplier,
         final Supplier<Boolean> isValid,
         final String targetField,
-        final GeoDataLookup geoDataLookup,
+        final IpDataLookup ipDataLookup,
         final boolean ignoreMissing,
         final boolean firstOnly,
         final String databaseFile
@@ -75,7 +75,7 @@ public final class GeoIpProcessor extends AbstractProcessor {
         this.isValid = isValid;
         this.targetField = targetField;
         this.supplier = supplier;
-        this.geoDataLookup = geoDataLookup;
+        this.ipDataLookup = ipDataLookup;
         this.ignoreMissing = ignoreMissing;
         this.firstOnly = firstOnly;
         this.databaseFile = databaseFile;
@@ -98,8 +98,8 @@ public final class GeoIpProcessor extends AbstractProcessor {
             throw new IllegalArgumentException("field [" + field + "] is null, cannot extract geoip information.");
         }
 
-        GeoIpDatabase geoIpDatabase = this.supplier.get();
-        if (geoIpDatabase == null) {
+        IpDatabase ipDatabase = this.supplier.get();
+        if (ipDatabase == null) {
             if (ignoreMissing == false) {
                 tag(ingestDocument, databaseFile);
             }
@@ -108,7 +108,7 @@ public final class GeoIpProcessor extends AbstractProcessor {
 
         try {
             if (ip instanceof String ipString) {
-                Map<String, Object> geoData = getGeoData(geoIpDatabase, ipString);
+                Map<String, Object> geoData = getGeoData(ipDatabase, ipString);
                 if (geoData.isEmpty() == false) {
                     ingestDocument.setFieldValue(targetField, geoData);
                 }
@@ -119,7 +119,7 @@ public final class GeoIpProcessor extends AbstractProcessor {
                     if (ipAddr instanceof String == false) {
                         throw new IllegalArgumentException("array in field [" + field + "] should only contain strings");
                     }
-                    Map<String, Object> geoData = getGeoData(geoIpDatabase, (String) ipAddr);
+                    Map<String, Object> geoData = getGeoData(ipDatabase, (String) ipAddr);
                     if (geoData.isEmpty()) {
                         geoDataList.add(null);
                         continue;
@@ -138,13 +138,13 @@ public final class GeoIpProcessor extends AbstractProcessor {
                 throw new IllegalArgumentException("field [" + field + "] should contain only string or array of strings");
             }
         } finally {
-            geoIpDatabase.release();
+            ipDatabase.release();
         }
         return ingestDocument;
     }
 
-    private Map<String, Object> getGeoData(GeoIpDatabase geoIpDatabase, String ip) throws IOException {
-        return geoDataLookup.getGeoData(geoIpDatabase, ip);
+    private Map<String, Object> getGeoData(IpDatabase ipDatabase, String ip) throws IOException {
+        return ipDataLookup.get(ipDatabase, ip);
     }
 
     @Override
@@ -165,28 +165,28 @@ public final class GeoIpProcessor extends AbstractProcessor {
     }
 
     Set<Property> getProperties() {
-        return geoDataLookup.getProperties();
+        return ipDataLookup.getProperties();
     }
 
     /**
-     * Retrieves and verifies a {@link GeoIpDatabase} instance for each execution of the {@link GeoIpProcessor}. Guards against missing
+     * Retrieves and verifies a {@link IpDatabase} instance for each execution of the {@link GeoIpProcessor}. Guards against missing
      * custom databases, and ensures that database instances are of the proper type before use. (Hmmm... not this last bit anymore, huh?)
      */
     // it really seems like this class isn't holding its weight anymore
-    public static final class DatabaseVerifyingSupplier implements CheckedSupplier<GeoIpDatabase, IOException> {
-        private final GeoIpDatabaseProvider geoIpDatabaseProvider;
+    public static final class DatabaseVerifyingSupplier implements CheckedSupplier<IpDatabase, IOException> {
+        private final IpDatabaseProvider ipDatabaseProvider;
         private final String databaseFile;
         private final String databaseType; // TODO HUH... this is interesting.
 
-        public DatabaseVerifyingSupplier(GeoIpDatabaseProvider geoIpDatabaseProvider, String databaseFile, String databaseType) {
-            this.geoIpDatabaseProvider = geoIpDatabaseProvider;
+        public DatabaseVerifyingSupplier(IpDatabaseProvider ipDatabaseProvider, String databaseFile, String databaseType) {
+            this.ipDatabaseProvider = ipDatabaseProvider;
             this.databaseFile = databaseFile;
             this.databaseType = databaseType;
         }
 
         @Override
-        public GeoIpDatabase get() throws IOException {
-            GeoIpDatabase loader = geoIpDatabaseProvider.getDatabase(databaseFile);
+        public IpDatabase get() throws IOException {
+            IpDatabase loader = ipDatabaseProvider.getDatabase(databaseFile);
             if (loader == null) {
                 return null;
             }
@@ -196,10 +196,10 @@ public final class GeoIpProcessor extends AbstractProcessor {
 
     public static final class Factory implements Processor.Factory {
 
-        private final GeoIpDatabaseProvider geoIpDatabaseProvider;
+        private final IpDatabaseProvider ipDatabaseProvider;
 
-        public Factory(GeoIpDatabaseProvider geoIpDatabaseProvider) {
-            this.geoIpDatabaseProvider = geoIpDatabaseProvider;
+        public Factory(IpDatabaseProvider ipDatabaseProvider) {
+            this.ipDatabaseProvider = ipDatabaseProvider;
         }
 
         @Override
@@ -226,8 +226,8 @@ public final class GeoIpProcessor extends AbstractProcessor {
                 deprecationLogger.warn(DeprecationCategory.OTHER, "default_databases_message", DEFAULT_DATABASES_DEPRECATION_MESSAGE);
             }
 
-            GeoIpDatabase geoIpDatabase = geoIpDatabaseProvider.getDatabase(databaseFile);
-            if (geoIpDatabase == null) {
+            IpDatabase ipDatabase = ipDatabaseProvider.getDatabase(databaseFile);
+            if (ipDatabase == null) {
                 // It's possible that the database could be downloaded via the GeoipDownloader process and could become available
                 // at a later moment, so a processor impl is returned that tags documents instead. If a database cannot be sourced then the
                 // processor will continue to tag documents with a warning until it is remediated by providing a database or changing the
@@ -237,9 +237,9 @@ public final class GeoIpProcessor extends AbstractProcessor {
 
             final String databaseType;
             try {
-                databaseType = geoIpDatabase.getDatabaseType();
+                databaseType = ipDatabase.getDatabaseType();
             } finally {
-                geoIpDatabase.release();
+                ipDatabase.release();
             }
 
             final Database database;
@@ -256,16 +256,16 @@ public final class GeoIpProcessor extends AbstractProcessor {
                 throw newConfigurationException(TYPE, processorTag, "properties", e.getMessage());
             }
 
-            final GeoDataLookup geoDataLookup = GeoDataLookupFactory.get(databaseType, databaseFile).create(properties);
+            final IpDataLookup ipDataLookup = IpDataLookupFactory.get(databaseType, databaseFile).create(properties);
 
             return new GeoIpProcessor(
                 processorTag,
                 description,
                 ipField,
-                new DatabaseVerifyingSupplier(geoIpDatabaseProvider, databaseFile, databaseType),
-                () -> geoIpDatabaseProvider.isValid(databaseFile),
+                new DatabaseVerifyingSupplier(ipDatabaseProvider, databaseFile, databaseType),
+                () -> ipDatabaseProvider.isValid(databaseFile),
                 targetField,
-                geoDataLookup,
+                ipDataLookup,
                 ignoreMissing,
                 firstOnly,
                 databaseFile
