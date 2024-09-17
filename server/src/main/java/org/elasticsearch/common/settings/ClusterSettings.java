@@ -1,9 +1,10 @@
 /*
  * Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
- * or more contributor license agreements. Licensed under the Elastic License
- * 2.0 and the Server Side Public License, v 1; you may not use this file except
- * in compliance with, at your election, the Elastic License 2.0 or the Server
- * Side Public License, v 1.
+ * or more contributor license agreements. Licensed under the "Elastic License
+ * 2.0", the "GNU Affero General Public License v3.0 only", and the "Server Side
+ * Public License v 1"; you may not use this file except in compliance with, at
+ * your election, the "Elastic License 2.0", the "GNU Affero General Public
+ * License v3.0 only", or the "Server Side Public License, v 1".
  */
 package org.elasticsearch.common.settings;
 
@@ -55,6 +56,7 @@ import org.elasticsearch.cluster.routing.allocation.decider.FilterAllocationDeci
 import org.elasticsearch.cluster.routing.allocation.decider.SameShardAllocationDecider;
 import org.elasticsearch.cluster.routing.allocation.decider.ShardsLimitAllocationDecider;
 import org.elasticsearch.cluster.routing.allocation.decider.ThrottlingAllocationDecider;
+import org.elasticsearch.cluster.routing.allocation.shards.ShardsAvailabilityHealthIndicatorService;
 import org.elasticsearch.cluster.service.ClusterApplierService;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.cluster.service.MasterService;
@@ -521,6 +523,7 @@ public final class ClusterSettings extends AbstractScopedSettings {
         ThreadPool.ESTIMATED_TIME_INTERVAL_SETTING,
         ThreadPool.LATE_TIME_INTERVAL_WARN_THRESHOLD_SETTING,
         ThreadPool.SLOW_SCHEDULER_TASK_WARN_THRESHOLD_SETTING,
+        ThreadPool.WRITE_THREAD_POOLS_EWMA_ALPHA_SETTING,
         FastVectorHighlighter.SETTING_TV_HIGHLIGHT_MULTI_VALUE,
         Node.BREAKER_TYPE_KEY,
         OperationRouting.USE_ADAPTIVE_REPLICA_SELECTION_SETTING,
@@ -598,6 +601,7 @@ public final class ClusterSettings extends AbstractScopedSettings {
         MergePolicyConfig.DEFAULT_MAX_TIME_BASED_MERGED_SEGMENT_SETTING,
         TransportService.ENABLE_STACK_OVERFLOW_AVOIDANCE,
         DataStreamGlobalRetentionSettings.DATA_STREAMS_DEFAULT_RETENTION_SETTING,
-        DataStreamGlobalRetentionSettings.DATA_STREAMS_MAX_RETENTION_SETTING
+        DataStreamGlobalRetentionSettings.DATA_STREAMS_MAX_RETENTION_SETTING,
+        ShardsAvailabilityHealthIndicatorService.REPLICA_UNASSIGNED_BUFFER_TIME
     );
 }

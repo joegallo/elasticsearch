@@ -1,9 +1,10 @@
 /*
  * Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
- * or more contributor license agreements. Licensed under the Elastic License
- * 2.0 and the Server Side Public License, v 1; you may not use this file except
- * in compliance with, at your election, the Elastic License 2.0 or the Server
- * Side Public License, v 1.
+ * or more contributor license agreements. Licensed under the "Elastic License
+ * 2.0", the "GNU Affero General Public License v3.0 only", and the "Server Side
+ * Public License v 1"; you may not use this file except in compliance with, at
+ * your election, the "Elastic License 2.0", the "GNU Affero General Public
+ * License v3.0 only", or the "Server Side Public License, v 1".
  */
 package org.elasticsearch.cluster.metadata;
 
@@ -369,7 +370,8 @@ public class MetadataIndexTemplateService {
         }
 
         if (finalComponentTemplate.template().lifecycle() != null) {
-            finalComponentTemplate.template().lifecycle().addWarningHeaderIfDataRetentionNotEffective(globalRetentionSettings.get());
+            // We do not know if this lifecycle will belong to an internal data stream, so we fall back to a non internal.
+            finalComponentTemplate.template().lifecycle().addWarningHeaderIfDataRetentionNotEffective(globalRetentionSettings.get(), false);
         }
 
         logger.info("{} component template [{}]", existing == null ? "adding" : "updating", name);
@@ -815,7 +817,12 @@ public class MetadataIndexTemplateService {
                         + "] specifies lifecycle configuration that can only be used in combination with a data stream"
                 );
             }
-            lifecycle.addWarningHeaderIfDataRetentionNotEffective(globalRetention);
+            if (globalRetention != null) {
+                // We cannot know for sure if the template will apply to internal data streams, so we use a simpler heuristic:
+                // If all the index patterns start with a dot, we consider that all the connected data streams are internal.
+                boolean isInternalDataStream = template.indexPatterns().stream().allMatch(indexPattern -> indexPattern.charAt(0) == '.');
+                lifecycle.addWarningHeaderIfDataRetentionNotEffective(globalRetention, isInternalDataStream);
+            }
         }
     }
 
