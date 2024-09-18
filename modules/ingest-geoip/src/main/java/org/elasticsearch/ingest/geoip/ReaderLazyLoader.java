@@ -100,7 +100,10 @@ class ReaderLazyLoader implements IpDatabase, Closeable {
 
     @Override
     @Nullable
-    public <T> T getResponse(String ipAddress, CheckedBiFunction<Reader, String, Optional<T>, Exception> responseProvider) {
+    public <RESPONSE> RESPONSE getResponse(
+        String ipAddress,
+        CheckedBiFunction<Reader, String, Optional<RESPONSE>, Exception> responseProvider
+    ) {
         return cache.putIfAbsent(ipAddress, databasePath.toString(), ip -> {
             try {
                 return responseProvider.apply(get(), ipAddress).orElse(null);
