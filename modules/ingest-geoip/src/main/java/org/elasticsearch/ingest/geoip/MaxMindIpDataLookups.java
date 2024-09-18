@@ -595,7 +595,7 @@ class MaxMindIpDataLookups {
 
         /**
          * Extract the configured properties from the retrieved response
-         * @param response the response that was retrieved
+         * @param response the non-null response that was retrieved
          * @return a mapping of properties for the ip from the response
          */
         protected abstract Map<String, Object> transform(RESPONSE response);
