@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -99,13 +98,10 @@ class ReaderLazyLoader implements IpDatabase {
 
     @Override
     @Nullable
-    public <RESPONSE> RESPONSE getResponse(
-        String ipAddress,
-        CheckedBiFunction<Reader, String, Optional<RESPONSE>, Exception> responseProvider
-    ) {
+    public <RESPONSE> RESPONSE getResponse(String ipAddress, CheckedBiFunction<Reader, String, RESPONSE, Exception> responseProvider) {
         return cache.putIfAbsent(ipAddress, databasePath.toString(), ip -> {
             try {
-                return responseProvider.apply(get(), ipAddress).orElse(null);
+                return responseProvider.apply(get(), ipAddress);
             } catch (Exception e) {
                 throw ExceptionsHelper.convertToRuntime(e);
             }
