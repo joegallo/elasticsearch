@@ -9,10 +9,8 @@
 
 package org.elasticsearch.ingest.geoip;
 
-import com.maxmind.db.DatabaseRecord;
 import com.maxmind.geoip2.model.CityResponse;
 
-import org.elasticsearch.common.network.InetAddresses;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.test.ESTestCase;
@@ -24,8 +22,6 @@ import org.junit.Before;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Optional;
 
 import static org.elasticsearch.ingest.geoip.GeoIpTestUtils.copyDatabase;
 import static org.elasticsearch.ingest.geoip.GeoIpTestUtils.copyDefaultDatabases;
@@ -130,11 +126,7 @@ public class ConfigDatabasesTests extends ESTestCase {
 
             ReaderLazyLoader loader = configDatabases.getDatabase("GeoLite2-City.mmdb");
             assertThat(loader.getDatabaseType(), equalTo("GeoLite2-City"));
-            CityResponse cityResponse = loader.getResponse("89.160.20.128", (reader, ip) -> {
-                DatabaseRecord<CityResponse> record = reader.getRecord(InetAddresses.forString(ip), CityResponse.class);
-                CityResponse result = record.getData();
-                return Optional.of(new CityResponse(result, "", record.getNetwork(), List.of("en")));
-            });
+            CityResponse cityResponse = loader.getResponse("89.160.20.128", GeoIpTestUtils::getCity);
             assertThat(cityResponse.getCity().getName(), equalTo("Tumba"));
             assertThat(cache.count(), equalTo(1));
         }
@@ -147,11 +139,7 @@ public class ConfigDatabasesTests extends ESTestCase {
             ReaderLazyLoader loader = configDatabases.getDatabase("GeoLite2-City.mmdb");
 
             assertThat(loader.getDatabaseType(), equalTo("GeoLite2-City"));
-            CityResponse cityResponse = loader.getResponse("89.160.20.128", (reader, ip) -> {
-                DatabaseRecord<CityResponse> record = reader.getRecord(InetAddresses.forString(ip), CityResponse.class);
-                CityResponse result = record.getData();
-                return Optional.of(new CityResponse(result, "", record.getNetwork(), List.of("en")));
-            });
+            CityResponse cityResponse = loader.getResponse("89.160.20.128", GeoIpTestUtils::getCity);
             assertThat(cityResponse.getCity().getName(), equalTo("Linköping"));
             assertThat(cache.count(), equalTo(1));
         });
