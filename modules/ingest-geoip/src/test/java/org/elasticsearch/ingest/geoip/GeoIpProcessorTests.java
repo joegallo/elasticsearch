@@ -214,6 +214,7 @@ public class GeoIpProcessorTests extends ESTestCase {
         assertThat(ingestDocument.getSourceAndMetadata().get("source_field"), equalTo(ip));
         @SuppressWarnings("unchecked")
         Map<String, Object> geoData = (Map<String, Object>) ingestDocument.getSourceAndMetadata().get("target_field");
+        assertThat(geoData, notNullValue());
         assertThat(geoData.size(), equalTo(10));
         assertThat(geoData.get("ip"), equalTo(ip));
         assertThat(geoData.get("country_iso_code"), equalTo("US"));
@@ -224,10 +225,7 @@ public class GeoIpProcessorTests extends ESTestCase {
         assertThat(geoData.get("region_name"), equalTo("Florida"));
         assertThat(geoData.get("city_name"), equalTo("Homestead"));
         assertThat(geoData.get("timezone"), equalTo("America/New_York"));
-        Map<String, Object> location = new HashMap<>();
-        location.put("lat", 25.4573d);
-        location.put("lon", -80.4572d);
-        assertThat(geoData.get("location"), equalTo(location));
+        assertThat(geoData.get("location"), equalTo(Map.of("lat", 25.4573d, "lon", -80.4572d)));
     }
 
     public void testCityWithMissingLocation() throws Exception {

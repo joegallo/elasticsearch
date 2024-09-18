@@ -170,11 +170,7 @@ enum Database {
     public static Database getDatabase(final String databaseType, final String databaseFile) {
         Database database = null;
         if (databaseType != null) {
-            // DOUBLE YIKES: [database_file] Unsupported database type [\u0003ipinfo generic_country_free.] for file [country.mmdb]
-            // TRIPLE YIKES: [database_file] Unsupported database type [\u0004ipinfo ip_geolocation_sample] for file
-            // [ip_geolocation_sample.mmdb]
-            // is this a problem with the file or with our parsing code?
-            // yikes
+            // yikes -- TODO these contains checks can be improved now that the file parsing has been fixed
             if (databaseType.contains("ipinfo ") && databaseType.contains("asn_free")) {
                 database = Database.Asn;
             } else if (databaseType.contains("ipinfo ") && databaseType.contains("country_free")) {
