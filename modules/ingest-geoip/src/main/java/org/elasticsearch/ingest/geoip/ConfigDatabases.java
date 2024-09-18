@@ -77,13 +77,13 @@ final class ConfigDatabases implements Closeable {
                 ReaderLazyLoader loader = new ReaderLazyLoader(cache, file, null);
                 ReaderLazyLoader existing = configDatabases.put(databaseFileName, loader);
                 if (existing != null) {
-                    existing.close();
+                    existing.shutdown();
                 }
             } else {
                 logger.info("database file removed [{}], close database...", file);
                 ReaderLazyLoader existing = configDatabases.remove(databaseFileName);
                 assert existing != null;
-                existing.close();
+                existing.shutdown();
             }
         } catch (Exception e) {
             logger.error(() -> "failed to update database [" + databaseFileName + "]", e);
@@ -116,7 +116,7 @@ final class ConfigDatabases implements Closeable {
     @Override
     public void close() throws IOException {
         for (ReaderLazyLoader lazyLoader : configDatabases.values()) {
-            lazyLoader.close();
+            lazyLoader.shutdown();
         }
     }
 

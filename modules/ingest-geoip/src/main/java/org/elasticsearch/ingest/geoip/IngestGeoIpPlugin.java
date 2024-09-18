@@ -163,7 +163,7 @@ public class IngestGeoIpPlugin extends Plugin
 
     @Override
     public void close() throws IOException {
-        databaseRegistry.get().close();
+        databaseRegistry.get().shutdown();
     }
 
     @Override
