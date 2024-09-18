@@ -44,12 +44,11 @@ class MaxMindIpDataLookups {
 
     static class AnonymousIp extends AbstractBase<AnonymousIpResponse> {
         AnonymousIp(final Set<Database.Property> properties) {
-            super(properties, AnonymousIpResponse.class);
-        }
-
-        @Override
-        protected AnonymousIpResponse buildResponse(AnonymousIpResponse resp, String ipAddress, Network network, List<String> locales) {
-            return new AnonymousIpResponse(resp, ipAddress, network);
+            super(
+                properties,
+                AnonymousIpResponse.class,
+                (response, ipAddress, network, locales) -> new AnonymousIpResponse(response, ipAddress, network)
+            );
         }
 
         @Override
@@ -91,12 +90,7 @@ class MaxMindIpDataLookups {
 
     static class Asn extends AbstractBase<AsnResponse> {
         Asn(Set<Database.Property> properties) {
-            super(properties, AsnResponse.class);
-        }
-
-        @Override
-        protected AsnResponse buildResponse(AsnResponse resp, String ipAddress, Network network, List<String> locales) {
-            return new AsnResponse(resp, ipAddress, network);
+            super(properties, AsnResponse.class, (response, ipAddress, network, locales) -> new AsnResponse(response, ipAddress, network));
         }
 
         @Override
@@ -132,12 +126,7 @@ class MaxMindIpDataLookups {
 
     static class City extends AbstractBase<CityResponse> {
         City(final Set<Database.Property> properties) {
-            super(properties, CityResponse.class);
-        }
-
-        @Override
-        protected CityResponse buildResponse(CityResponse resp, String ipAddress, Network network, List<String> locales) {
-            return new CityResponse(resp, ipAddress, network, locales);
+            super(properties, CityResponse.class, CityResponse::new);
         }
 
         @Override
@@ -222,17 +211,11 @@ class MaxMindIpDataLookups {
 
     static class ConnectionType extends AbstractBase<ConnectionTypeResponse> {
         ConnectionType(final Set<Database.Property> properties) {
-            super(properties, ConnectionTypeResponse.class);
-        }
-
-        @Override
-        protected ConnectionTypeResponse buildResponse(
-            ConnectionTypeResponse resp,
-            String ipAddress,
-            Network network,
-            List<String> locales
-        ) {
-            return new ConnectionTypeResponse(resp, ipAddress, network);
+            super(
+                properties,
+                ConnectionTypeResponse.class,
+                (response, ipAddress, network, locales) -> new ConnectionTypeResponse(response, ipAddress, network)
+            );
         }
 
         @Override
@@ -256,12 +239,7 @@ class MaxMindIpDataLookups {
 
     static class Country extends AbstractBase<CountryResponse> {
         Country(final Set<Database.Property> properties) {
-            super(properties, CountryResponse.class);
-        }
-
-        @Override
-        protected CountryResponse buildResponse(CountryResponse resp, String ipAddress, Network network, List<String> locales) {
-            return new CountryResponse(resp, ipAddress, network, locales);
+            super(properties, CountryResponse.class, CountryResponse::new);
         }
 
         @Override
@@ -305,12 +283,11 @@ class MaxMindIpDataLookups {
 
     static class Domain extends AbstractBase<DomainResponse> {
         Domain(final Set<Database.Property> properties) {
-            super(properties, DomainResponse.class);
-        }
-
-        @Override
-        protected DomainResponse buildResponse(DomainResponse resp, String ipAddress, Network network, List<String> locales) {
-            return new DomainResponse(resp, ipAddress, network);
+            super(
+                properties,
+                DomainResponse.class,
+                (response, ipAddress, network, locales) -> new DomainResponse(response, ipAddress, network)
+            );
         }
 
         @Override
@@ -334,12 +311,7 @@ class MaxMindIpDataLookups {
 
     static class Enterprise extends AbstractBase<EnterpriseResponse> {
         Enterprise(final Set<Database.Property> properties) {
-            super(properties, EnterpriseResponse.class);
-        }
-
-        @Override
-        protected EnterpriseResponse buildResponse(EnterpriseResponse resp, String ipAddress, Network network, List<String> locales) {
-            return new EnterpriseResponse(resp, ipAddress, network, locales);
+            super(properties, EnterpriseResponse.class, EnterpriseResponse::new);
         }
 
         @Override
@@ -514,12 +486,7 @@ class MaxMindIpDataLookups {
 
     static class Isp extends AbstractBase<IspResponse> {
         Isp(final Set<Database.Property> properties) {
-            super(properties, IspResponse.class);
-        }
-
-        @Override
-        protected IspResponse buildResponse(IspResponse resp, String ipAddress, Network network, List<String> locales) {
-            return new IspResponse(resp, ipAddress, network);
+            super(properties, IspResponse.class, (response, ipAddress, network, locales) -> new IspResponse(response, ipAddress, network));
         }
 
         @Override
@@ -578,7 +545,19 @@ class MaxMindIpDataLookups {
     }
 
     /**
-     * The {@code MaxMindGeoDataLookups.AbstractBase} is an abstract base implementation of {@link IpDataLookup} that
+     * As an internal detail, the {@code com.maxmind.geoip2.model } classes that are populated by
+     * {@link Reader#getRecord(InetAddress, Class)} are kinda half-populated and need to go through a second round of construction
+     * with context from the querying caller. This method gives us a place do that additional binding. Cleverly, the signature
+     * here matches the constructor for many of these model classes exactly, so an appropriate implementation can 'just' be a method
+     * reference in some cases (in other cases it needs to be a lambda).
+     */
+    @FunctionalInterface
+    private interface ResponseBuilder<RESPONSE extends AbstractResponse> {
+        RESPONSE build(RESPONSE resp, String address, Network network, List<String> locales);
+    }
+
+    /**
+     * The {@code MaxmindGeoDataLookups.AbstractBase} is an abstract base implementation of {@link IpDataLookup} that
      * provides common functionality for getting a specific kind of {@link AbstractResponse} from a {@link IpDatabase}.
      *
      * @param <RESPONSE> the intermediate type of {@link AbstractResponse}
@@ -587,10 +566,12 @@ class MaxMindIpDataLookups {
 
         protected final Set<Database.Property> properties;
         protected final Class<RESPONSE> clazz;
+        protected final ResponseBuilder<RESPONSE> builder;
 
-        AbstractBase(final Set<Database.Property> properties, final Class<RESPONSE> clazz) {
+        AbstractBase(final Set<Database.Property> properties, final Class<RESPONSE> clazz, final ResponseBuilder<RESPONSE> builder) {
             this.properties = Set.copyOf(properties);
             this.clazz = clazz;
+            this.builder = builder;
         }
 
         @Override
@@ -615,11 +596,9 @@ class MaxMindIpDataLookups {
             if (result == null) {
                 return Optional.empty();
             } else {
-                return Optional.of(buildResponse(result, NetworkAddress.format(ip), record.getNetwork(), List.of("en")));
+                return Optional.of(builder.build(result, NetworkAddress.format(ip), record.getNetwork(), List.of("en")));
             }
         }
-
-        protected abstract RESPONSE buildResponse(RESPONSE resp, String ipAddress, Network network, List<String> locales);
 
         /**
          * Extract the configured properties from the retrieved response
