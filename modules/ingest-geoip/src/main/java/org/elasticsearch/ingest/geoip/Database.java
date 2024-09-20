@@ -9,6 +9,7 @@
 
 package org.elasticsearch.ingest.geoip;
 
+import org.elasticsearch.common.Strings;
 import org.elasticsearch.core.Nullable;
 
 import java.util.Arrays;
@@ -149,6 +150,12 @@ enum Database {
         )
     );
 
+    // initial dispatch uses case-insensitive prefix matching
+    private static final String GEOIP2_PREFIX = "GeoIP2".toLowerCase(Locale.ROOT);
+    private static final String GEOLITE2_PREFIX = "GeoLite2".toLowerCase(Locale.ROOT);
+    private static final String IPINFO_PREFIX = "ipinfo";
+
+    // subsequent dispatch is case-sensitive suffix matching
     public static final String CITY_DB_SUFFIX = "-City";
     public static final String COUNTRY_DB_SUFFIX = "-Country";
     public static final String ASN_DB_SUFFIX = "-ASN";
@@ -157,6 +164,40 @@ enum Database {
     public static final String DOMAIN_DB_SUFFIX = "-Domain";
     public static final String ENTERPRISE_DB_SUFFIX = "-Enterprise";
     public static final String ISP_DB_SUFFIX = "-ISP";
+
+    private static Database getMaxmindDatabase(final String databaseType) {
+        Database database = null;
+        if (databaseType.endsWith(Database.CITY_DB_SUFFIX)) {
+            database = Database.City;
+        } else if (databaseType.endsWith(Database.COUNTRY_DB_SUFFIX)) {
+            database = Database.Country;
+        } else if (databaseType.endsWith(Database.ASN_DB_SUFFIX)) {
+            database = Database.Asn;
+        } else if (databaseType.endsWith(Database.ANONYMOUS_IP_DB_SUFFIX)) {
+            database = Database.AnonymousIp;
+        } else if (databaseType.endsWith(Database.CONNECTION_TYPE_DB_SUFFIX)) {
+            database = Database.ConnectionType;
+        } else if (databaseType.endsWith(Database.DOMAIN_DB_SUFFIX)) {
+            database = Database.Domain;
+        } else if (databaseType.endsWith(Database.ENTERPRISE_DB_SUFFIX)) {
+            database = Database.Enterprise;
+        } else if (databaseType.endsWith(Database.ISP_DB_SUFFIX)) {
+            database = Database.Isp;
+        }
+        return database;
+    }
+
+    private static Database getIpinfoDatabase(final String databaseType) {
+        Database database = null;
+        if (databaseType.contains("asn_free")) {
+            database = Database.Asn;
+        } else if (databaseType.contains("country_free")) {
+            database = Database.Country;
+        } else if (databaseType.contains("ip_geolocation")) {
+            database = Database.City;
+        }
+        return database;
+    }
 
     /**
      * Parses the passed-in databaseType (presumably from the passed-in databaseFile) and return the Database instance that is
@@ -169,32 +210,19 @@ enum Database {
      */
     public static Database getDatabase(final String databaseType, final String databaseFile) {
         Database database = null;
-        if (databaseType != null) {
-            // yikes -- TODO these contains checks can be improved now that the file parsing has been fixed
-            if (databaseType.contains("ipinfo ") && databaseType.contains("asn_free")) {
-                database = Database.Asn;
-            } else if (databaseType.contains("ipinfo ") && databaseType.contains("country_free")) {
-                database = Database.Country;
-            } else if (databaseType.contains("ipinfo ") && databaseType.contains("ip_geolocation")) {
-                database = Database.City;
-            }
-            // yikes
-            else if (databaseType.endsWith(Database.CITY_DB_SUFFIX)) {
-                database = Database.City;
-            } else if (databaseType.endsWith(Database.COUNTRY_DB_SUFFIX)) {
-                database = Database.Country;
-            } else if (databaseType.endsWith(Database.ASN_DB_SUFFIX)) {
-                database = Database.Asn;
-            } else if (databaseType.endsWith(Database.ANONYMOUS_IP_DB_SUFFIX)) {
-                database = Database.AnonymousIp;
-            } else if (databaseType.endsWith(Database.CONNECTION_TYPE_DB_SUFFIX)) {
-                database = Database.ConnectionType;
-            } else if (databaseType.endsWith(Database.DOMAIN_DB_SUFFIX)) {
-                database = Database.Domain;
-            } else if (databaseType.endsWith(Database.ENTERPRISE_DB_SUFFIX)) {
-                database = Database.Enterprise;
-            } else if (databaseType.endsWith(Database.ISP_DB_SUFFIX)) {
-                database = Database.Isp;
+
+        // TODO yikes, I dunno, this code seems a bit funky
+
+        if (Strings.hasText(databaseType)) {
+            final String databaseTypeLowerCase = databaseType.toLowerCase(Locale.ROOT);
+
+            if (databaseTypeLowerCase.startsWith(GEOIP2_PREFIX) || databaseTypeLowerCase.startsWith(GEOLITE2_PREFIX)) {
+                database = getMaxmindDatabase(databaseType);
+            } else if (databaseTypeLowerCase.startsWith(IPINFO_PREFIX)) {
+                database = getIpinfoDatabase(databaseType);
+            } else {
+                // for historical reasons, fall back to assuming maxmind-like type parsing
+                database = getMaxmindDatabase(databaseType);
             }
         }
 
