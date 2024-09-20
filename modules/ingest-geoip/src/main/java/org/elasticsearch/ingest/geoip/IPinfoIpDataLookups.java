@@ -133,7 +133,7 @@ final class IPinfoIpDataLookups {
         @Override
         protected Map<String, Object> transform(final Result<IPinfoASN> result) {
             IPinfoASN response = result.result;
-            long asn = response.asn;
+            Long asn = response.asn;
             String organizationName = response.name;
             String network = result.network;
 
@@ -142,7 +142,9 @@ final class IPinfoIpDataLookups {
                 switch (property) {
                     case IP -> data.put("ip", result.ip);
                     case ASN -> {
-                        data.put("asn", asn);
+                        if (asn != null) {
+                            data.put("asn", asn);
+                        }
                     }
                     case ORGANIZATION_NAME -> {
                         if (organizationName != null) {
