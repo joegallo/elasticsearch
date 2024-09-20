@@ -221,6 +221,11 @@ class IPinfoIpDataLookups {
         }
     }
 
+    /**
+     * Just a little record holder -- there's the data that we receive via the binding to our record objects from the Reader via the
+     * getRecord call, but then we also need to capture the passed-in ip address that came from the caller as well as the network for
+     * the returned DatabaseRecord from the Reader.
+     */
     public record Result<T>(T result, String ip, String network) {}
 
     /**
