@@ -84,8 +84,8 @@ public class IPinfoIpDataLookupsTests extends ESTestCase {
 
         {
             ReaderLazyLoader loader = configDatabases.getDatabase("asn.mmdb");
-            IpDataLookup asn = new IPinfoIpDataLookups.Asn(Set.of(Database.Property.values()));
-            Map<String, Object> data = asn.get(loader, "64.67.15.209");
+            IpDataLookup lookup = new IPinfoIpDataLookups.Asn(Set.of(Database.Property.values()));
+            Map<String, Object> data = lookup.get(loader, "64.67.15.209");
             assertThat(
                 data,
                 equalTo(
@@ -102,8 +102,8 @@ public class IPinfoIpDataLookupsTests extends ESTestCase {
 
         {
             ReaderLazyLoader loader = configDatabases.getDatabase("asn_sample.mmdb");
-            IpDataLookup asn = new IPinfoIpDataLookups.Asn(Set.of(Database.Property.values()));
-            Map<String, Object> data = asn.get(loader, "24.248.118.0");
+            IpDataLookup lookup = new IPinfoIpDataLookups.Asn(Set.of(Database.Property.values()));
+            Map<String, Object> data = lookup.get(loader, "24.248.118.0");
             assertThat(
                 data,
                 equalTo(
@@ -115,6 +115,82 @@ public class IPinfoIpDataLookupsTests extends ESTestCase {
                         entry("domain", "cox.com"),
                         entry("country_iso_code", "US"),
                         entry("type", "isp")
+                    )
+                )
+            );
+        }
+    }
+
+    public void testGeolocation() throws IOException {
+        Path configDir = createTempDir();
+        copyDatabase("ip_geolocation_sample.mmdb", configDir);
+
+        GeoIpCache cache = new GeoIpCache(1000); // real cache to test purging of entries upon a reload
+        ConfigDatabases configDatabases = new ConfigDatabases(configDir, cache);
+        configDatabases.initialize(resourceWatcherService);
+
+        {
+            ReaderLazyLoader loader = configDatabases.getDatabase("ip_geolocation_sample.mmdb");
+            IpDataLookup lookup = new IPinfoIpDataLookups.City(Set.of(Database.Property.values()));
+            Map<String, Object> data = lookup.get(loader, "1.20.16.64");
+            assertThat(
+                data,
+                equalTo(
+                    Map.ofEntries(
+                        entry("ip", "1.20.16.64"),
+                        entry("country_iso_code", "TH"),
+                        entry("region_name", "Bangkok"),
+                        entry("city_name", "Bangkok"),
+                        entry("timezone", "Asia/Bangkok"),
+                        entry("location", Map.of("lat", 13.75398, "lon", 100.50144))
+                    )
+                )
+            );
+        }
+    }
+
+    public void testPrivacyDetection() throws IOException {
+        Path configDir = createTempDir();
+        copyDatabase("privacy_detection_sample.mmdb", configDir);
+
+        GeoIpCache cache = new GeoIpCache(1000); // real cache to test purging of entries upon a reload
+        ConfigDatabases configDatabases = new ConfigDatabases(configDir, cache);
+        configDatabases.initialize(resourceWatcherService);
+
+        {
+            ReaderLazyLoader loader = configDatabases.getDatabase("privacy_detection_sample.mmdb");
+            IpDataLookup lookup = new IPinfoIpDataLookups.PrivacyDetection(Set.of(Database.Property.values()));
+            Map<String, Object> data = lookup.get(loader, "12.181.21.18");
+            assertThat(
+                data,
+                equalTo(
+                    Map.ofEntries(
+                        entry("ip", "12.181.21.18"),
+                        entry("hosting_provider", false),
+                        entry("proxy", false),
+                        entry("relay", false),
+                        entry("tor_exit_node", false),
+                        entry("vpn", true)
+                    )
+                )
+            );
+        }
+
+        {
+            ReaderLazyLoader loader = configDatabases.getDatabase("privacy_detection_sample.mmdb");
+            IpDataLookup lookup = new IPinfoIpDataLookups.PrivacyDetection(Set.of(Database.Property.values()));
+            Map<String, Object> data = lookup.get(loader, "140.248.38.0");
+            assertThat(
+                data,
+                equalTo(
+                    Map.ofEntries(
+                        entry("ip", "140.248.38.0"),
+                        entry("hosting_provider", true),
+                        entry("proxy", false),
+                        entry("service", "Apple Private Relay"),
+                        entry("relay", true),
+                        entry("tor_exit_node", false),
+                        entry("vpn", false)
                     )
                 )
             );
