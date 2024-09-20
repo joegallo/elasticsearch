@@ -247,11 +247,7 @@ class IPinfoIpDataLookups {
         @Override
         public final Map<String, Object> get(final IpDatabase ipDatabase, final String ipAddress) {
             Result<RESPONSE> resp = ipDatabase.getResponse(ipAddress, this::lookup);
-            if (resp == null || resp.result == null) {
-                return Map.of();
-            } else {
-                return transformResponse(resp);
-            }
+            return (resp == null || resp.result == null) ? Map.of() : transformResponse(resp);
         }
 
         protected Result<RESPONSE> lookup(Reader reader, String ipAddress) throws IOException {
