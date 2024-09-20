@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -255,15 +254,11 @@ class IPinfoIpDataLookups {
             }
         }
 
-        protected Optional<Result<RESPONSE>> lookup(Reader reader, String ipAddress) throws IOException {
+        protected Result<RESPONSE> lookup(Reader reader, String ipAddress) throws IOException {
             InetAddress ip = InetAddresses.forString(ipAddress);
             DatabaseRecord<RESPONSE> record = reader.getRecord(ip, clazz);
             RESPONSE result = record.getData();
-            if (result == null) {
-                return Optional.empty();
-            } else {
-                return Optional.of(new Result<>(result, NetworkAddress.format(ip), record.getNetwork().toString()));
-            }
+            return (result == null) ? null : new Result<>(result, NetworkAddress.format(ip), record.getNetwork().toString());
         }
 
         /**
