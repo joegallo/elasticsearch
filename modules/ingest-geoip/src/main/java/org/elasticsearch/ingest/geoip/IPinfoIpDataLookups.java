@@ -125,6 +125,22 @@ final class IPinfoIpDataLookups {
         }
     }
 
+    public record IPinfoPrivacyDetection(Boolean hosting, Boolean proxy, Boolean relay, String service, Boolean tor, Boolean vpn) {
+        @SuppressWarnings("checkstyle:RedundantModifier")
+        @MaxMindDbConstructor
+        public IPinfoPrivacyDetection(
+            @MaxMindDbParameter(name = "hosting") String hosting,
+            // @MaxMindDbParameter(name = "network") String network, // what do we want to do with this one?
+            @MaxMindDbParameter(name = "proxy") String proxy,
+            @MaxMindDbParameter(name = "relay") String relay,
+            @MaxMindDbParameter(name = "service") String service,
+            @MaxMindDbParameter(name = "tor") String tor,
+            @MaxMindDbParameter(name = "vpn") String vpn
+        ) {
+            this(parseBoolean(hosting), parseBoolean(proxy), parseBoolean(relay), service, parseBoolean(tor), parseBoolean(vpn));
+        }
+    }
+
     static class Asn extends AbstractBase<IPinfoASN> {
         Asn(Set<Database.Property> properties) {
             super(properties, IPinfoASN.class);
@@ -265,6 +281,55 @@ final class IPinfoIpDataLookups {
                         String continentName = response.continentName;
                         if (continentName != null) {
                             data.put("continent_name", continentName);
+                        }
+                    }
+                }
+            }
+            return data;
+        }
+    }
+
+    static class PrivacyDetection extends AbstractBase<IPinfoPrivacyDetection> {
+        PrivacyDetection(Set<Database.Property> properties) {
+            super(properties, IPinfoPrivacyDetection.class);
+        }
+
+        @Override
+        protected Map<String, Object> transform(final Result<IPinfoPrivacyDetection> result) {
+            IPinfoPrivacyDetection response = result.result;
+
+            Map<String, Object> data = new HashMap<>();
+            for (Database.Property property : this.properties) {
+                switch (property) {
+                    case IP -> data.put("ip", result.ip);
+                    case HOSTING_PROVIDER -> {
+                        if (response.hosting != null) {
+                            data.put("hosting_provider", response.hosting); // TODO name in response doc
+                        }
+                    }
+                    case TOR_EXIT_NODE -> {
+                        if (response.tor != null) {
+                            data.put("tor_exit_node", response.tor); // TODO name in response doc
+                        }
+                    }
+                    case PROXY -> {
+                        if (response.proxy != null) {
+                            data.put("proxy", response.proxy);
+                        }
+                    }
+                    case RELAY -> {
+                        if (response.relay != null) {
+                            data.put("relay", response.relay);
+                        }
+                    }
+                    case VPN -> {
+                        if (response.vpn != null) {
+                            data.put("vpn", response.vpn);
+                        }
+                    }
+                    case SERVICE -> {
+                        if (Strings.hasText(response.service)) {
+                            data.put("service", response.service);
                         }
                     }
                 }

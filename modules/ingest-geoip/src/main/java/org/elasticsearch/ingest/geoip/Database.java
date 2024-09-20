@@ -278,7 +278,12 @@ enum Database {
         MOBILE_NETWORK_CODE,
         CONNECTION_TYPE,
         USER_TYPE,
-        TYPE;
+        // TODO YIKES
+        TYPE,
+        PROXY,
+        RELAY,
+        VPN,
+        SERVICE;
 
         /**
          * Parses a string representation of a property into an actual Property instance. Not all properties that exist are
