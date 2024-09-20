@@ -137,41 +137,41 @@ final class IPinfoIpDataLookups {
             String organizationName = response.name;
             String network = result.network;
 
-            Map<String, Object> geoData = new HashMap<>();
+            Map<String, Object> data = new HashMap<>();
             for (Database.Property property : this.properties) {
                 switch (property) {
-                    case IP -> geoData.put("ip", result.ip);
+                    case IP -> data.put("ip", result.ip);
                     case ASN -> {
-                        geoData.put("asn", asn);
+                        data.put("asn", asn);
                     }
                     case ORGANIZATION_NAME -> {
                         if (organizationName != null) {
-                            geoData.put("organization_name", organizationName);
+                            data.put("organization_name", organizationName);
                         }
                     }
                     case NETWORK -> {
                         if (network != null) {
-                            geoData.put("network", network);
+                            data.put("network", network);
                         }
                     }
                     case COUNTRY_ISO_CODE -> {
                         if (response.country != null) {
-                            geoData.put("country_iso_code", response.country);
+                            data.put("country_iso_code", response.country);
                         }
                     }
                     case DOMAIN -> {
                         if (response.domain != null) {
-                            geoData.put("domain", response.domain);
+                            data.put("domain", response.domain);
                         }
                     }
                     case TYPE -> {
                         if (response.type != null) {
-                            geoData.put("type", response.type);
+                            data.put("type", response.type);
                         }
                     }
                 }
             }
-            return geoData;
+            return data;
         }
     }
 
@@ -184,32 +184,32 @@ final class IPinfoIpDataLookups {
         protected Map<String, Object> transform(final Result<IPinfoGeolocation> result) {
             IPinfoGeolocation response = result.result;
 
-            Map<String, Object> geoData = new HashMap<>();
+            Map<String, Object> data = new HashMap<>();
             for (Database.Property property : this.properties) {
                 switch (property) {
-                    case IP -> geoData.put("ip", result.ip);
+                    case IP -> data.put("ip", result.ip);
                     case COUNTRY_ISO_CODE -> {
                         String countryIsoCode = response.country;
                         if (countryIsoCode != null) {
-                            geoData.put("country_iso_code", countryIsoCode);
+                            data.put("country_iso_code", countryIsoCode);
                         }
                     }
                     case REGION_NAME -> {
                         String subdivisionName = response.region;
                         if (subdivisionName != null) {
-                            geoData.put("region_name", subdivisionName);
+                            data.put("region_name", subdivisionName);
                         }
                     }
                     case CITY_NAME -> {
                         String cityName = response.city;
                         if (cityName != null) {
-                            geoData.put("city_name", cityName);
+                            data.put("city_name", cityName);
                         }
                     }
                     case TIMEZONE -> {
                         String locationTimeZone = response.timezone;
                         if (locationTimeZone != null) {
-                            geoData.put("timezone", locationTimeZone);
+                            data.put("timezone", locationTimeZone);
                         }
                     }
                     case LOCATION -> {
@@ -219,12 +219,12 @@ final class IPinfoIpDataLookups {
                             Map<String, Object> locationObject = new HashMap<>();
                             locationObject.put("lat", latitude);
                             locationObject.put("lon", longitude);
-                            geoData.put("location", locationObject);
+                            data.put("location", locationObject);
                         }
                     }
                 }
             }
-            return geoData;
+            return data;
         }
     }
 
@@ -237,37 +237,37 @@ final class IPinfoIpDataLookups {
         protected Map<String, Object> transform(final Result<IPinfoCountry> result) {
             IPinfoCountry response = result.result;
 
-            Map<String, Object> geoData = new HashMap<>();
+            Map<String, Object> data = new HashMap<>();
             for (Database.Property property : this.properties) {
                 switch (property) {
-                    case IP -> geoData.put("ip", result.ip);
+                    case IP -> data.put("ip", result.ip);
                     case COUNTRY_ISO_CODE -> {
                         String countryIsoCode = response.country;
                         if (countryIsoCode != null) {
-                            geoData.put("country_iso_code", countryIsoCode);
+                            data.put("country_iso_code", countryIsoCode);
                         }
                     }
                     case COUNTRY_NAME -> {
                         String countryName = response.countryName;
                         if (countryName != null) {
-                            geoData.put("country_name", countryName);
+                            data.put("country_name", countryName);
                         }
                     }
                     case CONTINENT_CODE -> {
                         String continentCode = response.continent;
                         if (continentCode != null) {
-                            geoData.put("continent_code", continentCode);
+                            data.put("continent_code", continentCode);
                         }
                     }
                     case CONTINENT_NAME -> {
                         String continentName = response.continentName;
                         if (continentName != null) {
-                            geoData.put("continent_name", continentName);
+                            data.put("continent_name", continentName);
                         }
                     }
                 }
             }
-            return geoData;
+            return data;
         }
     }
 
