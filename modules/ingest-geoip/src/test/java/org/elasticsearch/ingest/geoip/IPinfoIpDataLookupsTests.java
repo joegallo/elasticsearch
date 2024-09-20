@@ -25,7 +25,10 @@ import java.util.Set;
 
 import static java.util.Map.entry;
 import static org.elasticsearch.ingest.geoip.GeoIpTestUtils.copyDatabase;
+import static org.elasticsearch.ingest.geoip.IPinfoIpDataLookups.parseAsn;
+import static org.elasticsearch.ingest.geoip.IPinfoIpDataLookups.parseBoolean;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.nullValue;
 
 public class IPinfoIpDataLookupsTests extends ESTestCase {
 
@@ -43,6 +46,31 @@ public class IPinfoIpDataLookupsTests extends ESTestCase {
     public void cleanup() {
         resourceWatcherService.close();
         threadPool.shutdownNow();
+    }
+
+    public void testParseAsn() {
+        // expected case: "AS123" is 123
+        assertThat(parseAsn("AS123"), equalTo(123L));
+        // defensive case: null becomes null, this is not expected fwiw
+        assertThat(parseAsn(null), nullValue());
+        assertThat(parseAsn(""), nullValue());
+        // defensive cases: we strip whitespace and ignore case
+        assertThat(parseAsn(" as 456  "), equalTo(456L));
+        // edge case: any non-parsable string is null
+        assertThat(parseAsn("anythingelse"), nullValue());
+    }
+
+    public void testParseBoolean() {
+        // expected cases: "true" is true and "" is false
+        assertThat(parseBoolean(""), equalTo(false));
+        assertThat(parseBoolean("true"), equalTo(true));
+        // defensive case: null becomes null, this is not expected fwiw
+        assertThat(parseBoolean(null), nullValue());
+        // defensive cases: we strip whitespace and ignore case
+        assertThat(parseBoolean("    "), equalTo(false));
+        assertThat(parseBoolean(" TrUe "), equalTo(true));
+        // edge case: any non-"true" (ignoring whitespace and casing) string is false
+        assertThat(parseBoolean(randomAlphaOfLength(5)), equalTo(false));
     }
 
     public void testAsn() throws IOException {

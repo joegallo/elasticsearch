@@ -39,8 +39,11 @@ import java.util.Set;
 /**
  * A collection of {@link IpDataLookup} implementations for MaxMind databases
  */
-class MaxMindIpDataLookups {
-    private MaxMindIpDataLookups() {}
+final class MaxMindIpDataLookups {
+
+    private MaxMindIpDataLookups() {
+        // utility class
+    }
 
     static class AnonymousIp extends AbstractBase<AnonymousIpResponse> {
         AnonymousIp(final Set<Database.Property> properties) {

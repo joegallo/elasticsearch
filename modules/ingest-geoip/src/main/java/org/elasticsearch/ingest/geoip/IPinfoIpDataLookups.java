@@ -14,6 +14,7 @@ import com.maxmind.db.MaxMindDbConstructor;
 import com.maxmind.db.MaxMindDbParameter;
 import com.maxmind.db.Reader;
 
+import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.network.InetAddresses;
 import org.elasticsearch.common.network.NetworkAddress;
 import org.elasticsearch.core.Nullable;
@@ -21,14 +22,53 @@ import org.elasticsearch.core.Nullable;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
 /**
  * A collection of {@link IpDataLookup} implementations for IPinfo databases
  */
-class IPinfoIpDataLookups {
-    private IPinfoIpDataLookups() {}
+final class IPinfoIpDataLookups {
+
+    private IPinfoIpDataLookups() {
+        // utility class
+    }
+
+    static Long parseAsn(String asn) {
+        if (asn == null || Strings.hasText(asn) == false) {
+            return null;
+        } else {
+            String stripped = asn.toUpperCase(Locale.ROOT).replaceAll("AS", "").trim();
+            try {
+                return Long.parseLong(stripped);
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+    }
+
+    static Boolean parseBoolean(String bool) {
+        if (bool == null) {
+            return null;
+        } else {
+            String trimmed = bool.trim();
+            return "true".equalsIgnoreCase(trimmed);
+        }
+    }
+
+    static Double parseLocationDouble(String latlon) {
+        if (latlon == null || Strings.hasText(latlon) == false) {
+            return null;
+        } else {
+            String stripped = latlon.trim();
+            try {
+                return Double.parseDouble(stripped);
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
+    }
 
     public record IPinfoASN(
         Long asn, //
@@ -46,7 +86,7 @@ class IPinfoIpDataLookups {
             @MaxMindDbParameter(name = "name") String name,
             @Nullable @MaxMindDbParameter(name = "type") String type
         ) {
-            this(Long.parseLong(asn.replaceAll("AS", "")), country, domain, name, type);
+            this(parseAsn(asn), country, domain, name, type);
         }
     }
 
@@ -61,17 +101,28 @@ class IPinfoIpDataLookups {
     }
 
     public record IPinfoGeolocation(
-        @MaxMindDbParameter(name = "city") String city,
-        @MaxMindDbParameter(name = "country") String country,
-        @MaxMindDbParameter(name = "latitude") String latitude,
-        @MaxMindDbParameter(name = "longitude") String longitude,
-        // @MaxMindDbParameter(name = "network") String network, // what do we want to do with this one?
-        @MaxMindDbParameter(name = "postal_code") String postalCode, // what do we want to do with this one?
-        @MaxMindDbParameter(name = "region") String region,
-        @MaxMindDbParameter(name = "timezone") String timezone
+        String city,
+        String country,
+        Double latitude,
+        Double longitude,
+        String postalCode, // what do we want to do with this one?
+        String region,
+        String timezone
     ) {
+        @SuppressWarnings("checkstyle:RedundantModifier")
         @MaxMindDbConstructor
-        public IPinfoGeolocation {}
+        public IPinfoGeolocation(
+            @MaxMindDbParameter(name = "city") String city,
+            @MaxMindDbParameter(name = "country") String country,
+            @MaxMindDbParameter(name = "latitude") String latitude,
+            @MaxMindDbParameter(name = "longitude") String longitude,
+            // @MaxMindDbParameter(name = "network") String network, // what do we want to do with this one?
+            @MaxMindDbParameter(name = "postal_code") String postalCode, // what do we want to do with this one?
+            @MaxMindDbParameter(name = "region") String region,
+            @MaxMindDbParameter(name = "timezone") String timezone
+        ) {
+            this(city, country, parseLocationDouble(latitude), parseLocationDouble(longitude), postalCode, region, timezone);
+        }
     }
 
     static class Asn extends AbstractBase<IPinfoASN> {
@@ -162,9 +213,8 @@ class IPinfoIpDataLookups {
                         }
                     }
                     case LOCATION -> {
-                        // todo bleh -- can we parse these in advance once?
-                        Double latitude = Double.parseDouble(response.latitude);
-                        Double longitude = Double.parseDouble(response.longitude);
+                        Double latitude = response.latitude;
+                        Double longitude = response.longitude;
                         if (latitude != null && longitude != null) {
                             Map<String, Object> locationObject = new HashMap<>();
                             locationObject.put("lat", latitude);
