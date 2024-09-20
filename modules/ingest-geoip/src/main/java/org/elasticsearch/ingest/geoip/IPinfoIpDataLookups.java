@@ -80,7 +80,7 @@ class IPinfoIpDataLookups {
         }
 
         @Override
-        protected Map<String, Object> transformResponse(final Result<IPinfoASN> result) {
+        protected Map<String, Object> transform(final Result<IPinfoASN> result) {
             IPinfoASN response = result.result;
             long asn = response.asn;
             String organizationName = response.name;
@@ -130,7 +130,7 @@ class IPinfoIpDataLookups {
         }
 
         @Override
-        protected Map<String, Object> transformResponse(final Result<IPinfoGeolocation> result) {
+        protected Map<String, Object> transform(final Result<IPinfoGeolocation> result) {
             IPinfoGeolocation response = result.result;
 
             Map<String, Object> geoData = new HashMap<>();
@@ -184,7 +184,7 @@ class IPinfoIpDataLookups {
         }
 
         @Override
-        protected Map<String, Object> transformResponse(final Result<IPinfoCountry> result) {
+        protected Map<String, Object> transform(final Result<IPinfoCountry> result) {
             IPinfoCountry response = result.result;
 
             Map<String, Object> geoData = new HashMap<>();
@@ -247,10 +247,11 @@ class IPinfoIpDataLookups {
         @Override
         public final Map<String, Object> get(final IpDatabase ipDatabase, final String ipAddress) {
             final Result<RESPONSE> response = ipDatabase.getResponse(ipAddress, this::lookup);
-            return (response == null || response.result == null) ? Map.of() : transformResponse(response);
+            return (response == null || response.result == null) ? Map.of() : transform(response);
         }
 
-        protected Result<RESPONSE> lookup(Reader reader, String ipAddress) throws IOException {
+        @Nullable
+        private Result<RESPONSE> lookup(final Reader reader, final String ipAddress) throws IOException {
             final InetAddress ip = InetAddresses.forString(ipAddress);
             final DatabaseRecord<RESPONSE> record = reader.getRecord(ip, clazz);
             final RESPONSE data = record.getData();
@@ -259,9 +260,9 @@ class IPinfoIpDataLookups {
 
         /**
          * Extract the configured properties from the retrieved response
-         * @param response the response that was retrieved
+         * @param response the non-null response that was retrieved
          * @return a mapping of properties for the ip from the response
          */
-        protected abstract Map<String, Object> transformResponse(Result<RESPONSE> response);
+        protected abstract Map<String, Object> transform(Result<RESPONSE> response);
     }
 }
