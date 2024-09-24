@@ -35,7 +35,7 @@ final class IPinfoIpDataLookups {
         // utility class
     }
 
-    static Long parseAsn(String asn) {
+    static Long parseAsn(final String asn) {
         if (asn == null || Strings.hasText(asn) == false) {
             return null;
         } else {
@@ -48,12 +48,26 @@ final class IPinfoIpDataLookups {
         }
     }
 
-    static Boolean parseBoolean(String bool) {
+    static Boolean parseBoolean(final String bool) {
         if (bool == null) {
             return null;
         } else {
             String trimmed = bool.trim();
-            return "true".equalsIgnoreCase(trimmed);
+            // TODO yikes: let's think about how we want to handle this logic. how future-proof do we want to be?
+            // and how do we want to handle surprising things?
+
+            // note: alternatively, we can: return "true".equalsIgnoreCase(trimmed); // right?
+            if ("true".equalsIgnoreCase(trimmed)) {
+                return true;
+            } else if ("false".equalsIgnoreCase(trimmed)) { // note: see conversation in slack, also don't commit this comment
+                return false;
+            } else if (trimmed.isEmpty()) {
+                // as a fallback, empty string can represent false
+                return false;
+            } else {
+                // there's no much we can do in this case
+                return null;
+            }
         }
     }
 
