@@ -34,6 +34,7 @@ import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.ingest.EnterpriseGeoIpTask;
+import org.elasticsearch.ingest.geoip.EnterpriseGeoIpDownloader.Checksum;
 import org.elasticsearch.ingest.geoip.direct.DatabaseConfiguration;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.persistent.PersistentTasksCustomMetadata;
@@ -206,8 +207,7 @@ public class EnterpriseGeoIpDownloaderTests extends ESTestCase {
                 "test",
                 empty,
                 0,
-                MessageDigests.sha256(),
-                "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                Checksum.sha256("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"),
                 0
             )
         );
@@ -228,7 +228,7 @@ public class EnterpriseGeoIpDownloaderTests extends ESTestCase {
 
         IOException exception = expectThrows(
             IOException.class,
-            () -> geoIpDownloader.indexChunks("test", new ByteArrayInputStream(new byte[0]), 0, MessageDigests.sha256(), "123123", 0)
+            () -> geoIpDownloader.indexChunks("test", new ByteArrayInputStream(new byte[0]), 0, Checksum.sha256( "123123"), 0)
         );
         assertEquals(
             "checksum mismatch, expected [123123], actual [e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855]",
@@ -279,8 +279,7 @@ public class EnterpriseGeoIpDownloaderTests extends ESTestCase {
                 "test",
                 big,
                 15,
-                MessageDigests.sha256(),
-                "f2304545f224ff9ffcc585cb0a993723f911e03beb552cc03937dd443e931eab",
+                Checksum.sha256("f2304545f224ff9ffcc585cb0a993723f911e03beb552cc03937dd443e931eab"),
                 0
             )
         );
@@ -316,14 +315,13 @@ public class EnterpriseGeoIpDownloaderTests extends ESTestCase {
                 String name,
                 InputStream is,
                 int chunk,
-                MessageDigest digest,
-                String expectedMd5,
+                Checksum checksum,
                 long start
             ) {
                 assertSame(bais, is);
                 assertEquals(0, chunk);
                 indexedChunks.set(true);
-                return Tuple.tuple(11, expectedMd5);
+                return Tuple.tuple(11, checksum.checksum());
             }
 
             @Override
@@ -375,14 +373,13 @@ public class EnterpriseGeoIpDownloaderTests extends ESTestCase {
                 String name,
                 InputStream is,
                 int chunk,
-                MessageDigest digest,
-                String expectedMd5,
+                Checksum checksum,
                 long start
             ) {
                 assertSame(bais, is);
                 assertEquals(9, chunk);
                 indexedChunks.set(true);
-                return Tuple.tuple(1, expectedMd5);
+                return Tuple.tuple(1, checksum.checksum());
             }
 
             @Override
@@ -444,12 +441,11 @@ public class EnterpriseGeoIpDownloaderTests extends ESTestCase {
                 String name,
                 InputStream is,
                 int chunk,
-                MessageDigest digest,
-                String expectedChecksum,
+                Checksum checksum,
                 long start
             ) {
                 fail();
-                return Tuple.tuple(0, expectedChecksum);
+                return Tuple.tuple(0, checksum.checksum());
             }
 
             @Override

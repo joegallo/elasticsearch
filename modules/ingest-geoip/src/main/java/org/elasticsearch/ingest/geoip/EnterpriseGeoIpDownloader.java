@@ -22,7 +22,6 @@ import org.elasticsearch.cluster.block.ClusterBlockLevel;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.hash.MessageDigests;
-import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -320,7 +319,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
      * Elasticsearch index.
      * <p>
      * As an implementation detail, this method retrieves the sha256 checksum of the database to download and then invokes
-     * {@link EnterpriseGeoIpDownloader#processDatabase(PasswordAuthentication, String, String, String, String)} with that checksum,
+     * {@link EnterpriseGeoIpDownloader#processDatabase(PasswordAuthentication, String, Checksum, String)} with that checksum,
      * deferring to that method to actually download and process the tar.gz itself.
      *
      * @param auth The credentials to use to download from the Maxmind endpoint
@@ -343,7 +342,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         final String sha256 = matcher.group(1);
         // the name that comes from the enterprise downloader cluster state doesn't include the .mmdb extension,
         // but the downloading and indexing of database code expects it to be there, so we add it on here before further processing
-        processDatabase(auth, name + ".mmdb", null, sha256, tgzUrl);
+        processDatabase(auth, name + ".mmdb", Checksum.sha256(sha256), tgzUrl);
     }
 
     void processDatabase2(PasswordAuthentication auth, DatabaseConfiguration database) throws IOException {
@@ -378,30 +377,55 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         }
         // the name that comes from the enterprise downloader cluster state doesn't include the .mmdb extension,
         // but the downloading and indexing of database code expects it to be there, so we add it on here before further processing
-        processDatabase(auth, name + ".mmdb", md5, null, mmdbUrl);
+        processDatabase(auth, name + ".mmdb", Checksum.md5(md5), mmdbUrl);
+    }
+
+    record Checksum(Type type, String checksum) {
+
+        public Checksum {
+            Objects.requireNonNull(type);
+            Objects.requireNonNull(checksum);
+        }
+
+        static Checksum md5(String checksum) {
+            return new Checksum(Type.MD5, checksum);
+        }
+
+        static Checksum sha256(String checksum) {
+            return new Checksum(Type.SHA256, checksum);
+        }
+
+        enum Type {
+            MD5,
+            SHA256
+        }
+
+        MessageDigest digest() {
+            return switch (type) {
+                case MD5 -> null; // a leaky implementation detail, we don't need to calculate two md5s
+                case SHA256 -> MessageDigests.sha256();
+            };
+        }
+
+        boolean matches(Metadata metadata) {
+            return switch (type) {
+                case MD5 -> metadata.md5() != null && metadata.md5().equals(checksum);
+                case SHA256 -> metadata.sha256() != null && metadata.sha256().equals(checksum);
+            };
+        }
     }
 
     /**
      * This method fetches the tar.gz file for the given database from the Maxmind endpoint, then indexes that tar.gz
      * file into the .geoip_databases Elasticsearch index, deleting any old versions of the database tar.gz from the index if they exist.
-     *
+     * <p>
      * The name of the database to be downloaded from Maxmind and indexed into an Elasticsearch index
-     * @param md5 The md5 to compare to the computed md5 of the downloaded tar.gz file
+     * @param checksum The checksum to compare to the computed checksum of the downloaded file
      * @param url The URL for the Maxmind endpoint from which the database's tar.gz will be downloaded
      */
-    private void processDatabase(
-        final PasswordAuthentication auth,
-        final String name,
-        @Nullable final String md5,
-        @Nullable final String sha256,
-        final String url
-    ) {
-        if (md5 == null && sha256 == null) {
-            throw new IllegalArgumentException("At least one of md5 or sha256 must not be null");
-        }
-
+    private void processDatabase(final PasswordAuthentication auth, final String name, final Checksum checksum, final String url) {
         Metadata metadata = state.getDatabases().getOrDefault(name, Metadata.EMPTY);
-        if ((md5 != null && Objects.equals(metadata.md5(), md5)) && (sha256 != null && Objects.equals(metadata.sha256(), sha256))) {
+        if (checksum.matches(metadata)) {
             updateTimestamp(name, metadata);
             return;
         }
@@ -409,16 +433,9 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         long start = System.currentTimeMillis();
         try (InputStream is = httpClient.get(auth, url)) {
             int firstChunk = metadata.lastChunk() + 1; // if there is no metadata, then Metadata.EMPTY + 1 = 0
-            Tuple<Integer, String> tuple = indexChunks(
-                name,
-                is,
-                firstChunk,
-                md5 != null ? null : MessageDigests.sha256(),
-                Objects.requireNonNullElse(md5, sha256),
-                start
-            );
+            Tuple<Integer, String> tuple = indexChunks(name, is, firstChunk, checksum, start);
             int lastChunk = tuple.v1();
-            String indexedMd5 = md5 != null ? md5 : tuple.v2();
+            String indexedMd5 = tuple.v2();
             if (lastChunk > firstChunk) {
                 state = state.put(name, new Metadata(start, firstChunk, lastChunk - 1, indexedMd5, start));
                 updateTaskState();
@@ -461,15 +478,12 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
     }
 
     // visible for testing
-    Tuple<Integer, String> indexChunks(
-        String name,
-        InputStream is,
-        int chunk,
-        @Nullable MessageDigest digest,
-        String expectedChecksum,
-        long timestamp
-    ) throws IOException {
+    Tuple<Integer, String> indexChunks(String name, InputStream is, int chunk, final Checksum checksum, long timestamp) throws IOException {
+        // we have to calculate and return md5 sums as a matter of course (see actualMd5 being return below),
+        // but we don't have to do it *twice* -- so if the passed-in checksum is also md5, then we'll get null here
         MessageDigest md5 = MessageDigests.md5();
+        MessageDigest digest = checksum.digest(); // this returns null for md5
+
         for (byte[] buf = getChunk(is); buf.length != 0; buf = getChunk(is)) {
             md5.update(buf);
             if (digest != null) {
@@ -492,8 +506,13 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
 
         String actualMd5 = MessageDigests.toHexString(md5.digest());
         String actualChecksum = digest == null ? actualMd5 : MessageDigests.toHexString(digest.digest());
-        if (Objects.equals(expectedChecksum, actualChecksum) == false) {
-            throw new IOException("checksum mismatch, expected [" + expectedChecksum + "], actual [" + actualChecksum + "]");
+        if (Objects.equals(checksum.checksum, actualChecksum) == false) {
+            throw new IOException("checksum mismatch, expected [" + checksum.checksum + "], actual [" + actualChecksum + "]");
+        }
+        // just being explicit, the passed-in digest is for our use inside this method, you can't consult it after calling this
+        // method in order to learn anything useful
+        if (digest != null) {
+            digest.reset();
         }
         return Tuple.tuple(chunk, actualMd5);
     }
