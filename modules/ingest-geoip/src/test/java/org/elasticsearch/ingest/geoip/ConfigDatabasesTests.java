@@ -68,7 +68,7 @@ public class ConfigDatabasesTests extends ESTestCase {
         configDatabases.initialize(resourceWatcherService);
 
         assertThat(configDatabases.getConfigDatabases().size(), equalTo(2));
-        ReaderLazyLoader loader = configDatabases.getDatabase("GeoLite2-City.mmdb");
+        DatabaseReaderLazyLoader loader = configDatabases.getDatabase("GeoLite2-City.mmdb");
         assertThat(loader.getDatabaseType(), equalTo("GeoLite2-City"));
 
         loader = configDatabases.getDatabase("GeoIP2-City.mmdb");
@@ -81,7 +81,7 @@ public class ConfigDatabasesTests extends ESTestCase {
         configDatabases.initialize(resourceWatcherService);
         {
             assertThat(configDatabases.getConfigDatabases().size(), equalTo(3));
-            ReaderLazyLoader loader = configDatabases.getDatabase("GeoLite2-ASN.mmdb");
+            DatabaseReaderLazyLoader loader = configDatabases.getDatabase("GeoLite2-ASN.mmdb");
             assertThat(loader.getDatabaseType(), equalTo("GeoLite2-ASN"));
 
             loader = configDatabases.getDatabase("GeoLite2-City.mmdb");
@@ -96,7 +96,7 @@ public class ConfigDatabasesTests extends ESTestCase {
 
         assertBusy(() -> {
             assertThat(configDatabases.getConfigDatabases().size(), equalTo(4));
-            ReaderLazyLoader loader = configDatabases.getDatabase("GeoLite2-ASN.mmdb");
+            DatabaseReaderLazyLoader loader = configDatabases.getDatabase("GeoLite2-ASN.mmdb");
             assertThat(loader.getDatabaseType(), equalTo("GeoLite2-ASN"));
 
             loader = configDatabases.getDatabase("GeoLite2-City.mmdb");
@@ -124,7 +124,7 @@ public class ConfigDatabasesTests extends ESTestCase {
             assertThat(cache.count(), equalTo(0));
             assertThat(configDatabases.getConfigDatabases().size(), equalTo(1));
 
-            ReaderLazyLoader loader = configDatabases.getDatabase("GeoLite2-City.mmdb");
+            DatabaseReaderLazyLoader loader = configDatabases.getDatabase("GeoLite2-City.mmdb");
             assertThat(loader.getDatabaseType(), equalTo("GeoLite2-City"));
             CityResponse cityResponse = loader.getResponse("89.160.20.128", GeoIpTestUtils::getCity);
             assertThat(cityResponse.getCity().getName(), equalTo("Tumba"));
@@ -136,7 +136,7 @@ public class ConfigDatabasesTests extends ESTestCase {
             assertThat(configDatabases.getConfigDatabases().size(), equalTo(1));
             assertThat(cache.count(), equalTo(0));
 
-            ReaderLazyLoader loader = configDatabases.getDatabase("GeoLite2-City.mmdb");
+            DatabaseReaderLazyLoader loader = configDatabases.getDatabase("GeoLite2-City.mmdb");
 
             assertThat(loader.getDatabaseType(), equalTo("GeoLite2-City"));
             CityResponse cityResponse = loader.getResponse("89.160.20.128", GeoIpTestUtils::getCity);

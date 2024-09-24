@@ -58,7 +58,7 @@ public class ReloadingDatabasesWhilePerformingGeoLookupsIT extends ESTestCase {
      * com.maxmind.db.ClosedDatabaseException: The MaxMind DB has been closed
      *
      * This failure can be avoided by ensuring that a database is only closed when no
-     * geoip processor instance is using the related {@link ReaderLazyLoader} instance
+     * geoip processor instance is using the related {@link DatabaseReaderLazyLoader} instance
      */
     public void test() throws Exception {
         Path geoIpConfigDir = createTempDir();
@@ -126,7 +126,7 @@ public class ReloadingDatabasesWhilePerformingGeoLookupsIT extends ESTestCase {
         Thread updateDatabaseThread = new Thread(() -> {
             for (int i = 0; i < numberOfDatabaseUpdates; i++) {
                 try {
-                    ReaderLazyLoader previous1 = databaseNodeService.get("GeoLite2-City.mmdb");
+                    DatabaseReaderLazyLoader previous1 = databaseNodeService.get("GeoLite2-City.mmdb");
                     if (Files.exists(geoIpTmpDir.resolve("GeoLite2-City.mmdb"))) {
                         databaseNodeService.removeStaleEntries(List.of("GeoLite2-City.mmdb"));
                         assertBusy(() -> {
@@ -140,15 +140,15 @@ public class ReloadingDatabasesWhilePerformingGeoLookupsIT extends ESTestCase {
                         copyDatabase("GeoLite2-City-Test.mmdb", geoIpTmpDir.resolve("GeoLite2-City.mmdb"));
                         databaseNodeService.updateDatabase("GeoLite2-City.mmdb", "md5", geoIpTmpDir.resolve("GeoLite2-City.mmdb"));
                     }
-                    ReaderLazyLoader previous2 = databaseNodeService.get("GeoLite2-City-Test.mmdb");
+                    DatabaseReaderLazyLoader previous2 = databaseNodeService.get("GeoLite2-City-Test.mmdb");
                     copyDatabase(
                         i % 2 == 0 ? "GeoIP2-City-Test.mmdb" : "GeoLite2-City-Test.mmdb",
                         geoIpTmpDir.resolve("GeoLite2-City-Test.mmdb")
                     );
                     databaseNodeService.updateDatabase("GeoLite2-City-Test.mmdb", "md5", geoIpTmpDir.resolve("GeoLite2-City-Test.mmdb"));
 
-                    ReaderLazyLoader current1 = databaseNodeService.get("GeoLite2-City.mmdb");
-                    ReaderLazyLoader current2 = databaseNodeService.get("GeoLite2-City-Test.mmdb");
+                    DatabaseReaderLazyLoader current1 = databaseNodeService.get("GeoLite2-City.mmdb");
+                    DatabaseReaderLazyLoader current2 = databaseNodeService.get("GeoLite2-City-Test.mmdb");
                     assertThat(current1, not(sameInstance(previous1)));
                     assertThat(current2, not(sameInstance(previous2)));
 
@@ -178,7 +178,7 @@ public class ReloadingDatabasesWhilePerformingGeoLookupsIT extends ESTestCase {
         assertThat(failureHolder2.get(), nullValue());
         assertThat(numberOfIngestRuns.get(), greaterThan(0));
 
-        for (ReaderLazyLoader lazyLoader : databaseNodeService.getAllDatabases()) {
+        for (DatabaseReaderLazyLoader lazyLoader : databaseNodeService.getAllDatabases()) {
             assertThat(lazyLoader.current(), equalTo(0));
         }
         // Avoid accumulating many temp dirs while running with -Dtests.iters=X

@@ -792,12 +792,12 @@ public class GeoIpProcessorTests extends ESTestCase {
         return () -> loader;
     }
 
-    private ReaderLazyLoader loader(final String databaseName, final AtomicBoolean closed) {
+    private DatabaseReaderLazyLoader loader(final String databaseName, final AtomicBoolean closed) {
         Path path = tmpDir.resolve(databaseName);
         copyDatabase(databaseName, path);
 
         final GeoIpCache cache = new GeoIpCache(1000);
-        return new ReaderLazyLoader(cache, path, null) {
+        return new DatabaseReaderLazyLoader(cache, path, null) {
             @Override
             protected void doShutdown() throws IOException {
                 if (closed != null) {

@@ -39,7 +39,7 @@ final class ConfigDatabases implements Closeable {
     private final GeoIpCache cache;
     private final Path geoipConfigDir;
 
-    private final ConcurrentMap<String, ReaderLazyLoader> configDatabases;
+    private final ConcurrentMap<String, DatabaseReaderLazyLoader> configDatabases;
 
     ConfigDatabases(Environment environment, GeoIpCache cache) {
         this(environment.configFile().resolve("ingest-geoip"), cache);
@@ -61,11 +61,11 @@ final class ConfigDatabases implements Closeable {
         logger.debug("initialized config databases [{}] and watching [{}] for changes", configDatabases.keySet(), geoipConfigDir);
     }
 
-    ReaderLazyLoader getDatabase(String name) {
+    DatabaseReaderLazyLoader getDatabase(String name) {
         return configDatabases.get(name);
     }
 
-    Map<String, ReaderLazyLoader> getConfigDatabases() {
+    Map<String, DatabaseReaderLazyLoader> getConfigDatabases() {
         return configDatabases;
     }
 
@@ -74,14 +74,14 @@ final class ConfigDatabases implements Closeable {
         try {
             if (update) {
                 logger.info("database file changed [{}], reload database...", file);
-                ReaderLazyLoader loader = new ReaderLazyLoader(cache, file, null);
-                ReaderLazyLoader existing = configDatabases.put(databaseFileName, loader);
+                DatabaseReaderLazyLoader loader = new DatabaseReaderLazyLoader(cache, file, null);
+                DatabaseReaderLazyLoader existing = configDatabases.put(databaseFileName, loader);
                 if (existing != null) {
                     existing.shutdown();
                 }
             } else {
                 logger.info("database file removed [{}], close database...", file);
-                ReaderLazyLoader existing = configDatabases.remove(databaseFileName);
+                DatabaseReaderLazyLoader existing = configDatabases.remove(databaseFileName);
                 assert existing != null;
                 existing.shutdown();
             }
@@ -90,8 +90,8 @@ final class ConfigDatabases implements Closeable {
         }
     }
 
-    Map<String, ReaderLazyLoader> initConfigDatabases() throws IOException {
-        Map<String, ReaderLazyLoader> databases = new HashMap<>();
+    Map<String, DatabaseReaderLazyLoader> initConfigDatabases() throws IOException {
+        Map<String, DatabaseReaderLazyLoader> databases = new HashMap<>();
 
         if (geoipConfigDir != null && Files.exists(geoipConfigDir)) {
             try (Stream<Path> databaseFiles = Files.list(geoipConfigDir)) {
@@ -103,7 +103,7 @@ final class ConfigDatabases implements Closeable {
                     if (Files.isRegularFile(databasePath) && pathMatcher.matches(databasePath)) {
                         assert Files.exists(databasePath);
                         String databaseFileName = databasePath.getFileName().toString();
-                        ReaderLazyLoader loader = new ReaderLazyLoader(cache, databasePath, null);
+                        DatabaseReaderLazyLoader loader = new DatabaseReaderLazyLoader(cache, databasePath, null);
                         databases.put(databaseFileName, loader);
                     }
                 }
@@ -115,7 +115,7 @@ final class ConfigDatabases implements Closeable {
 
     @Override
     public void close() throws IOException {
-        for (ReaderLazyLoader lazyLoader : configDatabases.values()) {
+        for (DatabaseReaderLazyLoader lazyLoader : configDatabases.values()) {
             lazyLoader.shutdown();
         }
     }

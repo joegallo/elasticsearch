@@ -35,11 +35,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * no memory is being wasted on the database reader.
  */
 // okay this is the actual database, my goodness
-class ReaderLazyLoader implements IpDatabase {
+class DatabaseReaderLazyLoader implements IpDatabase {
 
     private static final boolean LOAD_DATABASE_ON_HEAP = Booleans.parseBoolean(System.getProperty("es.geoip.load_db_on_heap", "false"));
 
-    private static final Logger logger = LogManager.getLogger(ReaderLazyLoader.class);
+    private static final Logger logger = LogManager.getLogger(DatabaseReaderLazyLoader.class);
 
     private final String md5;
     private final GeoIpCache cache;
@@ -53,7 +53,7 @@ class ReaderLazyLoader implements IpDatabase {
     private volatile boolean deleteDatabaseFileOnShutdown;
     private final AtomicInteger currentUsages = new AtomicInteger(0);
 
-    ReaderLazyLoader(GeoIpCache cache, Path databasePath, String md5) {
+    DatabaseReaderLazyLoader(GeoIpCache cache, Path databasePath, String md5) {
         this.cache = cache;
         this.databasePath = Objects.requireNonNull(databasePath);
         this.md5 = md5;
