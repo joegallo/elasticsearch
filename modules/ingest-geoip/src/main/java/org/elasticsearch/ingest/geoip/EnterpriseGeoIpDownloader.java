@@ -320,8 +320,8 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
      * Elasticsearch index.
      * <p>
      * As an implementation detail, this method retrieves the sha256 checksum of the database to download and then invokes
-     * {@link EnterpriseGeoIpDownloader#processDatabase(PasswordAuthentication, String, String, String)} with that checksum, deferring to
-     * that method to actually download and process the tar.gz itself.
+     * {@link EnterpriseGeoIpDownloader#processDatabase(PasswordAuthentication, String, String, String, String)} with that checksum,
+     * deferring to that method to actually download and process the tar.gz itself.
      *
      * @param auth The credentials to use to download from the Maxmind endpoint
      * @param database The database to be downloaded from Maxmind and indexed into an Elasticsearch index
@@ -343,7 +343,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         final String sha256 = matcher.group(1);
         // the name that comes from the enterprise downloader cluster state doesn't include the .mmdb extension,
         // but the downloading and indexing of database code expects it to be there, so we add it on here before further processing
-        processDatabase(auth, name + ".mmdb", sha256, tgzUrl);
+        processDatabase(auth, name + ".mmdb", null, sha256, tgzUrl);
     }
 
     void processDatabase2(PasswordAuthentication auth, DatabaseConfiguration database) throws IOException {
@@ -378,41 +378,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         }
         // the name that comes from the enterprise downloader cluster state doesn't include the .mmdb extension,
         // but the downloading and indexing of database code expects it to be there, so we add it on here before further processing
-        processDatabase2(auth, name + ".mmdb", md5, mmdbUrl);
-    }
-
-    /**
-     * This method fetches the tar.gz file for the given database from the Maxmind endpoint, then indexes that tar.gz
-     * file into the .geoip_databases Elasticsearch index, deleting any old versions of the database tar.gz from the index if they exist.
-     *
-     * @param auth The credentials to use to download from the Maxmind endpoint
-     * The name of the database to be downloaded from Maxmind and indexed into an Elasticsearch index
-     * @param sha256 The sha256 to compare to the computed sha256 of the downloaded tar.gz file
-     * @param url The URL for the Maxmind endpoint from which the database's tar.gz will be downloaded
-     */
-    // THIS ONE RIGHT HERE
-    private void processDatabase(PasswordAuthentication auth, String name, String sha256, String url) {
-        Metadata metadata = state.getDatabases().getOrDefault(name, Metadata.EMPTY);
-        if (Objects.equals(metadata.sha256(), sha256)) { // here's a difference
-            updateTimestamp(name, metadata);
-            return;
-        }
-        logger.debug("downloading database [{}]", name);
-        long start = System.currentTimeMillis();
-        try (InputStream is = httpClient.get(auth, url)) {
-            int firstChunk = metadata.lastChunk() + 1; // if there is no metadata, then Metadata.EMPTY + 1 = 0
-            Tuple<Integer, String> tuple = indexChunks(name, is, firstChunk, MessageDigests.sha256(), sha256, start);
-            int lastChunk = tuple.v1();
-            String md5 = tuple.v2();
-            if (lastChunk > firstChunk) {
-                state = state.put(name, new Metadata(start, firstChunk, lastChunk - 1, md5, start, sha256));
-                updateTaskState();
-                logger.info("successfully downloaded database [{}]", name);
-                deleteOldChunks(name, firstChunk);
-            }
-        } catch (Exception e) {
-            logger.error(() -> "error downloading database [" + name + "]", e);
-        }
+        processDatabase(auth, name + ".mmdb", md5, null, mmdbUrl);
     }
 
     /**
@@ -423,10 +389,19 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
      * @param md5 The md5 to compare to the computed md5 of the downloaded tar.gz file
      * @param url The URL for the Maxmind endpoint from which the database's tar.gz will be downloaded
      */
-    // THIS ONE RIGHT HERE
-    private void processDatabase2(PasswordAuthentication auth, String name, String md5, String url) {
+    private void processDatabase(
+        final PasswordAuthentication auth,
+        final String name,
+        @Nullable final String md5,
+        @Nullable final String sha256,
+        final String url
+    ) {
+        if (md5 == null && sha256 == null) {
+            throw new IllegalArgumentException("At least one of md5 or sha256 must not be null");
+        }
+
         Metadata metadata = state.getDatabases().getOrDefault(name, Metadata.EMPTY);
-        if (Objects.equals(metadata.md5(), md5)) { // here's a difference
+        if ((md5 != null && Objects.equals(metadata.md5(), md5)) && (sha256 != null && Objects.equals(metadata.sha256(), sha256))) {
             updateTimestamp(name, metadata);
             return;
         }
@@ -434,10 +409,18 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         long start = System.currentTimeMillis();
         try (InputStream is = httpClient.get(auth, url)) {
             int firstChunk = metadata.lastChunk() + 1; // if there is no metadata, then Metadata.EMPTY + 1 = 0
-            Tuple<Integer, String> tuple = indexChunks(name, is, firstChunk, null, md5, start);
+            Tuple<Integer, String> tuple = indexChunks(
+                name,
+                is,
+                firstChunk,
+                md5 != null ? null : MessageDigests.sha256(),
+                Objects.requireNonNullElse(md5, sha256),
+                start
+            );
             int lastChunk = tuple.v1();
+            String indexedMd5 = md5 != null ? md5 : tuple.v2();
             if (lastChunk > firstChunk) {
-                state = state.put(name, new Metadata(start, firstChunk, lastChunk - 1, md5, start));
+                state = state.put(name, new Metadata(start, firstChunk, lastChunk - 1, indexedMd5, start));
                 updateTaskState();
                 logger.info("successfully downloaded database [{}]", name);
                 deleteOldChunks(name, firstChunk);
