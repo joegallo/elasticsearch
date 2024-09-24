@@ -184,9 +184,10 @@ public class GeoIpDownloader extends AllocatedPersistentTask {
         processDatabase(name, md5, url);
     }
 
+    // THIS ONE RIGHT HERE
     private void processDatabase(final String name, final String md5, final String url) {
         Metadata metadata = state.getDatabases().getOrDefault(name, Metadata.EMPTY);
-        if (Objects.equals(metadata.md5(), md5)) {
+        if (Objects.equals(metadata.md5(), md5)) { // here's a difference
             updateTimestamp(name, metadata);
             return;
         }

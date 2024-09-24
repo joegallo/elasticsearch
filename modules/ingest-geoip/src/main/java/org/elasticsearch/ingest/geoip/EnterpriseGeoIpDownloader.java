@@ -390,9 +390,10 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
      * @param sha256 The sha256 to compare to the computed sha256 of the downloaded tar.gz file
      * @param url The URL for the Maxmind endpoint from which the database's tar.gz will be downloaded
      */
+    // THIS ONE RIGHT HERE
     private void processDatabase(PasswordAuthentication auth, String name, String sha256, String url) {
         Metadata metadata = state.getDatabases().getOrDefault(name, Metadata.EMPTY);
-        if (Objects.equals(metadata.sha256(), sha256)) {
+        if (Objects.equals(metadata.sha256(), sha256)) { // here's a difference
             updateTimestamp(name, metadata);
             return;
         }
@@ -422,9 +423,10 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
      * @param md5 The md5 to compare to the computed md5 of the downloaded tar.gz file
      * @param url The URL for the Maxmind endpoint from which the database's tar.gz will be downloaded
      */
+    // THIS ONE RIGHT HERE
     private void processDatabase2(PasswordAuthentication auth, String name, String md5, String url) {
         Metadata metadata = state.getDatabases().getOrDefault(name, Metadata.EMPTY);
-        if (Objects.equals(metadata.md5(), md5)) {
+        if (Objects.equals(metadata.md5(), md5)) { // here's a difference
             updateTimestamp(name, metadata);
             return;
         }
