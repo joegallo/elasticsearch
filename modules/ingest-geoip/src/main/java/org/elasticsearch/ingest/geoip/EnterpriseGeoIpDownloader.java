@@ -430,7 +430,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
             updateTimestamp(name, metadata);
             return;
         }
-        logger.debug("downloading geoip database [{}]", name);
+        logger.debug("downloading database [{}]", name);
         long start = System.currentTimeMillis();
         try (InputStream is = httpClient.get(auth, url)) {
             int firstChunk = metadata.lastChunk() + 1; // if there is no metadata, then Metadata.EMPTY + 1 = 0
@@ -439,11 +439,11 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
             if (lastChunk > firstChunk) {
                 state = state.put(name, new Metadata(start, firstChunk, lastChunk - 1, md5, start));
                 updateTaskState();
-                logger.info("successfully downloaded geoip database [{}]", name);
+                logger.info("successfully downloaded database [{}]", name);
                 deleteOldChunks(name, firstChunk);
             }
         } catch (Exception e) {
-            logger.error(() -> "error downloading geoip database [" + name + "]", e);
+            logger.error(() -> "error downloading database [" + name + "]", e);
         }
     }
 
