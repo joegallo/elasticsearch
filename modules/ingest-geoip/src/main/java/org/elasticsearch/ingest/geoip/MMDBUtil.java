@@ -102,8 +102,8 @@ public final class MMDBUtil {
     }
 
     public static boolean isGzip(Path path) throws IOException {
-        try (InputStream is = new GZIPInputStream(Files.newInputStream(path))) {
-            is.read(); // nooping, the point is just whether it's a gzip or not
+        try (InputStream is = Files.newInputStream(path); InputStream gzis = new GZIPInputStream(is)) {
+            gzis.read(); // nooping, the point is just whether it's a gzip or not
             return true;
         } catch (ZipException e) {
             return false;
