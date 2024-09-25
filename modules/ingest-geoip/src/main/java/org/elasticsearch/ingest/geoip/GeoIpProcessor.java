@@ -108,31 +108,31 @@ public final class GeoIpProcessor extends AbstractProcessor {
             }
 
             if (ip instanceof String ipString) {
-                Map<String, Object> geoData = getGeoData(ipDatabase, ipString);
-                if (geoData.isEmpty() == false) {
-                    ingestDocument.setFieldValue(targetField, geoData);
+                Map<String, Object> data = ipDataLookup.get(ipDatabase, ipString);
+                if (data.isEmpty() == false) {
+                    ingestDocument.setFieldValue(targetField, data);
                 }
             } else if (ip instanceof List<?> ipList) {
                 boolean match = false;
-                List<Map<String, Object>> geoDataList = new ArrayList<>(ipList.size());
+                List<Map<String, Object>> dataList = new ArrayList<>(ipList.size());
                 for (Object ipAddr : ipList) {
                     if (ipAddr instanceof String == false) {
                         throw new IllegalArgumentException("array in field [" + field + "] should only contain strings");
                     }
-                    Map<String, Object> geoData = getGeoData(ipDatabase, (String) ipAddr);
-                    if (geoData.isEmpty()) {
-                        geoDataList.add(null);
+                    Map<String, Object> data = ipDataLookup.get(ipDatabase, (String) ipAddr);
+                    if (data.isEmpty()) {
+                        dataList.add(null);
                         continue;
                     }
                     if (firstOnly) {
-                        ingestDocument.setFieldValue(targetField, geoData);
+                        ingestDocument.setFieldValue(targetField, data);
                         return ingestDocument;
                     }
                     match = true;
-                    geoDataList.add(geoData);
+                    dataList.add(data);
                 }
                 if (match) {
-                    ingestDocument.setFieldValue(targetField, geoDataList);
+                    ingestDocument.setFieldValue(targetField, dataList);
                 }
             } else {
                 throw new IllegalArgumentException("field [" + field + "] should contain only string or array of strings");
@@ -140,10 +140,6 @@ public final class GeoIpProcessor extends AbstractProcessor {
         }
 
         return ingestDocument;
-    }
-
-    private Map<String, Object> getGeoData(IpDatabase ipDatabase, String ip) throws IOException {
-        return ipDataLookup.get(ipDatabase, ip);
     }
 
     @Override
