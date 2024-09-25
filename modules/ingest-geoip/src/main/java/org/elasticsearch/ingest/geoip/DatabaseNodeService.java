@@ -38,7 +38,6 @@ import org.elasticsearch.watcher.ResourceWatcherService;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileVisitResult;
@@ -63,7 +62,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
-import java.util.zip.ZipException;
 
 import static org.elasticsearch.core.Strings.format;
 import static org.elasticsearch.ingest.geoip.EnterpriseGeoIpTaskState.getEnterpriseGeoIpTaskState;
@@ -385,14 +383,7 @@ public final class DatabaseNodeService implements IpDatabaseProvider {
         retrieveDatabase(databaseName, recordedMd5, metadata, bytes -> Files.write(retrievedFile, bytes, StandardOpenOption.APPEND), () -> {
             final Path databaseFile = geoipTmpDirectory.resolve(databaseName);
 
-            boolean isTarGz;
-            try (InputStream is = new GZIPInputStream(Files.newInputStream(retrievedFile))) {
-                is.read(); // nooping, the point is just whether it's a gzip or not
-                isTarGz = true;
-            } catch (ZipException e) {
-                isTarGz = false;
-            }
-
+            boolean isTarGz = MMDBUtil.isGzip(retrievedFile);
             if (isTarGz) {
                 // tarball contains <database_name>.mmdb, LICENSE.txt, COPYRIGHTS.txt and optional README.txt files.
                 // we store mmdb file as is and prepend database name to all other entries to avoid conflicts
