@@ -29,7 +29,6 @@ import org.elasticsearch.cluster.block.ClusterBlocks;
 import org.elasticsearch.cluster.metadata.IndexMetadata;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.ReferenceDocs;
-import org.elasticsearch.common.hash.MessageDigests;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.Tuple;
@@ -54,7 +53,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.PasswordAuthentication;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
@@ -228,7 +226,7 @@ public class EnterpriseGeoIpDownloaderTests extends ESTestCase {
 
         IOException exception = expectThrows(
             IOException.class,
-            () -> geoIpDownloader.indexChunks("test", new ByteArrayInputStream(new byte[0]), 0, Checksum.sha256( "123123"), 0)
+            () -> geoIpDownloader.indexChunks("test", new ByteArrayInputStream(new byte[0]), 0, Checksum.sha256("123123"), 0)
         );
         assertEquals(
             "checksum mismatch, expected [123123], actual [e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855]",
@@ -311,13 +309,7 @@ public class EnterpriseGeoIpDownloaderTests extends ESTestCase {
             }
 
             @Override
-            Tuple<Integer, String> indexChunks(
-                String name,
-                InputStream is,
-                int chunk,
-                Checksum checksum,
-                long start
-            ) {
+            Tuple<Integer, String> indexChunks(String name, InputStream is, int chunk, Checksum checksum, long start) {
                 assertSame(bais, is);
                 assertEquals(0, chunk);
                 indexedChunks.set(true);
@@ -369,13 +361,7 @@ public class EnterpriseGeoIpDownloaderTests extends ESTestCase {
             }
 
             @Override
-            Tuple<Integer, String> indexChunks(
-                String name,
-                InputStream is,
-                int chunk,
-                Checksum checksum,
-                long start
-            ) {
+            Tuple<Integer, String> indexChunks(String name, InputStream is, int chunk, Checksum checksum, long start) {
                 assertSame(bais, is);
                 assertEquals(9, chunk);
                 indexedChunks.set(true);
@@ -437,13 +423,7 @@ public class EnterpriseGeoIpDownloaderTests extends ESTestCase {
             }
 
             @Override
-            Tuple<Integer, String> indexChunks(
-                String name,
-                InputStream is,
-                int chunk,
-                Checksum checksum,
-                long start
-            ) {
+            Tuple<Integer, String> indexChunks(String name, InputStream is, int chunk, Checksum checksum, long start) {
                 fail();
                 return Tuple.tuple(0, checksum.checksum());
             }
