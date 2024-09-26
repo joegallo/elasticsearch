@@ -39,9 +39,9 @@ import java.util.Set;
 /**
  * A collection of {@link IpDataLookup} implementations for MaxMind databases
  */
-final class MaxMindIpDataLookups {
+final class MaxmindIpDataLookups {
 
-    private MaxMindIpDataLookups() {
+    private MaxmindIpDataLookups() {
         // utility class
     }
 
@@ -560,7 +560,7 @@ final class MaxMindIpDataLookups {
     }
 
     /**
-     * The {@code MaxmindGeoDataLookups.AbstractBase} is an abstract base implementation of {@link IpDataLookup} that
+     * The {@link MaxmindIpDataLookups.AbstractBase} is an abstract base implementation of {@link IpDataLookup} that
      * provides common functionality for getting a specific kind of {@link AbstractResponse} from a {@link IpDatabase}.
      *
      * @param <RESPONSE> the intermediate type of {@link AbstractResponse}

@@ -19,29 +19,29 @@ interface IpDataLookupFactory {
         if (databaseType != null) {
             // yikes
             if (databaseType.contains("ipinfo ") && databaseType.contains("asn_free")) {
-                factory = IPinfoIpDataLookups.Asn::new;
+                factory = IpinfoIpDataLookups.Asn::new;
             } else if (databaseType.contains("ipinfo ") && databaseType.contains("country_free")) {
-                factory = IPinfoIpDataLookups.Country::new;
+                factory = IpinfoIpDataLookups.Country::new;
             } else if (databaseType.contains("ipinfo ") && databaseType.contains("ip_geolocation")) {
-                factory = IPinfoIpDataLookups.City::new;
+                factory = IpinfoIpDataLookups.City::new;
             }
             // yikes
             else if (databaseType.endsWith(Database.CITY_DB_SUFFIX)) {
-                factory = MaxMindIpDataLookups.City::new;
+                factory = MaxmindIpDataLookups.City::new;
             } else if (databaseType.endsWith(Database.COUNTRY_DB_SUFFIX)) {
-                factory = MaxMindIpDataLookups.Country::new;
+                factory = MaxmindIpDataLookups.Country::new;
             } else if (databaseType.endsWith(Database.ASN_DB_SUFFIX)) {
-                factory = MaxMindIpDataLookups.Asn::new;
+                factory = MaxmindIpDataLookups.Asn::new;
             } else if (databaseType.endsWith(Database.ANONYMOUS_IP_DB_SUFFIX)) {
-                factory = MaxMindIpDataLookups.AnonymousIp::new;
+                factory = MaxmindIpDataLookups.AnonymousIp::new;
             } else if (databaseType.endsWith(Database.CONNECTION_TYPE_DB_SUFFIX)) {
-                factory = MaxMindIpDataLookups.ConnectionType::new;
+                factory = MaxmindIpDataLookups.ConnectionType::new;
             } else if (databaseType.endsWith(Database.DOMAIN_DB_SUFFIX)) {
-                factory = MaxMindIpDataLookups.Domain::new;
+                factory = MaxmindIpDataLookups.Domain::new;
             } else if (databaseType.endsWith(Database.ENTERPRISE_DB_SUFFIX)) {
-                factory = MaxMindIpDataLookups.Enterprise::new;
+                factory = MaxmindIpDataLookups.Enterprise::new;
             } else if (databaseType.endsWith(Database.ISP_DB_SUFFIX)) {
-                factory = MaxMindIpDataLookups.Isp::new;
+                factory = MaxmindIpDataLookups.Isp::new;
             }
         }
 

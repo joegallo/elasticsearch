@@ -25,12 +25,12 @@ import java.util.Set;
 
 import static java.util.Map.entry;
 import static org.elasticsearch.ingest.geoip.GeoIpTestUtils.copyDatabase;
-import static org.elasticsearch.ingest.geoip.IPinfoIpDataLookups.parseAsn;
-import static org.elasticsearch.ingest.geoip.IPinfoIpDataLookups.parseBoolean;
+import static org.elasticsearch.ingest.geoip.IpinfoIpDataLookups.parseAsn;
+import static org.elasticsearch.ingest.geoip.IpinfoIpDataLookups.parseBoolean;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
 
-public class IPinfoIpDataLookupsTests extends ESTestCase {
+public class IpinfoIpDataLookupsTests extends ESTestCase {
 
     private ThreadPool threadPool;
     private ResourceWatcherService resourceWatcherService;
@@ -84,7 +84,7 @@ public class IPinfoIpDataLookupsTests extends ESTestCase {
 
         {
             DatabaseReaderLazyLoader loader = configDatabases.getDatabase("asn.mmdb");
-            IpDataLookup lookup = new IPinfoIpDataLookups.Asn(Set.of(Database.Property.values()));
+            IpDataLookup lookup = new IpinfoIpDataLookups.Asn(Set.of(Database.Property.values()));
             Map<String, Object> data = lookup.getData(loader, "64.67.15.209");
             assertThat(
                 data,
@@ -102,7 +102,7 @@ public class IPinfoIpDataLookupsTests extends ESTestCase {
 
         {
             DatabaseReaderLazyLoader loader = configDatabases.getDatabase("asn_sample.mmdb");
-            IpDataLookup lookup = new IPinfoIpDataLookups.Asn(Set.of(Database.Property.values()));
+            IpDataLookup lookup = new IpinfoIpDataLookups.Asn(Set.of(Database.Property.values()));
             Map<String, Object> data = lookup.getData(loader, "24.248.118.0");
             assertThat(
                 data,
@@ -131,7 +131,7 @@ public class IPinfoIpDataLookupsTests extends ESTestCase {
 
         {
             DatabaseReaderLazyLoader loader = configDatabases.getDatabase("ip_geolocation_sample.mmdb");
-            IpDataLookup lookup = new IPinfoIpDataLookups.City(Set.of(Database.Property.values()));
+            IpDataLookup lookup = new IpinfoIpDataLookups.City(Set.of(Database.Property.values()));
             Map<String, Object> data = lookup.getData(loader, "1.20.16.64");
             assertThat(
                 data,
@@ -159,7 +159,7 @@ public class IPinfoIpDataLookupsTests extends ESTestCase {
 
         {
             DatabaseReaderLazyLoader loader = configDatabases.getDatabase("privacy_detection_sample.mmdb");
-            IpDataLookup lookup = new IPinfoIpDataLookups.PrivacyDetection(Set.of(Database.Property.values()));
+            IpDataLookup lookup = new IpinfoIpDataLookups.PrivacyDetection(Set.of(Database.Property.values()));
             Map<String, Object> data = lookup.getData(loader, "12.181.21.18");
             assertThat(
                 data,
@@ -178,7 +178,7 @@ public class IPinfoIpDataLookupsTests extends ESTestCase {
 
         {
             DatabaseReaderLazyLoader loader = configDatabases.getDatabase("privacy_detection_sample.mmdb");
-            IpDataLookup lookup = new IPinfoIpDataLookups.PrivacyDetection(Set.of(Database.Property.values()));
+            IpDataLookup lookup = new IpinfoIpDataLookups.PrivacyDetection(Set.of(Database.Property.values()));
             Map<String, Object> data = lookup.getData(loader, "140.248.38.0");
             assertThat(
                 data,

@@ -29,9 +29,9 @@ import java.util.Set;
 /**
  * A collection of {@link IpDataLookup} implementations for IPinfo databases
  */
-final class IPinfoIpDataLookups {
+final class IpinfoIpDataLookups {
 
-    private IPinfoIpDataLookups() {
+    private IpinfoIpDataLookups() {
         // utility class
     }
 
@@ -360,12 +360,12 @@ final class IPinfoIpDataLookups {
     public record Result<T>(T result, String ip, String network) {}
 
     /**
-     * The {@code MaxMindGeoDataLookups.AbstractBase} is an abstract base implementation of {@link IpDataLookup} that
-     * provides common functionality for getting a specific kind of IPinfoBaseClass from a {@link IpDatabase}.
+     * The {@link IpinfoIpDataLookups.AbstractBase} is an abstract base implementation of {@link IpDataLookup} that
+     * provides common functionality for getting a {@link IpinfoIpDataLookups.Result} that wraps a record from a {@link IpDatabase}.
      *
-     * @param <RESPONSE> the intermediate type of IPinfoBaseClass
+     * @param <RESPONSE> the record type that will be wrapped and returned
      */
-    private abstract static class AbstractBase<RESPONSE /*extends some IPinfoBaseClass*/> implements IpDataLookup {
+    private abstract static class AbstractBase<RESPONSE> implements IpDataLookup {
 
         protected final Set<Database.Property> properties;
         protected final Class<RESPONSE> clazz;
