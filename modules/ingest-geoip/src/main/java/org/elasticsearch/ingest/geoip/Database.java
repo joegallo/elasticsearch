@@ -165,28 +165,7 @@ enum Database {
     public static final String ENTERPRISE_DB_SUFFIX = "-Enterprise";
     public static final String ISP_DB_SUFFIX = "-ISP";
 
-    private static Database getMaxmindDatabase(final String databaseType) {
-        Database database = null;
-        if (databaseType.endsWith(Database.CITY_DB_SUFFIX)) {
-            database = Database.City;
-        } else if (databaseType.endsWith(Database.COUNTRY_DB_SUFFIX)) {
-            database = Database.Country;
-        } else if (databaseType.endsWith(Database.ASN_DB_SUFFIX)) {
-            database = Database.Asn;
-        } else if (databaseType.endsWith(Database.ANONYMOUS_IP_DB_SUFFIX)) {
-            database = Database.AnonymousIp;
-        } else if (databaseType.endsWith(Database.CONNECTION_TYPE_DB_SUFFIX)) {
-            database = Database.ConnectionType;
-        } else if (databaseType.endsWith(Database.DOMAIN_DB_SUFFIX)) {
-            database = Database.Domain;
-        } else if (databaseType.endsWith(Database.ENTERPRISE_DB_SUFFIX)) {
-            database = Database.Enterprise;
-        } else if (databaseType.endsWith(Database.ISP_DB_SUFFIX)) {
-            database = Database.Isp;
-        }
-        return database;
-    }
-
+    @Nullable
     private static Database getIpinfoDatabase(final String databaseType) {
         Database database = null;
         if (databaseType.contains("asn_free")) {
@@ -197,6 +176,29 @@ enum Database {
             database = Database.City;
         }
         return database;
+    }
+
+    @Nullable
+    private static Database getMaxmindDatabase(final String databaseType) {
+        if (databaseType.endsWith(Database.CITY_DB_SUFFIX)) {
+            return Database.City;
+        } else if (databaseType.endsWith(Database.COUNTRY_DB_SUFFIX)) {
+            return Database.Country;
+        } else if (databaseType.endsWith(Database.ASN_DB_SUFFIX)) {
+            return Database.Asn;
+        } else if (databaseType.endsWith(Database.ANONYMOUS_IP_DB_SUFFIX)) {
+            return Database.AnonymousIp;
+        } else if (databaseType.endsWith(Database.CONNECTION_TYPE_DB_SUFFIX)) {
+            return Database.ConnectionType;
+        } else if (databaseType.endsWith(Database.DOMAIN_DB_SUFFIX)) {
+            return Database.Domain;
+        } else if (databaseType.endsWith(Database.ENTERPRISE_DB_SUFFIX)) {
+            return Database.Enterprise;
+        } else if (databaseType.endsWith(Database.ISP_DB_SUFFIX)) {
+            return Database.Isp;
+        } else {
+            return null; // no match was found
+        }
     }
 
     /**
@@ -215,10 +217,7 @@ enum Database {
 
         if (Strings.hasText(databaseType)) {
             final String databaseTypeLowerCase = databaseType.toLowerCase(Locale.ROOT);
-
-            if (databaseTypeLowerCase.startsWith(GEOIP2_PREFIX) || databaseTypeLowerCase.startsWith(GEOLITE2_PREFIX)) {
-                database = getMaxmindDatabase(databaseType);
-            } else if (databaseTypeLowerCase.startsWith(IPINFO_PREFIX)) {
+            if (databaseTypeLowerCase.startsWith(IPINFO_PREFIX)) {
                 database = getIpinfoDatabase(databaseType);
             } else {
                 // for historical reasons, fall back to assuming maxmind-like type parsing
