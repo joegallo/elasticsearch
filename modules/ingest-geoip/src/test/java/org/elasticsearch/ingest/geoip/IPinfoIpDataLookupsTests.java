@@ -85,7 +85,7 @@ public class IPinfoIpDataLookupsTests extends ESTestCase {
         {
             DatabaseReaderLazyLoader loader = configDatabases.getDatabase("asn.mmdb");
             IpDataLookup lookup = new IPinfoIpDataLookups.Asn(Set.of(Database.Property.values()));
-            Map<String, Object> data = lookup.get(loader, "64.67.15.209");
+            Map<String, Object> data = lookup.getData(loader, "64.67.15.209");
             assertThat(
                 data,
                 equalTo(
@@ -103,7 +103,7 @@ public class IPinfoIpDataLookupsTests extends ESTestCase {
         {
             DatabaseReaderLazyLoader loader = configDatabases.getDatabase("asn_sample.mmdb");
             IpDataLookup lookup = new IPinfoIpDataLookups.Asn(Set.of(Database.Property.values()));
-            Map<String, Object> data = lookup.get(loader, "24.248.118.0");
+            Map<String, Object> data = lookup.getData(loader, "24.248.118.0");
             assertThat(
                 data,
                 equalTo(
@@ -132,7 +132,7 @@ public class IPinfoIpDataLookupsTests extends ESTestCase {
         {
             DatabaseReaderLazyLoader loader = configDatabases.getDatabase("ip_geolocation_sample.mmdb");
             IpDataLookup lookup = new IPinfoIpDataLookups.City(Set.of(Database.Property.values()));
-            Map<String, Object> data = lookup.get(loader, "1.20.16.64");
+            Map<String, Object> data = lookup.getData(loader, "1.20.16.64");
             assertThat(
                 data,
                 equalTo(
@@ -160,7 +160,7 @@ public class IPinfoIpDataLookupsTests extends ESTestCase {
         {
             DatabaseReaderLazyLoader loader = configDatabases.getDatabase("privacy_detection_sample.mmdb");
             IpDataLookup lookup = new IPinfoIpDataLookups.PrivacyDetection(Set.of(Database.Property.values()));
-            Map<String, Object> data = lookup.get(loader, "12.181.21.18");
+            Map<String, Object> data = lookup.getData(loader, "12.181.21.18");
             assertThat(
                 data,
                 equalTo(
@@ -179,7 +179,7 @@ public class IPinfoIpDataLookupsTests extends ESTestCase {
         {
             DatabaseReaderLazyLoader loader = configDatabases.getDatabase("privacy_detection_sample.mmdb");
             IpDataLookup lookup = new IPinfoIpDataLookups.PrivacyDetection(Set.of(Database.Property.values()));
-            Map<String, Object> data = lookup.get(loader, "140.248.38.0");
+            Map<String, Object> data = lookup.getData(loader, "140.248.38.0");
             assertThat(
                 data,
                 equalTo(

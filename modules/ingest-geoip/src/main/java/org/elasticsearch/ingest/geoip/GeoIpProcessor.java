@@ -108,7 +108,7 @@ public final class GeoIpProcessor extends AbstractProcessor {
             }
 
             if (ip instanceof String ipString) {
-                Map<String, Object> data = ipDataLookup.get(ipDatabase, ipString);
+                Map<String, Object> data = ipDataLookup.getData(ipDatabase, ipString);
                 if (data.isEmpty() == false) {
                     document.setFieldValue(targetField, data);
                 }
@@ -119,7 +119,7 @@ public final class GeoIpProcessor extends AbstractProcessor {
                     if (ipAddr instanceof String == false) {
                         throw new IllegalArgumentException("array in field [" + field + "] should only contain strings");
                     }
-                    Map<String, Object> data = ipDataLookup.get(ipDatabase, (String) ipAddr);
+                    Map<String, Object> data = ipDataLookup.getData(ipDatabase, (String) ipAddr);
                     if (data.isEmpty()) {
                         dataList.add(null);
                         continue;

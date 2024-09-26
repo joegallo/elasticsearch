@@ -21,7 +21,7 @@ interface IpDataLookup {
      * @return a map of geodata corresponding to the configured properties
      * @throws IOException if the implementation encounters any problem while retrieving the response
      */
-    Map<String, Object> get(IpDatabase ipDatabase, String ipAddress) throws IOException;
+    Map<String, Object> getData(IpDatabase ipDatabase, String ipAddress) throws IOException;
 
     /**
      * @return the set of properties this lookup will provide

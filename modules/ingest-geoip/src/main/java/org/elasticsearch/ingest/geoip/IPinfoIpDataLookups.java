@@ -381,7 +381,7 @@ final class IPinfoIpDataLookups {
         }
 
         @Override
-        public final Map<String, Object> get(final IpDatabase ipDatabase, final String ipAddress) {
+        public final Map<String, Object> getData(final IpDatabase ipDatabase, final String ipAddress) {
             final Result<RESPONSE> response = ipDatabase.getResponse(ipAddress, this::lookup);
             return (response == null || response.result == null) ? Map.of() : transform(response);
         }
