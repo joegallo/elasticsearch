@@ -28,9 +28,10 @@ public interface IpDatabase extends AutoCloseable {
     String getDatabaseType() throws IOException;
 
     /**
-     * Returns a response from this database's reader for the given IP address
+     * Returns a response from this database's reader for the given IP address.
+     *
      * @param ipAddress the address to lookup
-     * @param responseProvider typically a method-reference like {@code DatabaseReader::tryCity}
+     * @param responseProvider a method for extracting a response from a {@link Reader}, usually this will be a method reference
      * @return a possibly-null response
      * @param <RESPONSE> the type of response that will be returned
      */
