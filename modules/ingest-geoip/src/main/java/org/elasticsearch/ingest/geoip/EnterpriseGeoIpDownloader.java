@@ -248,231 +248,18 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         final String name = database.name();
         logger.debug("Processing database [{}] for configuration [{}]", name, database.id());
 
-        ProviderDownload downloader;
-        if (database.provider() instanceof DatabaseConfiguration.Maxmind maxmind) {
-            downloader = new MaxmindDownload(database.name(), maxmind);
-        } else if (database.provider() instanceof DatabaseConfiguration.IpInfo ipinfo) {
-            downloader = new IpinfoDownload(database.name(), ipinfo);
-        } else {
-            // illegal state exception or assert false or something
-            throw new RuntimeException("narp");
-        }
-
-        try (HttpClient.PasswordAuthenticationHolder holder = downloader.buildCredentials()) {
-            if (holder == null) {
-                logger.warn("No credentials found to download database [{}], skipping download...", id);
-                return false;
-            } else {
+        try (ProviderDownload downloader = downloaderFor(database)) {
+            if (downloader.validCredentials()) {
                 // the name that comes from the enterprise downloader cluster state doesn't include the .mmdb extension,
                 // but the downloading and indexing of database code expects it to be there, so we add it on here before further
                 // processing
                 final String fileName = name + ".mmdb";
                 processDatabase(fileName, downloader.checksum(), downloader.download());
                 return true;
+            } else {
+                logger.warn("No credentials found to download database [{}], skipping download...", id);
+                return false;
             }
-        }
-    }
-
-    class MaxmindDownload implements ProviderDownload {
-
-        final String name;
-        final DatabaseConfiguration.Maxmind maxmind;
-        HttpClient.PasswordAuthenticationHolder auth;
-
-        MaxmindDownload(String name, DatabaseConfiguration.Maxmind maxmind) {
-            this.name = name;
-            this.maxmind = maxmind;
-            this.auth = buildCredentials();
-        }
-
-        @Override
-        public HttpClient.PasswordAuthenticationHolder buildCredentials() {
-            // if the username is missing, empty, or blank, return null as 'no auth'
-            final String username = maxmind.accountId();
-            if (username == null || username.isEmpty() || username.isBlank()) {
-                return null;
-            }
-
-            // likewise if the password chars array is missing or empty, return null as 'no auth'
-            final char[] passwordChars = tokenProvider.apply("maxmind");
-            if (passwordChars == null || passwordChars.length == 0) {
-                return null;
-            }
-
-            return new HttpClient.PasswordAuthenticationHolder(username, passwordChars);
-        }
-
-        @Override
-        public String url(String suffix) {
-            String endpointPattern = DEFAULT_MAXMIND_ENDPOINT;
-            if (endpointPattern.contains("%")) {
-                throw new IllegalArgumentException("Invalid endpoint [" + endpointPattern + "]");
-            }
-            if (endpointPattern.endsWith("/") == false) {
-                endpointPattern += "/";
-            }
-            endpointPattern += "%s/download?suffix=%s";
-
-            // at this point the pattern looks like this (in the default case):
-            // https://download.maxmind.com/geoip/databases/%s/download?suffix=%s
-
-            return Strings.format(endpointPattern, name, suffix);
-        }
-
-        @Override
-        public Checksum checksum() throws IOException {
-            final String sha256Url = this.url("tar.gz.sha256");
-            var result = new String(httpClient.getBytes(auth.get(), sha256Url), StandardCharsets.UTF_8).trim(); // throws if the auth is bad
-            var matcher = SHA256_CHECKSUM_PATTERN.matcher(result);
-            boolean match = matcher.matches();
-            if (match == false) {
-                throw new RuntimeException("Unexpected sha256 response from [" + sha256Url + "]");
-            }
-            final String sha256 = matcher.group(1);
-            return Checksum.sha256(sha256);
-        }
-
-        @Override
-        public CheckedSupplier<InputStream, IOException> download() {
-            final String tgzUrl = this.url("tar.gz");
-            return () -> httpClient.get(auth.get(), tgzUrl);
-        }
-
-        @Override
-        public void close() throws IOException {
-            auth.close();
-        }
-    }
-
-    class IpinfoDownload implements ProviderDownload {
-
-        final String name;
-        final DatabaseConfiguration.IpInfo ipinfo;
-        HttpClient.PasswordAuthenticationHolder auth;
-
-        IpinfoDownload(String name, DatabaseConfiguration.IpInfo ipinfo) {
-            this.name = name;
-            this.ipinfo = ipinfo;
-            this.auth = buildCredentials();
-        }
-
-        @Override
-        public HttpClient.PasswordAuthenticationHolder buildCredentials() {
-            final char[] tokenChars = tokenProvider.apply("ipinfo");
-
-            // if the token is missing or empty, return null as 'no auth'
-            if (tokenChars == null || tokenChars.length == 0) {
-                return null;
-            }
-
-            // ipinfo uses the token as the username component of basic auth, see https://ipinfo.io/developers#authentication
-            return new HttpClient.PasswordAuthenticationHolder(new String(tokenChars), new char[] {});
-        }
-
-        @Override
-        public String url(String suffix) {
-            // TODO yikes we'll need to record (somewhere) that some files are in 'free/' and many are not.
-            String internalName = "free/" + name;
-
-            // reminder, we're passing the ipinfo token as the username part of http basic auth,
-            // see https://ipinfo.io/developers#authentication
-
-            // curl -L https://ipinfo.io/data/free/asn.mmdb?token=$TOKEN -o asn.mmdb # not-gzipped mmdb bytes
-            // curl -L "https://ipinfo.io/data/free/asn.mmdb/checksums?token=$TOKEN" # json
-            // curl -L https://ipinfo.io/data/standard_privacy.mmdb?token=$TOKEN -o privacy.mmdb
-            // see https://ipinfo.io/developers/database-filename-reference for more
-
-            String endpointPattern = DEFAULT_IPINFO_ENDPOINT;
-            if (endpointPattern.contains("%")) {
-                throw new IllegalArgumentException("Invalid endpoint [" + endpointPattern + "]");
-            }
-            if (endpointPattern.endsWith("/") == false) {
-                endpointPattern += "/";
-            }
-            endpointPattern += "%s.%s";
-
-            // at this point the pattern looks like this (in the default case):
-            // https://ipinfo.io/data/%s.%s
-
-            return Strings.format(endpointPattern, internalName, suffix);
-        }
-
-        @Override
-        public Checksum checksum() throws IOException {
-            final String checksumJsonUrl = this.url("mmdb/checksums"); // a minor abuse of the idea of a 'suffix', :shrug:
-            byte[] data = httpClient.getBytes(auth.get(), checksumJsonUrl); // this throws if the auth is bad
-            Map<String, Object> checksums;
-            try (XContentParser parser = XContentType.JSON.xContent().createParser(XContentParserConfiguration.EMPTY, data)) {
-                checksums = parser.map();
-            }
-            @SuppressWarnings("unchecked")
-            String md5 = ((Map<String, String>) checksums.get("checksums")).get("md5");
-            logger.info("checksum was [{}]", md5);
-
-            var matcher = MD5_CHECKSUM_PATTERN.matcher(md5);
-            boolean match = matcher.matches();
-            if (match == false) {
-                throw new RuntimeException("Unexpected md5 response from [" + checksumJsonUrl + "]");
-            }
-            return Checksum.md5(md5);
-        }
-
-        @Override
-        public CheckedSupplier<InputStream, IOException> download() {
-            final String mmdbUrl = this.url("mmdb");
-            return () -> httpClient.get(auth.get(), mmdbUrl);
-        }
-
-        @Override
-        public void close() throws IOException {
-            auth.close();
-        }
-    }
-
-    interface ProviderDownload extends Closeable {
-        // note: buildCredentials and url are inherently just implementation details of checksum() and download(),
-        // but it's useful to have unit tests for this logic and to keep it separate
-        HttpClient.PasswordAuthenticationHolder buildCredentials();
-
-        String url(String suffix);
-
-        Checksum checksum() throws IOException;
-
-        CheckedSupplier<InputStream, IOException> download();
-    }
-
-    record Checksum(Type type, String checksum) {
-
-        public Checksum {
-            Objects.requireNonNull(type);
-            Objects.requireNonNull(checksum);
-        }
-
-        static Checksum md5(String checksum) {
-            return new Checksum(Type.MD5, checksum);
-        }
-
-        static Checksum sha256(String checksum) {
-            return new Checksum(Type.SHA256, checksum);
-        }
-
-        enum Type {
-            MD5,
-            SHA256
-        }
-
-        MessageDigest digest() {
-            return switch (type) {
-                case MD5 -> null; // a leaky implementation detail, we don't need to calculate two md5s
-                case SHA256 -> MessageDigests.sha256();
-            };
-        }
-
-        boolean matches(Metadata metadata) {
-            return switch (type) {
-                case MD5 -> checksum.equals(metadata.md5());
-                case SHA256 -> checksum.equals(metadata.sha256());
-            };
         }
     }
 
@@ -671,4 +458,233 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         }
     }
 
+    private ProviderDownload downloaderFor(DatabaseConfiguration database) {
+        if (database.provider() instanceof DatabaseConfiguration.Maxmind maxmind) {
+            return new MaxmindDownload(database.name(), maxmind);
+        } else if (database.provider() instanceof DatabaseConfiguration.IpInfo ipinfo) {
+            return new IpinfoDownload(database.name(), ipinfo);
+        } else {
+            throw new IllegalArgumentException(
+                Strings.format("Unexpected provider [%s] for configuration [%s]", database.provider().getClass(), database.id())
+            );
+        }
+    }
+
+    class MaxmindDownload implements ProviderDownload {
+
+        final String name;
+        final DatabaseConfiguration.Maxmind maxmind;
+        HttpClient.PasswordAuthenticationHolder auth;
+
+        MaxmindDownload(String name, DatabaseConfiguration.Maxmind maxmind) {
+            this.name = name;
+            this.maxmind = maxmind;
+            this.auth = buildCredentials();
+        }
+
+        @Override
+        public HttpClient.PasswordAuthenticationHolder buildCredentials() {
+            // if the username is missing, empty, or blank, return null as 'no auth'
+            final String username = maxmind.accountId();
+            if (username == null || username.isEmpty() || username.isBlank()) {
+                return null;
+            }
+
+            // likewise if the password chars array is missing or empty, return null as 'no auth'
+            final char[] passwordChars = tokenProvider.apply("maxmind");
+            if (passwordChars == null || passwordChars.length == 0) {
+                return null;
+            }
+
+            return new HttpClient.PasswordAuthenticationHolder(username, passwordChars);
+        }
+
+        @Override
+        public boolean validCredentials() {
+            return auth.get() != null;
+        }
+
+        @Override
+        public String url(String suffix) {
+            String endpointPattern = DEFAULT_MAXMIND_ENDPOINT;
+            if (endpointPattern.contains("%")) {
+                throw new IllegalArgumentException("Invalid endpoint [" + endpointPattern + "]");
+            }
+            if (endpointPattern.endsWith("/") == false) {
+                endpointPattern += "/";
+            }
+            endpointPattern += "%s/download?suffix=%s";
+
+            // at this point the pattern looks like this (in the default case):
+            // https://download.maxmind.com/geoip/databases/%s/download?suffix=%s
+
+            return Strings.format(endpointPattern, name, suffix);
+        }
+
+        @Override
+        public Checksum checksum() throws IOException {
+            final String sha256Url = this.url("tar.gz.sha256");
+            var result = new String(httpClient.getBytes(auth.get(), sha256Url), StandardCharsets.UTF_8).trim(); // throws if the auth is bad
+            var matcher = SHA256_CHECKSUM_PATTERN.matcher(result);
+            boolean match = matcher.matches();
+            if (match == false) {
+                throw new RuntimeException("Unexpected sha256 response from [" + sha256Url + "]");
+            }
+            final String sha256 = matcher.group(1);
+            return Checksum.sha256(sha256);
+        }
+
+        @Override
+        public CheckedSupplier<InputStream, IOException> download() {
+            final String tgzUrl = this.url("tar.gz");
+            return () -> httpClient.get(auth.get(), tgzUrl);
+        }
+
+        @Override
+        public void close() throws IOException {
+            auth.close();
+        }
+    }
+
+    class IpinfoDownload implements ProviderDownload {
+
+        final String name;
+        final DatabaseConfiguration.IpInfo ipinfo;
+        HttpClient.PasswordAuthenticationHolder auth;
+
+        IpinfoDownload(String name, DatabaseConfiguration.IpInfo ipinfo) {
+            this.name = name;
+            this.ipinfo = ipinfo;
+            this.auth = buildCredentials();
+        }
+
+        @Override
+        public HttpClient.PasswordAuthenticationHolder buildCredentials() {
+            final char[] tokenChars = tokenProvider.apply("ipinfo");
+
+            // if the token is missing or empty, return null as 'no auth'
+            if (tokenChars == null || tokenChars.length == 0) {
+                return null;
+            }
+
+            // ipinfo uses the token as the username component of basic auth, see https://ipinfo.io/developers#authentication
+            return new HttpClient.PasswordAuthenticationHolder(new String(tokenChars), new char[] {});
+        }
+
+        @Override
+        public boolean validCredentials() {
+            return auth.get() != null;
+        }
+
+        @Override
+        public String url(String suffix) {
+            // TODO yikes we'll need to record (somewhere) that some files are in 'free/' and many are not.
+            String internalName = "free/" + name;
+
+            // reminder, we're passing the ipinfo token as the username part of http basic auth,
+            // see https://ipinfo.io/developers#authentication
+
+            // curl -L https://ipinfo.io/data/free/asn.mmdb?token=$TOKEN -o asn.mmdb # not-gzipped mmdb bytes
+            // curl -L "https://ipinfo.io/data/free/asn.mmdb/checksums?token=$TOKEN" # json
+            // curl -L https://ipinfo.io/data/standard_privacy.mmdb?token=$TOKEN -o privacy.mmdb
+            // see https://ipinfo.io/developers/database-filename-reference for more
+
+            String endpointPattern = DEFAULT_IPINFO_ENDPOINT;
+            if (endpointPattern.contains("%")) {
+                throw new IllegalArgumentException("Invalid endpoint [" + endpointPattern + "]");
+            }
+            if (endpointPattern.endsWith("/") == false) {
+                endpointPattern += "/";
+            }
+            endpointPattern += "%s.%s";
+
+            // at this point the pattern looks like this (in the default case):
+            // https://ipinfo.io/data/%s.%s
+
+            return Strings.format(endpointPattern, internalName, suffix);
+        }
+
+        @Override
+        public Checksum checksum() throws IOException {
+            final String checksumJsonUrl = this.url("mmdb/checksums"); // a minor abuse of the idea of a 'suffix', :shrug:
+            byte[] data = httpClient.getBytes(auth.get(), checksumJsonUrl); // this throws if the auth is bad
+            Map<String, Object> checksums;
+            try (XContentParser parser = XContentType.JSON.xContent().createParser(XContentParserConfiguration.EMPTY, data)) {
+                checksums = parser.map();
+            }
+            @SuppressWarnings("unchecked")
+            String md5 = ((Map<String, String>) checksums.get("checksums")).get("md5");
+            logger.info("checksum was [{}]", md5);
+
+            var matcher = MD5_CHECKSUM_PATTERN.matcher(md5);
+            boolean match = matcher.matches();
+            if (match == false) {
+                throw new RuntimeException("Unexpected md5 response from [" + checksumJsonUrl + "]");
+            }
+            return Checksum.md5(md5);
+        }
+
+        @Override
+        public CheckedSupplier<InputStream, IOException> download() {
+            final String mmdbUrl = this.url("mmdb");
+            return () -> httpClient.get(auth.get(), mmdbUrl);
+        }
+
+        @Override
+        public void close() throws IOException {
+            auth.close();
+        }
+    }
+
+    interface ProviderDownload extends Closeable {
+        // note: buildCredentials and url are inherently just implementation details of checksum() and download(),
+        // but it's useful to have unit tests for this logic and to keep it separate
+        HttpClient.PasswordAuthenticationHolder buildCredentials();
+
+        String url(String suffix);
+
+        boolean validCredentials();
+
+        Checksum checksum() throws IOException;
+
+        CheckedSupplier<InputStream, IOException> download();
+
+        @Override
+        void close() throws IOException;
+    }
+
+    record Checksum(Type type, String checksum) {
+
+        public Checksum {
+            Objects.requireNonNull(type);
+            Objects.requireNonNull(checksum);
+        }
+
+        static Checksum md5(String checksum) {
+            return new Checksum(Type.MD5, checksum);
+        }
+
+        static Checksum sha256(String checksum) {
+            return new Checksum(Type.SHA256, checksum);
+        }
+
+        enum Type {
+            MD5,
+            SHA256
+        }
+
+        MessageDigest digest() {
+            return switch (type) {
+                case MD5 -> null; // a leaky implementation detail, we don't need to calculate two md5s
+                case SHA256 -> MessageDigests.sha256();
+            };
+        }
+
+        boolean matches(Metadata metadata) {
+            return switch (type) {
+                case MD5 -> checksum.equals(metadata.md5());
+                case SHA256 -> checksum.equals(metadata.sha256());
+            };
+        }
+    }
 }
