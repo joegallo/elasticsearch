@@ -452,9 +452,9 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
             int firstChunk = metadata.lastChunk() + 1; // if there is no metadata, then Metadata.EMPTY + 1 = 0
             Tuple<Integer, String> tuple = indexChunks(name, is, firstChunk, checksum, start);
             int lastChunk = tuple.v1();
-            String indexedMd5 = tuple.v2();
+            String md5 = tuple.v2();
             if (lastChunk > firstChunk) {
-                state = state.put(name, new Metadata(start, firstChunk, lastChunk - 1, indexedMd5, start));
+                state = state.put(name, new Metadata(start, firstChunk, lastChunk - 1, md5, start));
                 updateTaskState();
                 logger.info("successfully downloaded database [{}]", name);
                 deleteOldChunks(name, firstChunk);
