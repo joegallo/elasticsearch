@@ -134,9 +134,6 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         // at this point the pattern looks like this (in the default case):
         // https://ipinfo.io/data/%s.%s
 
-        if (suffix != null) {
-            throw new IllegalArgumentException("narp");
-        }
         return Strings.format(endpointPattern, name, suffix);
     }
 
@@ -221,29 +218,8 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
                 DatabaseConfiguration database = entry.getValue().database();
                 if (existingDatabaseNames.contains(database.name() + ".mmdb") == false) {
                     logger.debug("A new database appeared [{}]", database.name());
-
-                    if (database.provider() instanceof DatabaseConfiguration.Maxmind maxmind) {
-                        final String accountId = maxmind.accountId(); // TODO AH HA
-                        try (HttpClient.PasswordAuthenticationHolder holder = credentialsBuilder.apply("maxmind", accountId)) {
-                            if (holder == null) {
-                                logger.warn("No credentials found to download database [{}], skipping download...", id);
-                            } else {
-                                processDatabase(holder.get(), database);
-                                addedSomething = true;
-                            }
-                        }
-                    } else if (database.provider() instanceof DatabaseConfiguration.IpInfo) {
-                        try (HttpClient.PasswordAuthenticationHolder holder = credentialsBuilder.apply("ipinfo", null)) {
-                            if (holder == null) {
-                                logger.warn("No credentials found to download database [{}], skipping download...", id);
-                            } else {
-                                processDatabase2(holder.get(), database);
-                                addedSomething = true;
-                            }
-                        }
-                    } else {
-                        // illegal state exception or assert false or something
-                        throw new RuntimeException("narp");
+                    if (processDatabase(id, database)) {
+                        addedSomething = true;
                     }
                 }
             }
@@ -286,33 +262,11 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
             for (Map.Entry<String, DatabaseConfigurationMetadata> entry : geoIpMeta.getDatabases().entrySet()) {
                 final String id = entry.getKey();
                 DatabaseConfiguration database = entry.getValue().database();
-
-                if (database.provider() instanceof DatabaseConfiguration.Maxmind maxmind) {
-                    final String accountId = maxmind.accountId(); // TODO AH HA
-                    try (HttpClient.PasswordAuthenticationHolder holder = credentialsBuilder.apply("maxmind", accountId)) {
-                        if (holder == null) {
-                            logger.warn("No credentials found to download database [{}], skipping download...", id);
-                        } else {
-                            processDatabase(holder.get(), database);
-                        }
-                    } catch (Exception e) {
-                        accumulator = ExceptionsHelper.useOrSuppress(accumulator, ExceptionsHelper.convertToRuntime(e));
-                    }
-                } else if (database.provider() instanceof DatabaseConfiguration.IpInfo) {
-                    try (HttpClient.PasswordAuthenticationHolder holder = credentialsBuilder.apply("ipinfo", null)) {
-                        if (holder == null) {
-                            logger.warn("No credentials found to download database [{}], skipping download...", id);
-                        } else {
-                            processDatabase2(holder.get(), database);
-                        }
-                    } catch (Exception e) {
-                        accumulator = ExceptionsHelper.useOrSuppress(accumulator, ExceptionsHelper.convertToRuntime(e));
-                    }
-                } else {
-                    // illegal state exception or assert false or something
-                    throw new RuntimeException("narp");
+                try {
+                    processDatabase(id, database);
+                } catch (Exception e) {
+                    accumulator = ExceptionsHelper.useOrSuppress(accumulator, ExceptionsHelper.convertToRuntime(e));
                 }
-
             }
             if (accumulator != null) {
                 throw accumulator;
@@ -330,18 +284,50 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
      * {@link EnterpriseGeoIpDownloader#processDatabase(String, Checksum, CheckedSupplier)} with that checksum,
      * deferring to that method to actually download and process the tar.gz itself.
      *
-     * @param auth The credentials to use to download from the Maxmind endpoint
+     * @param id The identifier for this database (for logging purposes)
      * @param database The database to be downloaded from Maxmind and indexed into an Elasticsearch index
      * @throws IOException If there is an error fetching the sha256 file
      */
-    void processDatabase(PasswordAuthentication auth, DatabaseConfiguration database) throws IOException {
+    boolean processDatabase(String id, DatabaseConfiguration database) throws IOException {
         final String name = database.name();
         logger.debug("Processing database [{}] for configuration [{}]", name, database.id());
-        final Checksum checksum = getMaxmindChecksum(auth, name);
 
-        // the name that comes from the enterprise downloader cluster state doesn't include the .mmdb extension,
-        // but the downloading and indexing of database code expects it to be there, so we add it on here before further processing
-        processDatabase(name + ".mmdb", checksum, getMaxmindDownload(auth, name));
+        if (database.provider() instanceof DatabaseConfiguration.Maxmind maxmind) {
+            final String accountId = maxmind.accountId(); // TODO AH HA
+            try (HttpClient.PasswordAuthenticationHolder holder = credentialsBuilder.apply("maxmind", accountId)) {
+                if (holder == null) {
+                    logger.warn("No credentials found to download database [{}], skipping download...", id);
+                    return false;
+                } else {
+                    PasswordAuthentication auth = holder.get();
+                    final Checksum checksum = getMaxmindChecksum(auth, name);
+                    // the name that comes from the enterprise downloader cluster state doesn't include the .mmdb extension,
+                    // but the downloading and indexing of database code expects it to be there, so we add it on here before further
+                    // processing
+                    processDatabase(name + ".mmdb", checksum, getMaxmindDownload(auth, name));
+                    return true;
+                }
+            }
+        } else if (database.provider() instanceof DatabaseConfiguration.IpInfo) {
+            try (HttpClient.PasswordAuthenticationHolder holder = credentialsBuilder.apply("ipinfo", null)) {
+                if (holder == null) {
+                    logger.warn("No credentials found to download database [{}], skipping download...", id);
+                    return false;
+                } else {
+                    PasswordAuthentication auth = holder.get();
+                    final Checksum checksum = getIpinfoChecksum(auth, name);
+
+                    // the name that comes from the enterprise downloader cluster state doesn't include the .mmdb extension,
+                    // but the downloading and indexing of database code expects it to be there, so we add it on here before further
+                    // processing
+                    processDatabase(name + ".mmdb", checksum, getIpinfoDownload(auth, name));
+                    return true;
+                }
+            }
+        } else {
+            // illegal state exception or assert false or something
+            throw new RuntimeException("narp");
+        }
     }
 
     private Checksum getMaxmindChecksum(PasswordAuthentication auth, String name) throws IOException {
@@ -383,16 +369,6 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
     private CheckedSupplier<InputStream, IOException> getIpinfoDownload(PasswordAuthentication auth, String name) {
         final String mmdbUrl = ipinfoDownloadUrl(name, "mmdb");
         return () -> httpClient.get(auth, mmdbUrl);
-    }
-
-    void processDatabase2(PasswordAuthentication auth, DatabaseConfiguration database) throws IOException {
-        final String name = database.name();
-        logger.debug("Processing database [{}] for configuration [{}]", name, database.id());
-        final Checksum checksum = getIpinfoChecksum(auth, name);
-
-        // the name that comes from the enterprise downloader cluster state doesn't include the .mmdb extension,
-        // but the downloading and indexing of database code expects it to be there, so we add it on here before further processing
-        processDatabase(name + ".mmdb", checksum, getIpinfoDownload(auth, name));
     }
 
     record Checksum(Type type, String checksum) {

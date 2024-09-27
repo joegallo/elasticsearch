@@ -51,7 +51,6 @@ import org.junit.Before;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.PasswordAuthentication;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -330,10 +329,9 @@ public class EnterpriseGeoIpDownloaderTests extends ESTestCase {
         };
 
         geoIpDownloader.setState(EnterpriseGeoIpTaskState.EMPTY);
-        PasswordAuthentication auth = new PasswordAuthentication("name", "password".toCharArray());
         String id = randomIdentifier();
         DatabaseConfiguration databaseConfiguration = new DatabaseConfiguration(id, "test", new DatabaseConfiguration.Maxmind("name"));
-        geoIpDownloader.processDatabase(auth, databaseConfiguration);
+        geoIpDownloader.processDatabase(id, databaseConfiguration);
         assertThat(indexedChunks.get(), equalTo(true));
     }
 
@@ -382,10 +380,9 @@ public class EnterpriseGeoIpDownloaderTests extends ESTestCase {
         };
 
         geoIpDownloader.setState(EnterpriseGeoIpTaskState.EMPTY.put("test.mmdb", new GeoIpTaskState.Metadata(0, 5, 8, "0", 0)));
-        PasswordAuthentication auth = new PasswordAuthentication("name", "password".toCharArray());
         String id = randomIdentifier();
         DatabaseConfiguration databaseConfiguration = new DatabaseConfiguration(id, "test", new DatabaseConfiguration.Maxmind("name"));
-        geoIpDownloader.processDatabase(auth, databaseConfiguration);
+        geoIpDownloader.processDatabase(id, databaseConfiguration);
         assertThat(indexedChunks.get(), equalTo(true));
     }
 
@@ -439,10 +436,9 @@ public class EnterpriseGeoIpDownloaderTests extends ESTestCase {
             }
         };
         geoIpDownloader.setState(taskState);
-        PasswordAuthentication auth = new PasswordAuthentication("name", "password".toCharArray());
         String id = randomIdentifier();
         DatabaseConfiguration databaseConfiguration = new DatabaseConfiguration(id, "test", new DatabaseConfiguration.Maxmind("name"));
-        geoIpDownloader.processDatabase(auth, databaseConfiguration);
+        geoIpDownloader.processDatabase(id, databaseConfiguration);
     }
 
     public void testUpdateDatabasesWriteBlock() {
