@@ -426,8 +426,8 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
 
         boolean matches(Metadata metadata) {
             return switch (type) {
-                case MD5 -> metadata.md5() != null && metadata.md5().equals(checksum);
-                case SHA256 -> metadata.sha256() != null && metadata.sha256().equals(checksum);
+                case MD5 -> checksum.equals(metadata.md5());
+                case SHA256 -> checksum.equals(metadata.sha256());
             };
         }
     }
