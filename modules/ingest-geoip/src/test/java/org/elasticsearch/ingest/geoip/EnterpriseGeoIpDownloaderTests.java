@@ -52,8 +52,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -475,8 +473,8 @@ public class EnterpriseGeoIpDownloaderTests extends ESTestCase {
     }
 
     public void testMaxmindUrls() {
-        // non-static classes have fun syntax, but it's nice to be able to test this class by itself
-        EnterpriseGeoIpDownloader.MaxmindDownload download = geoIpDownloader.new MaxmindDownload(
+        // non-static classes have fun syntax, but it's nice to be able to test this behavior by itself
+        final EnterpriseGeoIpDownloader.MaxmindDownload download = geoIpDownloader.new MaxmindDownload(
             "GeoLite2-City", new DatabaseConfiguration.Maxmind("account_id")
         );
 
@@ -488,16 +486,6 @@ public class EnterpriseGeoIpDownloaderTests extends ESTestCase {
             String url = "https://download.maxmind.com/geoip/databases/GeoLite2-City/download?suffix=tar.gz.sha256";
             assertThat(download.url("tar.gz.sha256"), equalTo(url));
         }
-    }
-
-    private GeoIpTaskState.Metadata newGeoIpTaskStateMetadata(boolean expired) {
-        Instant lastChecked;
-        if (expired) {
-            lastChecked = Instant.now().minus(randomIntBetween(31, 100), ChronoUnit.DAYS);
-        } else {
-            lastChecked = Instant.now().minus(randomIntBetween(0, 29), ChronoUnit.DAYS);
-        }
-        return new GeoIpTaskState.Metadata(0, 0, 0, randomAlphaOfLength(20), lastChecked.toEpochMilli());
     }
 
     private static class MockClient extends NoOpClient {

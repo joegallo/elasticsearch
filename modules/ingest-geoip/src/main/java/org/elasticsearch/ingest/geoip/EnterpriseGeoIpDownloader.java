@@ -156,7 +156,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
             }
         }
 
-        logger.trace("Updating geoip databases");
+        logger.trace("Updating databases");
         IngestGeoIpMetadata geoIpMeta = clusterState.metadata().custom(IngestGeoIpMetadata.TYPE, IngestGeoIpMetadata.EMPTY);
 
         // if there are entries in the cs that aren't in the persistent task state,
@@ -231,18 +231,19 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
     }
 
     /**
-     * This method fetches the sha256 file and tar.gz file for the given database from the Maxmind endpoint, then indexes that tar.gz
-     * file into the .geoip_databases Elasticsearch index, deleting any old versions of the database tar.gz from the index if they exist.
-     * If the computed sha256 does not match the expected sha256, an error will be logged and the database will not be put into the
-     * Elasticsearch index.
+     * This method fetches the checksum and database for the given database from the Maxmind endpoint, then indexes that database
+     * file into the .geoip_databases Elasticsearch index, deleting any old versions of the database from the index if they exist.
+     * If the computed checksum does not match the expected checksum, an error will be logged and the database will not be put into
+     * the Elasticsearch index.
      * <p>
-     * As an implementation detail, this method retrieves the sha256 checksum of the database to download and then invokes
+     * As an implementation detail, this method retrieves the checksum of the database to download and then invokes
      * {@link EnterpriseGeoIpDownloader#processDatabase(String, Checksum, CheckedSupplier)} with that checksum,
-     * deferring to that method to actually download and process the tar.gz itself.
+     * deferring to that method to actually download and process the database file itself.
      *
-     * @param id The identifier for this database (for logging purposes)
-     * @param database The database to be downloaded from Maxmind and indexed into an Elasticsearch index
-     * @throws IOException If there is an error fetching the sha256 file
+     * @param id The identifier for this database (just for logging purposes)
+     * @param database The database to be downloaded and indexed into an Elasticsearch index
+     * @return true if the file was processed, false if the file wasn't processed (for example if credentials haven't been configured)
+     * @throws IOException If there is an error fetching the checksum or database file
      */
     boolean processDatabase(String id, DatabaseConfiguration database) throws IOException {
         final String name = database.name();
@@ -251,8 +252,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         try (ProviderDownload downloader = downloaderFor(database)) {
             if (downloader.validCredentials()) {
                 // the name that comes from the enterprise downloader cluster state doesn't include the .mmdb extension,
-                // but the downloading and indexing of database code expects it to be there, so we add it on here before further
-                // processing
+                // but the downloading and indexing of database code expects it to be there, so we add it on here before continuing
                 final String fileName = name + ".mmdb";
                 processDatabase(fileName, downloader.checksum(), downloader.download());
                 return true;
@@ -264,12 +264,12 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
     }
 
     /**
-     * This method fetches the tar.gz file for the given database from the Maxmind endpoint, then indexes that tar.gz
-     * file into the .geoip_databases Elasticsearch index, deleting any old versions of the database tar.gz from the index if they exist.
-     * <p>
-     * The name of the database to be downloaded from Maxmind and indexed into an Elasticsearch index
+     * This method fetches the database file for the given database from the passed-in source, then indexes that database
+     * file into the .geoip_databases Elasticsearch index, deleting any old versions of the database from the index if they exist.
+     *
+     * @param name The name of the database to be downloaded and indexed into an Elasticsearch index
      * @param checksum The checksum to compare to the computed checksum of the downloaded file
-     * @param source The supplier of an InputStream that will download the file
+     * @param source The supplier of an InputStream that will actually download the file
      */
     private void processDatabase(final String name, final Checksum checksum, final CheckedSupplier<InputStream, IOException> source) {
         Metadata metadata = state.getDatabases().getOrDefault(name, Metadata.EMPTY);
@@ -333,7 +333,6 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         // but we don't have to do it *twice* -- so if the passed-in checksum is also md5, then we'll get null here
         MessageDigest md5 = MessageDigests.md5();
         MessageDigest digest = checksum.digest(); // this returns null for md5
-
         for (byte[] buf = getChunk(is); buf.length != 0; buf = getChunk(is)) {
             md5.update(buf);
             if (digest != null) {
@@ -404,12 +403,12 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         try {
             updateDatabases(); // n.b. this downloads bytes from the internet, it can take a while
         } catch (Exception e) {
-            logger.error("exception during geoip databases update", e);
+            logger.error("exception during databases update", e);
         }
         try {
             cleanDatabases();
         } catch (Exception e) {
-            logger.error("exception during geoip databases cleanup", e);
+            logger.error("exception during databases cleanup", e);
         }
     }
 
@@ -655,6 +654,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
 
     record Checksum(Type type, String checksum) {
 
+        // use the static factory methods, though, rather than this
         public Checksum {
             Objects.requireNonNull(type);
             Objects.requireNonNull(checksum);
