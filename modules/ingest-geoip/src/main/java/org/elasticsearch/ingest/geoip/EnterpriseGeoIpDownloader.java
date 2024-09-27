@@ -452,9 +452,11 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
             int firstChunk = metadata.lastChunk() + 1; // if there is no metadata, then Metadata.EMPTY + 1 = 0
             Tuple<Integer, String> tuple = indexChunks(name, is, firstChunk, checksum, start);
             int lastChunk = tuple.v1();
-            String md5 = tuple.v2();
+            String md5 = tuple.v2(); // the md5 of the bytes as they passed through indexChunks
             if (lastChunk > firstChunk) {
-                state = state.put(name, new Metadata(start, firstChunk, lastChunk - 1, md5, start));
+                // if there is a sha256 for this download, then record it (otherwise record null for it, which is also fine)
+                String sha256 = checksum.type == Checksum.Type.SHA256 ? checksum.checksum : null;
+                state = state.put(name, new Metadata(start, firstChunk, lastChunk - 1, md5, start, sha256));
                 updateTaskState();
                 logger.info("successfully downloaded database [{}]", name);
                 deleteOldChunks(name, firstChunk);
@@ -523,13 +525,9 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
 
         String actualMd5 = MessageDigests.toHexString(md5.digest());
         String actualChecksum = digest == null ? actualMd5 : MessageDigests.toHexString(digest.digest());
-        if (Objects.equals(checksum.checksum, actualChecksum) == false) {
-            throw new IOException("checksum mismatch, expected [" + checksum.checksum + "], actual [" + actualChecksum + "]");
-        }
-        // just being explicit, the passed-in digest is for our use inside this method, you can't consult it after calling this
-        // method in order to learn anything useful
-        if (digest != null) {
-            digest.reset();
+        String expectedChecksum = checksum.checksum;
+        if (Objects.equals(expectedChecksum, actualChecksum) == false) {
+            throw new IOException("checksum mismatch, expected [" + expectedChecksum + "], actual [" + actualChecksum + "]");
         }
         return Tuple.tuple(chunk, actualMd5);
     }
