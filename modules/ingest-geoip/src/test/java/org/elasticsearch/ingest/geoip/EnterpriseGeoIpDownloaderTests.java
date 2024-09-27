@@ -474,6 +474,22 @@ public class EnterpriseGeoIpDownloaderTests extends ESTestCase {
         verifyNoInteractions(httpClient);
     }
 
+    public void testMaxmindUrls() {
+        // non-static classes have fun syntax, but it's nice to be able to test this class by itself
+        EnterpriseGeoIpDownloader.MaxmindDownload download = geoIpDownloader.new MaxmindDownload(
+            "GeoLite2-City", new DatabaseConfiguration.Maxmind("account_id")
+        );
+
+        {
+            String url = "https://download.maxmind.com/geoip/databases/GeoLite2-City/download?suffix=tar.gz";
+            assertThat(download.url("tar.gz"), equalTo(url));
+        }
+        {
+            String url = "https://download.maxmind.com/geoip/databases/GeoLite2-City/download?suffix=tar.gz.sha256";
+            assertThat(download.url("tar.gz.sha256"), equalTo(url));
+        }
+    }
+
     private GeoIpTaskState.Metadata newGeoIpTaskStateMetadata(boolean expired) {
         Instant lastChecked;
         if (expired) {
