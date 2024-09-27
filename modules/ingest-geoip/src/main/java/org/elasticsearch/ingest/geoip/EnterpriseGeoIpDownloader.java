@@ -42,9 +42,9 @@ import org.elasticsearch.xcontent.XContentParser;
 import org.elasticsearch.xcontent.XContentParserConfiguration;
 import org.elasticsearch.xcontent.XContentType;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.PasswordAuthentication;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Arrays;
@@ -230,34 +230,6 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         }
     }
 
-    private HttpClient.PasswordAuthenticationHolder buildCredentials(final DatabaseConfiguration.Maxmind maxmind) {
-        // if the username is missing, empty, or blank, return null as 'no auth'
-        final String username = maxmind.accountId();
-        if (username == null || username.isEmpty() || username.isBlank()) {
-            return null;
-        }
-
-        // likewise if the password chars array is missing or empty, return null as 'no auth'
-        final char[] passwordChars = tokenProvider.apply("maxmind");
-        if (passwordChars == null || passwordChars.length == 0) {
-            return null;
-        }
-
-        return new HttpClient.PasswordAuthenticationHolder(username, passwordChars);
-    }
-
-    private HttpClient.PasswordAuthenticationHolder buildCredentials(final DatabaseConfiguration.IpInfo ipinfo) {
-        final char[] tokenChars = tokenProvider.apply("ipinfo");
-
-        // if the token is missing or empty, return null as 'no auth'
-        if (tokenChars == null || tokenChars.length == 0) {
-            return null;
-        }
-
-        // ipinfo uses the token as the username component of basic auth, see https://ipinfo.io/developers#authentication
-        return new HttpClient.PasswordAuthenticationHolder(new String(tokenChars), new char[] {});
-    }
-
     /**
      * This method fetches the sha256 file and tar.gz file for the given database from the Maxmind endpoint, then indexes that tar.gz
      * file into the .geoip_databases Elasticsearch index, deleting any old versions of the database tar.gz from the index if they exist.
@@ -276,48 +248,62 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         final String name = database.name();
         logger.debug("Processing database [{}] for configuration [{}]", name, database.id());
 
+        ProviderDownload downloader;
         if (database.provider() instanceof DatabaseConfiguration.Maxmind maxmind) {
-            try (HttpClient.PasswordAuthenticationHolder holder = buildCredentials(maxmind)) {
-                if (holder == null) {
-                    logger.warn("No credentials found to download database [{}], skipping download...", id);
-                    return false;
-                } else {
-                    PasswordAuthentication auth = holder.get();
-                    MaxmindDownload downloader = new MaxmindDownload();
-                    final Checksum checksum = downloader.checksum(auth, name);
-                    // the name that comes from the enterprise downloader cluster state doesn't include the .mmdb extension,
-                    // but the downloading and indexing of database code expects it to be there, so we add it on here before further
-                    // processing
-                    processDatabase(name + ".mmdb", checksum, downloader.download(auth, name));
-                    return true;
-                }
-            }
+            downloader = new MaxmindDownload(database.name(), maxmind);
         } else if (database.provider() instanceof DatabaseConfiguration.IpInfo ipinfo) {
-            try (HttpClient.PasswordAuthenticationHolder holder = buildCredentials(ipinfo)) {
-                if (holder == null) {
-                    logger.warn("No credentials found to download database [{}], skipping download...", id);
-                    return false;
-                } else {
-                    PasswordAuthentication auth = holder.get();
-                    IpinfoDownload downloader = new IpinfoDownload();
-                    final Checksum checksum = downloader.checksum(auth, name);
-                    // the name that comes from the enterprise downloader cluster state doesn't include the .mmdb extension,
-                    // but the downloading and indexing of database code expects it to be there, so we add it on here before further
-                    // processing
-                    processDatabase(name + ".mmdb", checksum, downloader.download(auth, name));
-                    return true;
-                }
-            }
+            downloader = new IpinfoDownload(database.name(), ipinfo);
         } else {
             // illegal state exception or assert false or something
             throw new RuntimeException("narp");
+        }
+
+        try (HttpClient.PasswordAuthenticationHolder holder = downloader.buildCredentials()) {
+            if (holder == null) {
+                logger.warn("No credentials found to download database [{}], skipping download...", id);
+                return false;
+            } else {
+                // the name that comes from the enterprise downloader cluster state doesn't include the .mmdb extension,
+                // but the downloading and indexing of database code expects it to be there, so we add it on here before further
+                // processing
+                final String fileName = name + ".mmdb";
+                processDatabase(fileName, downloader.checksum(), downloader.download());
+                return true;
+            }
         }
     }
 
     class MaxmindDownload implements ProviderDownload {
 
+        final String name;
+        final DatabaseConfiguration.Maxmind maxmind;
+        HttpClient.PasswordAuthenticationHolder auth;
+
+        MaxmindDownload(String name, DatabaseConfiguration.Maxmind maxmind) {
+            this.name = name;
+            this.maxmind = maxmind;
+            this.auth = buildCredentials();
+        }
+
         @Override
-        public String url(String name, String suffix) {
+        public HttpClient.PasswordAuthenticationHolder buildCredentials() {
+            // if the username is missing, empty, or blank, return null as 'no auth'
+            final String username = maxmind.accountId();
+            if (username == null || username.isEmpty() || username.isBlank()) {
+                return null;
+            }
+
+            // likewise if the password chars array is missing or empty, return null as 'no auth'
+            final char[] passwordChars = tokenProvider.apply("maxmind");
+            if (passwordChars == null || passwordChars.length == 0) {
+                return null;
+            }
+
+            return new HttpClient.PasswordAuthenticationHolder(username, passwordChars);
+        }
+
+        @Override
+        public String url(String suffix) {
             String endpointPattern = DEFAULT_MAXMIND_ENDPOINT;
             if (endpointPattern.contains("%")) {
                 throw new IllegalArgumentException("Invalid endpoint [" + endpointPattern + "]");
@@ -334,9 +320,9 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         }
 
         @Override
-        public Checksum checksum(PasswordAuthentication auth, String name) throws IOException {
-            final String sha256Url = this.url(name, "tar.gz.sha256");
-            var result = new String(httpClient.getBytes(auth, sha256Url), StandardCharsets.UTF_8).trim(); // this throws if the auth is bad
+        public Checksum checksum() throws IOException {
+            final String sha256Url = this.url("tar.gz.sha256");
+            var result = new String(httpClient.getBytes(auth.get(), sha256Url), StandardCharsets.UTF_8).trim(); // throws if the auth is bad
             var matcher = SHA256_CHECKSUM_PATTERN.matcher(result);
             boolean match = matcher.matches();
             if (match == false) {
@@ -347,18 +333,46 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         }
 
         @Override
-        public CheckedSupplier<InputStream, IOException> download(PasswordAuthentication auth, String name) {
-            final String tgzUrl = this.url(name, "tar.gz");
-            return () -> httpClient.get(auth, tgzUrl);
+        public CheckedSupplier<InputStream, IOException> download() {
+            final String tgzUrl = this.url("tar.gz");
+            return () -> httpClient.get(auth.get(), tgzUrl);
+        }
+
+        @Override
+        public void close() throws IOException {
+            auth.close();
         }
     }
 
     class IpinfoDownload implements ProviderDownload {
 
+        final String name;
+        final DatabaseConfiguration.IpInfo ipinfo;
+        HttpClient.PasswordAuthenticationHolder auth;
+
+        IpinfoDownload(String name, DatabaseConfiguration.IpInfo ipinfo) {
+            this.name = name;
+            this.ipinfo = ipinfo;
+            this.auth = buildCredentials();
+        }
+
         @Override
-        public String url(String name, String suffix) {
+        public HttpClient.PasswordAuthenticationHolder buildCredentials() {
+            final char[] tokenChars = tokenProvider.apply("ipinfo");
+
+            // if the token is missing or empty, return null as 'no auth'
+            if (tokenChars == null || tokenChars.length == 0) {
+                return null;
+            }
+
+            // ipinfo uses the token as the username component of basic auth, see https://ipinfo.io/developers#authentication
+            return new HttpClient.PasswordAuthenticationHolder(new String(tokenChars), new char[] {});
+        }
+
+        @Override
+        public String url(String suffix) {
             // TODO yikes we'll need to record (somewhere) that some files are in 'free/' and many are not.
-            name = "free/" + name;
+            String internalName = "free/" + name;
 
             // reminder, we're passing the ipinfo token as the username part of http basic auth,
             // see https://ipinfo.io/developers#authentication
@@ -380,13 +394,13 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
             // at this point the pattern looks like this (in the default case):
             // https://ipinfo.io/data/%s.%s
 
-            return Strings.format(endpointPattern, name, suffix);
+            return Strings.format(endpointPattern, internalName, suffix);
         }
 
         @Override
-        public Checksum checksum(PasswordAuthentication auth, String name) throws IOException {
-            final String checksumJsonUrl = this.url(name, "mmdb/checksums"); // a minor abuse of the idea of a 'suffix', :shrug:
-            byte[] data = httpClient.getBytes(auth, checksumJsonUrl); // this throws if the auth is bad
+        public Checksum checksum() throws IOException {
+            final String checksumJsonUrl = this.url("mmdb/checksums"); // a minor abuse of the idea of a 'suffix', :shrug:
+            byte[] data = httpClient.getBytes(auth.get(), checksumJsonUrl); // this throws if the auth is bad
             Map<String, Object> checksums;
             try (XContentParser parser = XContentType.JSON.xContent().createParser(XContentParserConfiguration.EMPTY, data)) {
                 checksums = parser.map();
@@ -404,18 +418,27 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         }
 
         @Override
-        public CheckedSupplier<InputStream, IOException> download(PasswordAuthentication auth, String name) {
-            final String mmdbUrl = this.url(name, "mmdb");
-            return () -> httpClient.get(auth, mmdbUrl);
+        public CheckedSupplier<InputStream, IOException> download() {
+            final String mmdbUrl = this.url("mmdb");
+            return () -> httpClient.get(auth.get(), mmdbUrl);
+        }
+
+        @Override
+        public void close() throws IOException {
+            auth.close();
         }
     }
 
-    interface ProviderDownload {
-        String url(String name, String suffix);
+    interface ProviderDownload extends Closeable {
+        // note: buildCredentials and url are inherently just implementation details of checksum() and download(),
+        // but it's useful to have unit tests for this logic and to keep it separate
+        HttpClient.PasswordAuthenticationHolder buildCredentials();
 
-        Checksum checksum(PasswordAuthentication auth, String name) throws IOException;
+        String url(String suffix);
 
-        CheckedSupplier<InputStream, IOException> download(PasswordAuthentication auth, String name);
+        Checksum checksum() throws IOException;
+
+        CheckedSupplier<InputStream, IOException> download();
     }
 
     record Checksum(Type type, String checksum) {
