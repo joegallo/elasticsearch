@@ -105,44 +105,18 @@ public class EnterpriseGeoIpDownloaderTaskExecutor extends PersistentTasksExecut
         }
     }
 
-    private HttpClient.PasswordAuthenticationHolder buildCredentials(final String type, final String username) {
+    private char[] getSecureToken(final String type) {
+        char[] token = null;
         if (type.equals("maxmind")) {
-            final char[] passwordChars;
             if (cachedSecureSettings.getSettingNames().contains(MAXMIND_LICENSE_KEY_SETTING.getKey())) {
-                passwordChars = cachedSecureSettings.getString(MAXMIND_LICENSE_KEY_SETTING.getKey()).getChars();
-            } else {
-                passwordChars = null;
+                token = cachedSecureSettings.getString(MAXMIND_LICENSE_KEY_SETTING.getKey()).getChars();
             }
-
-            // if the username is missing, empty, or blank, return null as 'no auth'
-            if (username == null || username.isEmpty() || username.isBlank()) {
-                return null;
-            }
-
-            // likewise if the password chars array is missing or empty, return null as 'no auth'
-            if (passwordChars == null || passwordChars.length == 0) {
-                return null;
-            }
-
-            return new HttpClient.PasswordAuthenticationHolder(username, passwordChars);
         } else if (type.equals("ipinfo")) {
-            // ipinfo uses the token as the username component of basic auth
-            // see https://ipinfo.io/developers#authentication
-            final String token;
-
             if (cachedSecureSettings.getSettingNames().contains(IPINFO_TOKEN_SETTING.getKey())) {
-                token = cachedSecureSettings.getString(IPINFO_TOKEN_SETTING.getKey()).toString();
-            } else {
-                token = null;
+                token = cachedSecureSettings.getString(IPINFO_TOKEN_SETTING.getKey()).getChars();
             }
-
-            logger.info("YOYOYOYOYOYOYOYOYO [{}]", token);
-
-            return new HttpClient.PasswordAuthenticationHolder(token, new char[] {});
-        } else {
-            // illegal state exception or assert false or something
-            throw new RuntimeException("narp");
         }
+        return token;
     }
 
     @Override
@@ -166,7 +140,7 @@ public class EnterpriseGeoIpDownloaderTaskExecutor extends PersistentTasksExecut
             parentTaskId,
             headers,
             () -> pollInterval,
-            this::buildCredentials
+            this::getSecureToken
         );
     }
 

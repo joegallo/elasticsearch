@@ -53,7 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -91,7 +91,6 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         "https://ipinfo.io/data"
     );
     // n.b. a future enhancement might be to allow for an IPINFO_ENDPOINT_SETTING, but
-    // at the moment this is an unsupported system property for use in tests (only)
     // at the moment this is an unsupported system property for use in tests (only)
 
     static String maxmindDownloadUrl(final String name, final String suffix) {
@@ -149,7 +148,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
     protected volatile EnterpriseGeoIpTaskState state;
     private volatile Scheduler.ScheduledCancellable scheduled;
     private final Supplier<TimeValue> pollIntervalSupplier;
-    private final BiFunction<String, String, HttpClient.PasswordAuthenticationHolder> credentialsBuilder;
+    private final Function<String, char[]> tokenProvider;
 
     EnterpriseGeoIpDownloader(
         Client client,
@@ -163,7 +162,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         TaskId parentTask,
         Map<String, String> headers,
         Supplier<TimeValue> pollIntervalSupplier,
-        BiFunction<String, String, HttpClient.PasswordAuthenticationHolder> credentialsBuilder
+        Function<String, char[]> tokenProvider
     ) {
         super(id, type, action, description, parentTask, headers);
         this.client = client;
@@ -171,7 +170,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         this.clusterService = clusterService;
         this.threadPool = threadPool;
         this.pollIntervalSupplier = pollIntervalSupplier;
-        this.credentialsBuilder = credentialsBuilder;
+        this.tokenProvider = tokenProvider;
     }
 
     void setState(EnterpriseGeoIpTaskState state) {
@@ -274,6 +273,34 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         }
     }
 
+    private HttpClient.PasswordAuthenticationHolder buildCredentials(final DatabaseConfiguration.Maxmind maxmind) {
+        // if the username is missing, empty, or blank, return null as 'no auth'
+        final String username = maxmind.accountId();
+        if (username == null || username.isEmpty() || username.isBlank()) {
+            return null;
+        }
+
+        // likewise if the password chars array is missing or empty, return null as 'no auth'
+        final char[] passwordChars = tokenProvider.apply("maxmind");
+        if (passwordChars == null || passwordChars.length == 0) {
+            return null;
+        }
+
+        return new HttpClient.PasswordAuthenticationHolder(username, passwordChars);
+    }
+
+    private HttpClient.PasswordAuthenticationHolder buildCredentials(final DatabaseConfiguration.IpInfo ipinfo) {
+        final char[] tokenChars = tokenProvider.apply("ipinfo");
+
+        // if the token is missing or empty, return null as 'no auth'
+        if (tokenChars == null || tokenChars.length == 0) {
+            return null;
+        }
+
+        // ipinfo uses the token as the username component of basic auth, see https://ipinfo.io/developers#authentication
+        return new HttpClient.PasswordAuthenticationHolder(new String(tokenChars), new char[] {});
+    }
+
     /**
      * This method fetches the sha256 file and tar.gz file for the given database from the Maxmind endpoint, then indexes that tar.gz
      * file into the .geoip_databases Elasticsearch index, deleting any old versions of the database tar.gz from the index if they exist.
@@ -293,8 +320,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         logger.debug("Processing database [{}] for configuration [{}]", name, database.id());
 
         if (database.provider() instanceof DatabaseConfiguration.Maxmind maxmind) {
-            final String accountId = maxmind.accountId(); // TODO AH HA
-            try (HttpClient.PasswordAuthenticationHolder holder = credentialsBuilder.apply("maxmind", accountId)) {
+            try (HttpClient.PasswordAuthenticationHolder holder = buildCredentials(maxmind)) {
                 if (holder == null) {
                     logger.warn("No credentials found to download database [{}], skipping download...", id);
                     return false;
@@ -308,8 +334,8 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
                     return true;
                 }
             }
-        } else if (database.provider() instanceof DatabaseConfiguration.IpInfo) {
-            try (HttpClient.PasswordAuthenticationHolder holder = credentialsBuilder.apply("ipinfo", null)) {
+        } else if (database.provider() instanceof DatabaseConfiguration.IpInfo ipinfo) {
+            try (HttpClient.PasswordAuthenticationHolder holder = buildCredentials(ipinfo)) {
                 if (holder == null) {
                     logger.warn("No credentials found to download database [{}], skipping download...", id);
                     return false;

@@ -109,7 +109,7 @@ public class EnterpriseGeoIpDownloaderTests extends ESTestCase {
             EMPTY_TASK_ID,
             Map.of(),
             () -> GeoIpDownloaderTaskExecutor.POLL_INTERVAL_SETTING.getDefault(Settings.EMPTY),
-            (type, input) -> new HttpClient.PasswordAuthenticationHolder("name", "password".toCharArray())
+            (type) -> "password".toCharArray()
         ) {
             {
                 EnterpriseGeoIpTask.EnterpriseGeoIpTaskParams geoIpTaskParams = mock(EnterpriseGeoIpTask.EnterpriseGeoIpTaskParams.class);
@@ -300,7 +300,7 @@ public class EnterpriseGeoIpDownloaderTests extends ESTestCase {
             EMPTY_TASK_ID,
             Map.of(),
             () -> GeoIpDownloaderTaskExecutor.POLL_INTERVAL_SETTING.getDefault(Settings.EMPTY),
-            (type, input) -> new HttpClient.PasswordAuthenticationHolder("name", "password".toCharArray())
+            (type) -> "password".toCharArray()
         ) {
             @Override
             protected void updateTimestamp(String name, GeoIpTaskState.Metadata metadata) {
@@ -351,7 +351,7 @@ public class EnterpriseGeoIpDownloaderTests extends ESTestCase {
             EMPTY_TASK_ID,
             Map.of(),
             () -> GeoIpDownloaderTaskExecutor.POLL_INTERVAL_SETTING.getDefault(Settings.EMPTY),
-            (type, input) -> new HttpClient.PasswordAuthenticationHolder("name", "password".toCharArray())
+            (type) -> "password".toCharArray()
         ) {
             @Override
             protected void updateTimestamp(String name, GeoIpTaskState.Metadata metadata) {
@@ -411,7 +411,7 @@ public class EnterpriseGeoIpDownloaderTests extends ESTestCase {
             EMPTY_TASK_ID,
             Map.of(),
             () -> GeoIpDownloaderTaskExecutor.POLL_INTERVAL_SETTING.getDefault(Settings.EMPTY),
-            (type, input) -> new HttpClient.PasswordAuthenticationHolder("name", "password".toCharArray())
+            (type) -> "password".toCharArray()
         ) {
             @Override
             protected void updateTimestamp(String name, GeoIpTaskState.Metadata newMetadata) {
