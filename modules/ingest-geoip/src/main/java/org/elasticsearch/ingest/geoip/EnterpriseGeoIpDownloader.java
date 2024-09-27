@@ -110,11 +110,18 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         return Strings.format(endpointPattern, name, suffix);
     }
 
-    static String ipinfoDownloadUrl(final String name, final String suffix) {
+    static String ipinfoDownloadUrl(String name, final String suffix) {
+        // TODO yikes we'll need to record (somewhere) that some files are in 'free/' and many are not.
+        name = "free/" + name;
+
+        // reminder, we're passing the ipinfo token as the username part of http basic auth,
+        // see https://ipinfo.io/developers#authentication
+
         // curl -L https://ipinfo.io/data/free/asn.mmdb?token=$TOKEN -o asn.mmdb # not-gzipped mmdb bytes
         // curl -L "https://ipinfo.io/data/free/asn.mmdb/checksums?token=$TOKEN" # json
         // curl -L https://ipinfo.io/data/standard_privacy.mmdb?token=$TOKEN -o privacy.mmdb
         // see https://ipinfo.io/developers/database-filename-reference for more
+
         String endpointPattern = DEFAULT_IPINFO_ENDPOINT;
         if (endpointPattern.contains("%")) {
             throw new IllegalArgumentException("Invalid endpoint [" + endpointPattern + "]");
@@ -122,13 +129,15 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         if (endpointPattern.endsWith("/") == false) {
             endpointPattern += "/";
         }
+        endpointPattern += "%s.%s";
+
         // at this point the pattern looks like this (in the default case):
-        // https://download.maxmind.com/geoip/databases/%s/download?suffix=%s
+        // https://ipinfo.io/data/%s.%s
 
         if (suffix != null) {
             throw new IllegalArgumentException("narp");
         }
-        return endpointPattern + name;
+        return Strings.format(endpointPattern, name, suffix);
     }
 
     static final String DATABASES_INDEX = ".geoip_databases";
@@ -353,8 +362,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
     }
 
     private Checksum getIpinfoChecksum(PasswordAuthentication auth, String name) throws IOException {
-        // TODO yikes we'll need to record (somewhere) that some files are in 'free/' and many are not.
-        final String checksumJsonUrl = ipinfoDownloadUrl("free/" + name + ".mmdb/checksums", null);
+        final String checksumJsonUrl = ipinfoDownloadUrl(name, "mmdb/checksums"); // a minor abuse of the idea of a 'suffix', :shrug:
         byte[] data = httpClient.getBytes(auth, checksumJsonUrl); // this throws if the auth is bad
         Map<String, Object> checksums;
         try (XContentParser parser = XContentType.JSON.xContent().createParser(XContentParserConfiguration.EMPTY, data)) {
@@ -373,27 +381,17 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
     }
 
     private CheckedSupplier<InputStream, IOException> getIpinfoDownload(PasswordAuthentication auth, String name) {
-
-        // TODO yikes we'll need to record (somewhere) that some files are in 'free/' and many are not.
-
-        // the name that comes from the enterprise downloader cluster state doesn't include the .mmdb extension,
-        // but the downloading and indexing of database code expects it to be there, so we add it on here before further processing
-        final String mmdbUrl = ipinfoDownloadUrl("free/" + name + ".mmdb", null);
+        final String mmdbUrl = ipinfoDownloadUrl(name, "mmdb");
         return () -> httpClient.get(auth, mmdbUrl);
     }
 
     void processDatabase2(PasswordAuthentication auth, DatabaseConfiguration database) throws IOException {
         final String name = database.name();
         logger.debug("Processing database [{}] for configuration [{}]", name, database.id());
-
-        // reminder, we're passing the ipinfo token as the username part of http basic auth,
-        // see https://ipinfo.io/developers#authentication
-
-        // curl -L https://ipinfo.io/data/free/asn.mmdb?token=$TOKEN -o asn.mmdb # not-gzipped mmdb bytes
-        // curl -L "https://ipinfo.io/data/free/asn.mmdb/checksums?token=$TOKEN" # json
-        // see https://ipinfo.io/developers/database-filename-reference for more
-
         final Checksum checksum = getIpinfoChecksum(auth, name);
+
+        // the name that comes from the enterprise downloader cluster state doesn't include the .mmdb extension,
+        // but the downloading and indexing of database code expects it to be there, so we add it on here before further processing
         processDatabase(name + ".mmdb", checksum, getIpinfoDownload(auth, name));
     }
 
