@@ -575,18 +575,20 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
             return auth.get() != null;
         }
 
+        private static final Set<String> FREE_DATABASES = Set.of("asn", "country", "country_asn");
+
         @Override
         public String url(String suffix) {
-            // TODO yikes we'll need to record (somewhere) that some files are in 'free/' and many are not.
-            String internalName = "free/" + name;
+            // note: the 'free' databases are in the sub-path 'free/' in terms of the download endpoint
+            final String internalName;
+            if (FREE_DATABASES.contains(name)) {
+                internalName = "free/" + name;
+            } else {
+                internalName = name;
+            }
 
             // reminder, we're passing the ipinfo token as the username part of http basic auth,
             // see https://ipinfo.io/developers#authentication
-
-            // curl -L https://ipinfo.io/data/free/asn.mmdb?token=$TOKEN -o asn.mmdb # not-gzipped mmdb bytes
-            // curl -L "https://ipinfo.io/data/free/asn.mmdb/checksums?token=$TOKEN" # json
-            // curl -L https://ipinfo.io/data/standard_privacy.mmdb?token=$TOKEN -o privacy.mmdb
-            // see https://ipinfo.io/developers/database-filename-reference for more
 
             String endpointPattern = DEFAULT_IPINFO_ENDPOINT;
             if (endpointPattern.contains("%")) {
@@ -599,6 +601,8 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
 
             // at this point the pattern looks like this (in the default case):
             // https://ipinfo.io/data/%s.%s
+            // also see https://ipinfo.io/developers/database-download,
+            // and https://ipinfo.io/developers/database-filename-reference for more
 
             return Strings.format(endpointPattern, internalName, suffix);
         }
