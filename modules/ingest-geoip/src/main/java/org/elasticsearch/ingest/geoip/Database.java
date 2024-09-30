@@ -17,6 +17,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * A high-level representation of a kind of geoip database that is supported by the {@link GeoIpProcessor}.
@@ -165,17 +166,55 @@ enum Database {
     public static final String ENTERPRISE_DB_SUFFIX = "-Enterprise";
     public static final String ISP_DB_SUFFIX = "-ISP";
 
+    private static final Set<String> IPINFO_TYPE_STOP_WORDS = Set.of(
+        "ipinfo",
+        "extended",
+        "free",
+        "generic",
+        "ip",
+        "sample",
+        "standard",
+        "mmdb"
+    );
+
+    static String ipinfoTypeCleanup(String type) {
+        List<String> parts = Arrays.asList(type.split("[ _.]"));
+        return parts.stream().filter((s) -> IPINFO_TYPE_STOP_WORDS.contains(s) == false).collect(Collectors.joining("_"));
+    }
+
     @Nullable
     private static Database getIpinfoDatabase(final String databaseType) {
-        Database database = null;
-        if (databaseType.contains("asn_free")) {
-            database = Database.Asn;
-        } else if (databaseType.contains("country_free")) {
-            database = Database.Country;
-        } else if (databaseType.contains("ip_geolocation")) {
-            database = Database.City;
+        // for ipinfo the database selection is more along the lines of user-agent sniffing than
+        // string-based dispatch. the specific database_type strings could change in the future,
+        // hence the somewhat loose nature of this checking.
+
+        final String cleanedType = ipinfoTypeCleanup(databaseType);
+
+        // early detection on any of the 'extended' types
+        if (databaseType.contains("extended")) {
+            // TODO yikes: keith asked for trace logging here
+            // which are not currently supported, so return null
+            return null;
         }
-        return database;
+
+        // early detection on 'country_asn' so the 'country' and 'asn' checks don't get faked out
+        if (cleanedType.contains("country_asn")) {
+            // TODO yikes: keith asked for trace logging here
+            // but it's not currently supported, so return null
+            return null;
+        }
+
+        if (cleanedType.contains("asn")) {
+            return Database.Asn;
+        } else if (cleanedType.contains("country")) {
+            return Database.Country;
+        } else if (cleanedType.contains("location")) { // note: catches 'location' and 'geolocation' ;)
+            return Database.City;
+        } else if (cleanedType.contains("privacy")) {
+            return null; // TODO yikes: Database.Privacy will need to exist
+        } else {
+            return null; // no match was found
+        }
     }
 
     @Nullable
@@ -213,12 +252,10 @@ enum Database {
     public static Database getDatabase(final String databaseType, final String databaseFile) {
         Database database = null;
 
-        // TODO yikes, I dunno, this code seems a bit funky
-
         if (Strings.hasText(databaseType)) {
             final String databaseTypeLowerCase = databaseType.toLowerCase(Locale.ROOT);
             if (databaseTypeLowerCase.startsWith(IPINFO_PREFIX)) {
-                database = getIpinfoDatabase(databaseType);
+                database = getIpinfoDatabase(databaseTypeLowerCase); // all lower case!
             } else {
                 // for historical reasons, fall back to assuming maxmind-like type parsing
                 database = getMaxmindDatabase(databaseType);
