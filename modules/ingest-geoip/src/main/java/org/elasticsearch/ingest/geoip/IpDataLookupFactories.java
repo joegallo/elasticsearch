@@ -135,13 +135,12 @@ final class IpDataLookupFactories {
     }
 
     static IpDataLookupFactory get(final String databaseType, final String databaseFile) {
-        final Function<Set<Database.Property>, IpDataLookup> factoryMethod;
         final Database database = getDatabase(databaseType);
-
         if (database == null) {
             throw new IllegalArgumentException("Unsupported database type [" + databaseType + "] for file [" + databaseFile + "]");
         }
 
+        final Function<Set<Database.Property>, IpDataLookup> factoryMethod;
         final String databaseTypeLowerCase = databaseType.toLowerCase(Locale.ROOT);
         if (databaseTypeLowerCase.startsWith(IPINFO_PREFIX)) {
             factoryMethod = switch (database) {
@@ -151,7 +150,7 @@ final class IpDataLookupFactories {
                 default -> null;
             };
         } else {
-            // for historical reasons, fall back to assuming maxmind-like type parsing
+            // for historical reasons, fall back to assuming maxmind-like types
             factoryMethod = switch (database) {
                 case Database.City -> MaxmindIpDataLookups.City::new;
                 case Database.Country -> MaxmindIpDataLookups.Country::new;
