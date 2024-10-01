@@ -9,6 +9,8 @@
 
 package org.elasticsearch.ingest.geoip;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.core.Nullable;
 
@@ -24,6 +26,8 @@ final class IpDataLookupFactories {
     private IpDataLookupFactories() {
         // utility class
     }
+
+    private static final Logger logger = LogManager.getLogger(IpDataLookupFactories.class);
 
     interface IpDataLookupFactory {
         IpDataLookup create(List<String> properties);
@@ -67,14 +71,15 @@ final class IpDataLookupFactories {
 
         // early detection on any of the 'extended' types
         if (databaseType.contains("extended")) {
-            // TODO yikes: keith asked for trace logging here
-            // which are not currently supported, so return null
+            // which are not currently supported, so log and return null
+            logger.trace("returning null for unsupported database_type [{}]", databaseType);
             return null;
         }
 
         // early detection on 'country_asn' so the 'country' and 'asn' checks don't get faked out
         if (cleanedType.contains("country_asn")) {
-            // TODO yikes: keith asked for trace logging here
+            // which are not currently supported, so log and return null
+            logger.trace("returning null for unsupported database_type [{}]", databaseType);
             // but it's not currently supported, so return null
             return null;
         }
@@ -88,7 +93,9 @@ final class IpDataLookupFactories {
         } else if (cleanedType.contains("privacy")) {
             return null; // TODO yikes: Database.Privacy will need to exist
         } else {
-            return null; // no match was found
+            // no match was found, so log and return null
+            logger.trace("returning null for unsupported database_type [{}]", databaseType);
+            return null;
         }
     }
 
@@ -141,6 +148,13 @@ final class IpDataLookupFactories {
 
     static Function<Set<Database.Property>, IpDataLookup> getIpinfoLookup(final Database database) {
         return switch (database) {
+            // TODO yikes:
+            // free asn :check:
+            // free country :check:
+            // non-free asn :meh: // TODO yikes
+            // non-free geolocation :meh: // TODO yikes
+            // non-free privacy // TODO yikes
+
             case Database.Asn -> IpinfoIpDataLookups.Asn::new;
             case Database.Country -> IpinfoIpDataLookups.Country::new;
             case Database.City -> IpinfoIpDataLookups.City::new;

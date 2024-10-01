@@ -57,7 +57,7 @@ enum Database {
             Property.IP,
             Property.ASN,
             Property.ORGANIZATION_NAME,
-            Property.NETWORK, //
+            Property.NETWORK, // TODO YIKES
             Property.DOMAIN,
             Property.COUNTRY_ISO_CODE,
             Property.TYPE
