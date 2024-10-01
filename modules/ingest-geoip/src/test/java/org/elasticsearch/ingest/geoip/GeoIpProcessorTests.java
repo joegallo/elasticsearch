@@ -20,7 +20,6 @@ import org.junit.Before;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -41,8 +40,9 @@ public class GeoIpProcessorTests extends ESTestCase {
 
     private static IpDataLookup lookupFor(final String databaseName) {
         String type = databaseName.replaceAll(".mmdb", "").replaceAll("-Test", "");
+        Database database = IpDataLookupFactories.getDatabase(type);
         return IpDataLookupFactories.get(type, databaseName)
-            .create(Arrays.stream(Database.Property.values()).map(Database.Property::toString).toList());
+            .create(database.properties().stream().map(Database.Property::toString).toList());
     }
 
     // a temporary directory that mmdb files can be copied to and read from
