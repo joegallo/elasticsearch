@@ -9,7 +9,6 @@
 
 package org.elasticsearch.ingest.geoip;
 
-import org.elasticsearch.common.Strings;
 import org.elasticsearch.core.Nullable;
 
 import java.util.Arrays;
@@ -17,15 +16,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
+ * TODO yikes reword this a bit
  * A high-level representation of a kind of geoip database that is supported by the {@link GeoIpProcessor}.
  * <p>
  * A database has a set of properties that are valid to use with it (see {@link Database#properties()}),
  * as well as a list of default properties to use if no properties are specified (see {@link Database#defaultProperties()}).
- * <p>
- * See especially {@link Database#getDatabase(String, String)} which is used to obtain instances of this class.
  */
 enum Database {
 
@@ -150,124 +147,6 @@ enum Database {
             Property.MOBILE_NETWORK_CODE
         )
     );
-
-    // initial dispatch uses case-insensitive prefix matching
-    private static final String GEOIP2_PREFIX = "GeoIP2".toLowerCase(Locale.ROOT);
-    private static final String GEOLITE2_PREFIX = "GeoLite2".toLowerCase(Locale.ROOT);
-    private static final String IPINFO_PREFIX = "ipinfo";
-
-    // subsequent dispatch is case-sensitive suffix matching
-    public static final String CITY_DB_SUFFIX = "-City";
-    public static final String COUNTRY_DB_SUFFIX = "-Country";
-    public static final String ASN_DB_SUFFIX = "-ASN";
-    public static final String ANONYMOUS_IP_DB_SUFFIX = "-Anonymous-IP";
-    public static final String CONNECTION_TYPE_DB_SUFFIX = "-Connection-Type";
-    public static final String DOMAIN_DB_SUFFIX = "-Domain";
-    public static final String ENTERPRISE_DB_SUFFIX = "-Enterprise";
-    public static final String ISP_DB_SUFFIX = "-ISP";
-
-    private static final Set<String> IPINFO_TYPE_STOP_WORDS = Set.of(
-        "ipinfo",
-        "extended",
-        "free",
-        "generic",
-        "ip",
-        "sample",
-        "standard",
-        "mmdb"
-    );
-
-    static String ipinfoTypeCleanup(String type) {
-        List<String> parts = Arrays.asList(type.split("[ _.]"));
-        return parts.stream().filter((s) -> IPINFO_TYPE_STOP_WORDS.contains(s) == false).collect(Collectors.joining("_"));
-    }
-
-    @Nullable
-    private static Database getIpinfoDatabase(final String databaseType) {
-        // for ipinfo the database selection is more along the lines of user-agent sniffing than
-        // string-based dispatch. the specific database_type strings could change in the future,
-        // hence the somewhat loose nature of this checking.
-
-        final String cleanedType = ipinfoTypeCleanup(databaseType);
-
-        // early detection on any of the 'extended' types
-        if (databaseType.contains("extended")) {
-            // TODO yikes: keith asked for trace logging here
-            // which are not currently supported, so return null
-            return null;
-        }
-
-        // early detection on 'country_asn' so the 'country' and 'asn' checks don't get faked out
-        if (cleanedType.contains("country_asn")) {
-            // TODO yikes: keith asked for trace logging here
-            // but it's not currently supported, so return null
-            return null;
-        }
-
-        if (cleanedType.contains("asn")) {
-            return Database.Asn;
-        } else if (cleanedType.contains("country")) {
-            return Database.Country;
-        } else if (cleanedType.contains("location")) { // note: catches 'location' and 'geolocation' ;)
-            return Database.City;
-        } else if (cleanedType.contains("privacy")) {
-            return null; // TODO yikes: Database.Privacy will need to exist
-        } else {
-            return null; // no match was found
-        }
-    }
-
-    @Nullable
-    private static Database getMaxmindDatabase(final String databaseType) {
-        if (databaseType.endsWith(Database.CITY_DB_SUFFIX)) {
-            return Database.City;
-        } else if (databaseType.endsWith(Database.COUNTRY_DB_SUFFIX)) {
-            return Database.Country;
-        } else if (databaseType.endsWith(Database.ASN_DB_SUFFIX)) {
-            return Database.Asn;
-        } else if (databaseType.endsWith(Database.ANONYMOUS_IP_DB_SUFFIX)) {
-            return Database.AnonymousIp;
-        } else if (databaseType.endsWith(Database.CONNECTION_TYPE_DB_SUFFIX)) {
-            return Database.ConnectionType;
-        } else if (databaseType.endsWith(Database.DOMAIN_DB_SUFFIX)) {
-            return Database.Domain;
-        } else if (databaseType.endsWith(Database.ENTERPRISE_DB_SUFFIX)) {
-            return Database.Enterprise;
-        } else if (databaseType.endsWith(Database.ISP_DB_SUFFIX)) {
-            return Database.Isp;
-        } else {
-            return null; // no match was found
-        }
-    }
-
-    /**
-     * Parses the passed-in databaseType (presumably from the passed-in databaseFile) and return the Database instance that is
-     * associated with that databaseType.
-     *
-     * @param databaseType the database type String from the metadata of the database file
-     * @param databaseFile the database file from which the database type was obtained
-     * @throws IllegalArgumentException if the databaseType is not associated with a Database instance
-     * @return the Database instance that is associated with the databaseType
-     */
-    public static Database getDatabase(final String databaseType, final String databaseFile) {
-        Database database = null;
-
-        if (Strings.hasText(databaseType)) {
-            final String databaseTypeLowerCase = databaseType.toLowerCase(Locale.ROOT);
-            if (databaseTypeLowerCase.startsWith(IPINFO_PREFIX)) {
-                database = getIpinfoDatabase(databaseTypeLowerCase); // all lower case!
-            } else {
-                // for historical reasons, fall back to assuming maxmind-like type parsing
-                database = getMaxmindDatabase(databaseType);
-            }
-        }
-
-        if (database == null) {
-            throw new IllegalArgumentException("Unsupported database type [" + databaseType + "] for file [" + databaseFile + "]");
-        }
-
-        return database;
-    }
 
     private final Set<Property> properties;
     private final Set<Property> defaultProperties;

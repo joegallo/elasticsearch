@@ -20,8 +20,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.zip.GZIPOutputStream;
 
-import static org.elasticsearch.ingest.geoip.Database.ipinfoTypeCleanup;
 import static org.elasticsearch.ingest.geoip.GeoIpTestUtils.copyDatabase;
+import static org.elasticsearch.ingest.geoip.IpDataLookupFactories.ipinfoTypeCleanup;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.hasLength;
 import static org.hamcrest.Matchers.is;
@@ -191,6 +191,6 @@ public class MMDBUtilTests extends ESTestCase {
     }
 
     private Database parseDatabaseFromType(String databaseFile) throws IOException {
-        return Database.getDatabase(MMDBUtil.getDatabaseType(tmpDir.resolve(databaseFile)), null);
+        return IpDataLookupFactories.getDatabase(MMDBUtil.getDatabaseType(tmpDir.resolve(databaseFile)));
     }
 }

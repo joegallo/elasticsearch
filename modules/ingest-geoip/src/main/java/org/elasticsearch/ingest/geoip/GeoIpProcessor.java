@@ -16,6 +16,7 @@ import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.ingest.geoip.Database.Property;
+import org.elasticsearch.ingest.geoip.IpDataLookupFactories.IpDataLookupFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -221,6 +222,9 @@ public final class GeoIpProcessor extends AbstractProcessor {
                 deprecationLogger.warn(DeprecationCategory.OTHER, "default_databases_message", DEFAULT_DATABASES_DEPRECATION_MESSAGE);
             }
 
+            // TODO yikes
+            // read the database_type from the actual mmdb, or return a DatabaseUnavailableProcessor
+            // but eh, this one seems necessary and important and we should probably have it here, I think this one is fair
             final String databaseType;
             try (IpDatabase ipDatabase = ipDatabaseProvider.getDatabase(databaseFile)) {
                 if (ipDatabase == null) {
@@ -233,21 +237,21 @@ public final class GeoIpProcessor extends AbstractProcessor {
                 databaseType = ipDatabase.getDatabaseType();
             }
 
-            final Database database;
+            // TODO yikes add a comment
+            final IpDataLookupFactory factory;
             try {
-                database = Database.getDatabase(databaseType, databaseFile);
+                factory = IpDataLookupFactories.get(databaseType, databaseFile);
             } catch (IllegalArgumentException e) {
                 throw newConfigurationException(TYPE, processorTag, "database_file", e.getMessage());
             }
 
-            final Set<Property> properties;
+            // TODO yikes add a comment
+            final IpDataLookup ipDataLookup;
             try {
-                properties = database.parseProperties(propertyNames);
+                ipDataLookup = factory.create(propertyNames);
             } catch (IllegalArgumentException e) {
                 throw newConfigurationException(TYPE, processorTag, "properties", e.getMessage());
             }
-
-            final IpDataLookup ipDataLookup = IpDataLookupFactory.get(databaseType, databaseFile).create(properties);
 
             return new GeoIpProcessor(
                 processorTag,
