@@ -222,9 +222,6 @@ public final class GeoIpProcessor extends AbstractProcessor {
                 deprecationLogger.warn(DeprecationCategory.OTHER, "default_databases_message", DEFAULT_DATABASES_DEPRECATION_MESSAGE);
             }
 
-            // TODO yikes
-            // read the database_type from the actual mmdb, or return a DatabaseUnavailableProcessor
-            // but eh, this one seems necessary and important and we should probably have it here, I think this one is fair
             final String databaseType;
             try (IpDatabase ipDatabase = ipDatabaseProvider.getDatabase(databaseFile)) {
                 if (ipDatabase == null) {
@@ -237,7 +234,6 @@ public final class GeoIpProcessor extends AbstractProcessor {
                 databaseType = ipDatabase.getDatabaseType();
             }
 
-            // TODO yikes add a comment
             final IpDataLookupFactory factory;
             try {
                 factory = IpDataLookupFactories.get(databaseType, databaseFile);
@@ -245,7 +241,6 @@ public final class GeoIpProcessor extends AbstractProcessor {
                 throw newConfigurationException(TYPE, processorTag, "database_file", e.getMessage());
             }
 
-            // TODO yikes add a comment
             final IpDataLookup ipDataLookup;
             try {
                 ipDataLookup = factory.create(propertyNames);

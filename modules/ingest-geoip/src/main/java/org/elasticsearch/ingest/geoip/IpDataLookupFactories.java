@@ -21,6 +21,10 @@ import java.util.stream.Collectors;
 
 final class IpDataLookupFactories {
 
+    private IpDataLookupFactories() {
+        // utility class
+    }
+
     interface IpDataLookupFactory {
         IpDataLookup create(List<String> properties);
     }
@@ -118,6 +122,7 @@ final class IpDataLookupFactories {
      * @param databaseType the database type String from the metadata of the database file
      * @return the Database instance that is associated with the databaseType
      */
+    @Nullable
     static Database getDatabase(final String databaseType) {
         Database database = null;
 
@@ -134,6 +139,28 @@ final class IpDataLookupFactories {
         return database;
     }
 
+    static Function<Set<Database.Property>, IpDataLookup> getIpinfoLookup(final Database database) {
+        return switch (database) {
+            case Database.Asn -> IpinfoIpDataLookups.Asn::new;
+            case Database.Country -> IpinfoIpDataLookups.Country::new;
+            case Database.City -> IpinfoIpDataLookups.City::new;
+            default -> null;
+        };
+    }
+
+    static Function<Set<Database.Property>, IpDataLookup> getMaxmindLookup(final Database database) {
+        return switch (database) {
+            case City -> MaxmindIpDataLookups.City::new;
+            case Country -> MaxmindIpDataLookups.Country::new;
+            case Asn -> MaxmindIpDataLookups.Asn::new;
+            case AnonymousIp -> MaxmindIpDataLookups.AnonymousIp::new;
+            case ConnectionType -> MaxmindIpDataLookups.ConnectionType::new;
+            case Domain -> MaxmindIpDataLookups.Domain::new;
+            case Enterprise -> MaxmindIpDataLookups.Enterprise::new;
+            case Isp -> MaxmindIpDataLookups.Isp::new;
+        };
+    }
+
     static IpDataLookupFactory get(final String databaseType, final String databaseFile) {
         final Database database = getDatabase(databaseType);
         if (database == null) {
@@ -143,24 +170,10 @@ final class IpDataLookupFactories {
         final Function<Set<Database.Property>, IpDataLookup> factoryMethod;
         final String databaseTypeLowerCase = databaseType.toLowerCase(Locale.ROOT);
         if (databaseTypeLowerCase.startsWith(IPINFO_PREFIX)) {
-            factoryMethod = switch (database) {
-                case Database.Asn -> IpinfoIpDataLookups.Asn::new;
-                case Database.Country -> IpinfoIpDataLookups.Country::new;
-                case Database.City -> IpinfoIpDataLookups.City::new;
-                default -> null;
-            };
+            factoryMethod = getIpinfoLookup(database);
         } else {
             // for historical reasons, fall back to assuming maxmind-like types
-            factoryMethod = switch (database) {
-                case Database.City -> MaxmindIpDataLookups.City::new;
-                case Database.Country -> MaxmindIpDataLookups.Country::new;
-                case Database.Asn -> MaxmindIpDataLookups.Asn::new;
-                case Database.AnonymousIp -> MaxmindIpDataLookups.AnonymousIp::new;
-                case Database.ConnectionType -> MaxmindIpDataLookups.ConnectionType::new;
-                case Database.Domain -> MaxmindIpDataLookups.Domain::new;
-                case Database.Enterprise -> MaxmindIpDataLookups.Enterprise::new;
-                case Database.Isp -> MaxmindIpDataLookups.Isp::new;
-            };
+            factoryMethod = getMaxmindLookup(database);
         }
 
         if (factoryMethod == null) {
