@@ -129,8 +129,18 @@ public class IngestGeoIpPlugin extends Plugin
             parameters.ingestService.getClusterService()
         );
         databaseRegistry.set(registry);
-        GeoIpProcessor.Factory factory = new GeoIpProcessor.Factory(registry);
-        return Map.of(GeoIpProcessor.TYPE, factory, "ip-enrich", factory);
+
+        // TODO yikes (clearly these names are a joke and the comments aren't needed here long-term)
+
+        // 1. add the ability to do validation/filtering on the GeoIpProcessor.Factory
+
+        // 2. we have code that monitors and reloads pipelines and stuff based on the `geoip` type, that also needs to learn about this
+        // ip_location type.
+
+        // geoip is a maxmind trademark, so the geoip processor will only work with maxmind files
+        GeoIpProcessor.Factory maxmindFilteringFactory = new GeoIpProcessor.Factory(registry /*, databaseFilteringValidator */);
+        GeoIpProcessor.Factory allAreWelcomeFactory = new GeoIpProcessor.Factory(registry);
+        return Map.of(GeoIpProcessor.TYPE, maxmindFilteringFactory, "ip_location", allAreWelcomeFactory);
     }
 
     @Override

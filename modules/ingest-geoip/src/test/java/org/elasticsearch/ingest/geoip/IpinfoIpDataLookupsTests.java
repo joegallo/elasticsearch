@@ -69,8 +69,9 @@ public class IpinfoIpDataLookupsTests extends ESTestCase {
         // defensive cases: we strip whitespace and ignore case
         assertThat(parseBoolean("    "), equalTo(false));
         assertThat(parseBoolean(" TrUe "), equalTo(true));
+        assertThat(parseBoolean(" FaLSE "), equalTo(false));
         // edge case: any non-"true" (ignoring whitespace and casing) string is false
-        assertThat(parseBoolean(randomAlphaOfLength(5)), equalTo(false));
+        assertThat(parseBoolean(randomAlphaOfLength(5)), nullValue());
     }
 
     public void testAsn() throws IOException {

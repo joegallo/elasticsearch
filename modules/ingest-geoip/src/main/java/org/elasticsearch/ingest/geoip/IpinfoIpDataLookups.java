@@ -36,6 +36,7 @@ final class IpinfoIpDataLookups {
     }
 
     static Long parseAsn(final String asn) {
+        // TODO yikes convert this to a javadoc
         if (asn == null || Strings.hasText(asn) == false) {
             return null;
         } else {
@@ -43,29 +44,33 @@ final class IpinfoIpDataLookups {
             try {
                 return Long.parseLong(stripped);
             } catch (NumberFormatException e) {
+                // TODO keith logger.trace
                 return null;
             }
         }
     }
 
     static Boolean parseBoolean(final String bool) {
+        // TODO yikes convert this to a javadoc
+        // "true" --> true // TODAY
+        // "" --> false // TODAY
+        // "false" --> false // THEY MENTIONED THIS TO US IN SLACK AS A PLAN
+
         if (bool == null) {
             return null;
         } else {
             String trimmed = bool.trim();
-            // TODO yikes: let's think about how we want to handle this logic. how future-proof do we want to be?
-            // and how do we want to handle surprising things?
 
-            // note: alternatively, we can: return "true".equalsIgnoreCase(trimmed); // right?
             if ("true".equalsIgnoreCase(trimmed)) {
                 return true;
-            } else if ("false".equalsIgnoreCase(trimmed)) { // note: see conversation in slack, also don't commit this comment
+            } else if ("false".equalsIgnoreCase(trimmed)) { // TODO yikes add a comment
                 return false;
             } else if (trimmed.isEmpty()) {
                 // as a fallback, empty string can represent false
                 return false;
             } else {
                 // there's no much we can do in this case
+                // TODO keith logger.trace
                 return null;
             }
         }
@@ -79,6 +84,8 @@ final class IpinfoIpDataLookups {
             try {
                 return Double.parseDouble(stripped);
             } catch (NumberFormatException e) {
+                // there's no much we can do in this case
+                // TODO keith logger.trace
                 return null;
             }
         }
