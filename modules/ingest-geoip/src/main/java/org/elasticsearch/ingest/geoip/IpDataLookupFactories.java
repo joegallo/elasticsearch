@@ -162,6 +162,7 @@ final class IpDataLookupFactories {
         };
     }
 
+    @Nullable
     static Function<Set<Database.Property>, IpDataLookup> getMaxmindLookup(final Database database) {
         return switch (database) {
             case City -> MaxmindIpDataLookups.City::new;
@@ -172,6 +173,7 @@ final class IpDataLookupFactories {
             case Domain -> MaxmindIpDataLookups.Domain::new;
             case Enterprise -> MaxmindIpDataLookups.Enterprise::new;
             case Isp -> MaxmindIpDataLookups.Isp::new;
+            default -> null;
         };
     }
 

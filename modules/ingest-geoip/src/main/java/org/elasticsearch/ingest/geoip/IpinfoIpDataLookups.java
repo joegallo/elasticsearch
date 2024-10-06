@@ -14,6 +14,8 @@ import com.maxmind.db.MaxMindDbConstructor;
 import com.maxmind.db.MaxMindDbParameter;
 import com.maxmind.db.Reader;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.network.InetAddresses;
 import org.elasticsearch.common.network.NetworkAddress;
@@ -35,8 +37,14 @@ final class IpinfoIpDataLookups {
         // utility class
     }
 
+    private static final Logger logger = LogManager.getLogger(IpinfoIpDataLookups.class);
+
+    /**
+     * Lax-ly parses a string that (ideally) looks like 'AS123' into a Long like 123L (or null, if such parsing isn't possible).
+     * @param asn a potentially empty (or null) ASN string that is expected to contain 'AS' and then a parsable long
+     * @return the parsed asn
+     */
     static Long parseAsn(final String asn) {
-        // TODO yikes convert this to a javadoc
         if (asn == null || Strings.hasText(asn) == false) {
             return null;
         } else {
@@ -44,7 +52,7 @@ final class IpinfoIpDataLookups {
             try {
                 return Long.parseLong(stripped);
             } catch (NumberFormatException e) {
-                // TODO keith logger.trace
+                logger.trace("Unable to parse non-compliant ASN string [{}]", asn);
                 return null;
             }
         }
@@ -91,16 +99,16 @@ final class IpinfoIpDataLookups {
         }
     }
 
-    public record IPinfoASN(
-        Long asn, //
-        @Nullable String country, // what do we want to do with this one?; // not present in the free asn database
-        String domain, // what do we want to do with this one?
-        String name, //
-        @Nullable String type // what do we want to do with this one?; // not present in the free asn database
+    public record AsnResult(
+        Long asn,
+        @Nullable String country, // not present in the free asn database
+        String domain,
+        String name,
+        @Nullable String type // not present in the free asn database
     ) {
         @SuppressWarnings("checkstyle:RedundantModifier")
         @MaxMindDbConstructor
-        public IPinfoASN(
+        public AsnResult(
             @MaxMindDbParameter(name = "asn") String asn,
             @Nullable @MaxMindDbParameter(name = "country") String country,
             @MaxMindDbParameter(name = "domain") String domain,
@@ -111,17 +119,17 @@ final class IpinfoIpDataLookups {
         }
     }
 
-    public record IPinfoCountry(
+    public record CountryResult(
         @MaxMindDbParameter(name = "continent") String continent,
         @MaxMindDbParameter(name = "continent_name") String continentName,
         @MaxMindDbParameter(name = "country") String country,
         @MaxMindDbParameter(name = "country_name") String countryName
     ) {
         @MaxMindDbConstructor
-        public IPinfoCountry {}
+        public CountryResult {}
     }
 
-    public record IPinfoGeolocation(
+    public record GeolocationResult(
         String city,
         String country,
         Double latitude,
@@ -132,7 +140,7 @@ final class IpinfoIpDataLookups {
     ) {
         @SuppressWarnings("checkstyle:RedundantModifier")
         @MaxMindDbConstructor
-        public IPinfoGeolocation(
+        public GeolocationResult(
             @MaxMindDbParameter(name = "city") String city,
             @MaxMindDbParameter(name = "country") String country,
             @MaxMindDbParameter(name = "latitude") String latitude,
@@ -146,10 +154,10 @@ final class IpinfoIpDataLookups {
         }
     }
 
-    public record IPinfoPrivacyDetection(Boolean hosting, Boolean proxy, Boolean relay, String service, Boolean tor, Boolean vpn) {
+    public record PrivacyDetectionResult(Boolean hosting, Boolean proxy, Boolean relay, String service, Boolean tor, Boolean vpn) {
         @SuppressWarnings("checkstyle:RedundantModifier")
         @MaxMindDbConstructor
-        public IPinfoPrivacyDetection(
+        public PrivacyDetectionResult(
             @MaxMindDbParameter(name = "hosting") String hosting,
             // @MaxMindDbParameter(name = "network") String network, // what do we want to do with this one?
             @MaxMindDbParameter(name = "proxy") String proxy,
@@ -162,14 +170,14 @@ final class IpinfoIpDataLookups {
         }
     }
 
-    static class Asn extends AbstractBase<IPinfoASN> {
+    static class Asn extends AbstractBase<AsnResult> {
         Asn(Set<Database.Property> properties) {
-            super(properties, IPinfoASN.class);
+            super(properties, AsnResult.class);
         }
 
         @Override
-        protected Map<String, Object> transform(final Result<IPinfoASN> result) {
-            IPinfoASN response = result.result;
+        protected Map<String, Object> transform(final Result<AsnResult> result) {
+            AsnResult response = result.result;
             Long asn = response.asn;
             String organizationName = response.name;
             String network = result.network;
@@ -214,14 +222,57 @@ final class IpinfoIpDataLookups {
         }
     }
 
-    static class City extends AbstractBase<IPinfoGeolocation> {
-        City(final Set<Database.Property> properties) {
-            super(properties, IPinfoGeolocation.class);
+    static class Country extends AbstractBase<CountryResult> {
+        Country(Set<Database.Property> properties) {
+            super(properties, CountryResult.class);
         }
 
         @Override
-        protected Map<String, Object> transform(final Result<IPinfoGeolocation> result) {
-            IPinfoGeolocation response = result.result;
+        protected Map<String, Object> transform(final Result<CountryResult> result) {
+            CountryResult response = result.result;
+
+            Map<String, Object> data = new HashMap<>();
+            for (Database.Property property : this.properties) {
+                switch (property) {
+                    case IP -> data.put("ip", result.ip);
+                    case COUNTRY_ISO_CODE -> {
+                        String countryIsoCode = response.country;
+                        if (countryIsoCode != null) {
+                            data.put("country_iso_code", countryIsoCode);
+                        }
+                    }
+                    case COUNTRY_NAME -> {
+                        String countryName = response.countryName;
+                        if (countryName != null) {
+                            data.put("country_name", countryName);
+                        }
+                    }
+                    case CONTINENT_CODE -> {
+                        String continentCode = response.continent;
+                        if (continentCode != null) {
+                            data.put("continent_code", continentCode);
+                        }
+                    }
+                    case CONTINENT_NAME -> {
+                        String continentName = response.continentName;
+                        if (continentName != null) {
+                            data.put("continent_name", continentName);
+                        }
+                    }
+                }
+            }
+            return data;
+        }
+    }
+
+    static class City extends AbstractBase<GeolocationResult> {
+        City(final Set<Database.Property> properties) {
+            super(properties, GeolocationResult.class);
+        }
+
+        @Override
+        protected Map<String, Object> transform(final Result<GeolocationResult> result) {
+            GeolocationResult response = result.result;
 
             Map<String, Object> data = new HashMap<>();
             for (Database.Property property : this.properties) {
@@ -267,57 +318,14 @@ final class IpinfoIpDataLookups {
         }
     }
 
-    static class Country extends AbstractBase<IPinfoCountry> {
-        Country(Set<Database.Property> properties) {
-            super(properties, IPinfoCountry.class);
-        }
-
-        @Override
-        protected Map<String, Object> transform(final Result<IPinfoCountry> result) {
-            IPinfoCountry response = result.result;
-
-            Map<String, Object> data = new HashMap<>();
-            for (Database.Property property : this.properties) {
-                switch (property) {
-                    case IP -> data.put("ip", result.ip);
-                    case COUNTRY_ISO_CODE -> {
-                        String countryIsoCode = response.country;
-                        if (countryIsoCode != null) {
-                            data.put("country_iso_code", countryIsoCode);
-                        }
-                    }
-                    case COUNTRY_NAME -> {
-                        String countryName = response.countryName;
-                        if (countryName != null) {
-                            data.put("country_name", countryName);
-                        }
-                    }
-                    case CONTINENT_CODE -> {
-                        String continentCode = response.continent;
-                        if (continentCode != null) {
-                            data.put("continent_code", continentCode);
-                        }
-                    }
-                    case CONTINENT_NAME -> {
-                        String continentName = response.continentName;
-                        if (continentName != null) {
-                            data.put("continent_name", continentName);
-                        }
-                    }
-                }
-            }
-            return data;
-        }
-    }
-
-    static class PrivacyDetection extends AbstractBase<IPinfoPrivacyDetection> {
+    static class PrivacyDetection extends AbstractBase<PrivacyDetectionResult> {
         PrivacyDetection(Set<Database.Property> properties) {
-            super(properties, IPinfoPrivacyDetection.class);
+            super(properties, PrivacyDetectionResult.class);
         }
 
         @Override
-        protected Map<String, Object> transform(final Result<IPinfoPrivacyDetection> result) {
-            IPinfoPrivacyDetection response = result.result;
+        protected Map<String, Object> transform(final Result<PrivacyDetectionResult> result) {
+            PrivacyDetectionResult response = result.result;
 
             Map<String, Object> data = new HashMap<>();
             for (Database.Property property : this.properties) {
