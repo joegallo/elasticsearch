@@ -57,15 +57,7 @@ enum Database {
         Set.of(Property.CONTINENT_NAME, Property.COUNTRY_NAME, Property.COUNTRY_ISO_CODE)
     ),
     Asn(
-        Set.of(
-            Property.IP,
-            Property.ASN,
-            Property.ORGANIZATION_NAME,
-            Property.NETWORK, // TODO YIKES
-            Property.DOMAIN,
-            Property.COUNTRY_ISO_CODE,
-            Property.TYPE
-        ),
+        Set.of(Property.IP, Property.ASN, Property.ORGANIZATION_NAME, Property.NETWORK),
         Set.of(Property.IP, Property.ASN, Property.ORGANIZATION_NAME, Property.NETWORK)
     ),
     AnonymousIp(

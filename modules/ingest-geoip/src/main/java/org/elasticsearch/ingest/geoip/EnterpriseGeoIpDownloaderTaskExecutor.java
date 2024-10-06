@@ -54,7 +54,7 @@ public class EnterpriseGeoIpDownloaderTaskExecutor extends PersistentTasksExecut
 
     static final String MAXMIND_SETTINGS_PREFIX = "ingest.geoip.downloader.maxmind.";
 
-    // TODO LEGAL NOPE: 'geoip' and 'ipinfo' in this setting together is *not* acceptable
+    // TODO YIKES LEGAL NOPE: 'geoip' and 'ipinfo' in this setting together is *not* acceptable
     static final String IPINFO_SETTINGS_PREFIX = "ingest.geoip.downloader.ipinfo.";
 
     public static final Setting<SecureString> MAXMIND_LICENSE_KEY_SETTING = SecureSetting.secureString(
