@@ -9,6 +9,12 @@
 
 package org.elasticsearch.ingest.geoip;
 
+import com.maxmind.db.DatabaseRecord;
+import com.maxmind.db.InvalidNetworkException;
+import com.maxmind.db.Networks;
+import com.maxmind.db.Reader;
+
+import org.elasticsearch.common.network.NetworkAddress;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.test.ESTestCase;
@@ -19,16 +25,21 @@ import org.junit.After;
 import org.junit.Before;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 import static java.util.Map.entry;
 import static org.elasticsearch.ingest.geoip.GeoIpTestUtils.copyDatabase;
 import static org.elasticsearch.ingest.geoip.IpinfoIpDataLookups.parseAsn;
 import static org.elasticsearch.ingest.geoip.IpinfoIpDataLookups.parseBoolean;
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.startsWith;
 
 public class IpinfoIpDataLookupsTests extends ESTestCase {
 
@@ -83,8 +94,7 @@ public class IpinfoIpDataLookupsTests extends ESTestCase {
         ConfigDatabases configDatabases = new ConfigDatabases(configDir, cache);
         configDatabases.initialize(resourceWatcherService);
 
-        if (false)
-        {
+        if (false) {
             DatabaseReaderLazyLoader loader = configDatabases.getDatabase("asn.mmdb");
             IpDataLookup lookup = new IpinfoIpDataLookups.Asn(Set.of(Database.Property.values()));
             Map<String, Object> data = lookup.getData(loader, "64.67.15.209");
@@ -114,13 +124,29 @@ public class IpinfoIpDataLookupsTests extends ESTestCase {
                         entry("organization_name", "Cox Communications Inc."),
                         entry("asn", 22773L),
                         entry("network", "174.77.179.0/24"),
-                        entry("domain", "cox.com")//,
-                        //entry("country_iso_code", "US"),
-                        //entry("type", "isp")
+                        entry("domain", "cox.com")// ,
+                        // entry("country_iso_code", "US"),
+                        // entry("type", "isp")
                     )
                 )
             );
         }
+    }
+
+    public void testAsnInvariants() {
+        Path configDir = createTempDir();
+        copyDatabase("ip_asn_sample.mmdb", configDir);
+
+        final Set<String> expectedColumns = Set.of("network", "asn", "name", "domain");
+
+        Path databasePath = configDir.resolve("ip_asn_sample.mmdb");
+        assertDatabaseInvariants(databasePath, (ip, row) -> {
+            assertThat(row.keySet(), equalTo(expectedColumns));
+            String asn = (String) row.get("asn");
+            assertThat(asn, startsWith("AS"));
+            assertThat(asn, equalTo(asn.trim()));
+            assertThat(parseAsn(asn), notNullValue());
+        });
     }
 
     public void testGeolocation() throws IOException {
@@ -196,6 +222,45 @@ public class IpinfoIpDataLookupsTests extends ESTestCase {
                     )
                 )
             );
+        }
+    }
+
+    public void testPrivacyDetectionInvariants() throws IOException, InvalidNetworkException {
+        Path configDir = createTempDir();
+        copyDatabase("privacy_detection_sample.mmdb", configDir);
+
+        final Set<String> expectedColumns = Set.of("network", "service", "hosting", "proxy", "relay", "tor", "vpn");
+
+        Path databasePath = configDir.resolve("privacy_detection_sample.mmdb");
+        assertDatabaseInvariants(databasePath, (ip, row) -> {
+            assertThat(row.keySet(), equalTo(expectedColumns));
+
+            for (String booleanColumn : Set.of("hosting", "proxy", "relay", "tor", "vpn")) {
+                String bool = (String) row.get(booleanColumn);
+                assertThat(bool, anyOf(equalTo("true"), equalTo(""), equalTo("false")));
+                assertThat(parseBoolean(bool), notNullValue());
+            }
+        });
+    }
+
+    public static void assertDatabaseInvariants(final Path databasePath, final BiConsumer<InetAddress, Map<String, Object>> rowConsumer) {
+        try (Reader reader = new Reader(databasePath.toFile())) {
+            Networks<?> networks = reader.networks(Map.class);
+            while (networks.hasNext()) {
+                DatabaseRecord<?> dbr = networks.next();
+                InetAddress address = dbr.getNetwork().getNetworkAddress();
+                @SuppressWarnings("unchecked")
+                Map<String, Object> result = reader.get(address, Map.class);
+                try {
+                    rowConsumer.accept(address, result);
+                } catch (AssertionError e) {
+                    fail(e, "Assert failed for address [%s]", NetworkAddress.format(address));
+                } catch (Exception e) {
+                    fail(e, "Exception handling address [%s]", NetworkAddress.format(address));
+                }
+            }
+        } catch (Exception e) {
+            fail(e);
         }
     }
 }
