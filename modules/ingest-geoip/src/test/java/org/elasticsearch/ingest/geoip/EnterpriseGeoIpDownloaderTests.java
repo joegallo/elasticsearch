@@ -491,7 +491,7 @@ public class EnterpriseGeoIpDownloaderTests extends ESTestCase {
     public void testIpinfoUrls() {
         // a 'free' database like 'asn' has 'free/' in the url (automatically)
         final EnterpriseGeoIpDownloader.IpinfoDownload download = geoIpDownloader.new IpinfoDownload(
-            "asn", new DatabaseConfiguration.IpInfo()
+            "asn", new DatabaseConfiguration.Ipinfo()
         );
 
         {
@@ -505,7 +505,7 @@ public class EnterpriseGeoIpDownloaderTests extends ESTestCase {
 
         // but a non-'free' database like 'standard_asn' does not
         final EnterpriseGeoIpDownloader.IpinfoDownload download2 = geoIpDownloader.new IpinfoDownload(
-            "standard_asn", new DatabaseConfiguration.IpInfo()
+            "standard_asn", new DatabaseConfiguration.Ipinfo()
         );
 
         {

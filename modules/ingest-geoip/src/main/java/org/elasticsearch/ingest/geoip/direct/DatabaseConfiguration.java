@@ -9,9 +9,11 @@
 
 package org.elasticsearch.ingest.geoip.direct;
 
+import org.elasticsearch.TransportVersions;
 import org.elasticsearch.action.ActionRequestValidationException;
 import org.elasticsearch.cluster.metadata.MetadataCreateIndexService;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.io.stream.NamedWriteable;
 import org.elasticsearch.common.io.stream.StreamInput;
 import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.io.stream.Writeable;
@@ -40,7 +42,7 @@ public record DatabaseConfiguration(String id, String name, Provider provider) i
     // id is a user selected signifier like 'my_domain_db'
     // name is the name of a file that can be downloaded (like 'GeoIP2-Domain')
 
-    // a configuration will have a 'type' like "maxmind", and that might have some more details,
+    // a configuration will have a 'provider' like "maxmind", and that might have some more details,
     // for now, though the important thing is that the json has to have it even though we don't model it meaningfully in this class
 
     public DatabaseConfiguration {
@@ -88,29 +90,28 @@ public record DatabaseConfiguration(String id, String name, Provider provider) i
     );
 
     private static final ParseField NAME = new ParseField("name");
-
-    // generally speaking, i think the maxind/ipinfo divide here seems like it's NamedWriteable shaped,
-    // so it might be worth examining that in greater detail -- this code right now is just intended to work
-    // as a proof-of-concept without necessarily being mergeable
-
-    private static final ParseField MAXMIND = new ParseField("maxmind");
-    private static final ParseField IPINFO = new ParseField("ipinfo");
+    private static final ParseField MAXMIND = new ParseField(Maxmind.NAME);
+    private static final ParseField IPINFO = new ParseField(Ipinfo.NAME);
+    private static final ParseField WEB = new ParseField(Web.NAME);
+    private static final ParseField LOCAL = new ParseField(Local.NAME);
 
     private static final ConstructingObjectParser<DatabaseConfiguration, String> PARSER = new ConstructingObjectParser<>(
         "database",
         false,
         (a, id) -> {
             String name = (String) a[0];
-            Maxmind maxmind = (Maxmind) a[1];
-            IpInfo ipinfo = (IpInfo) a[2];
-            if (maxmind != null && ipinfo == null) {
-                return new DatabaseConfiguration(id, name, maxmind);
-            } else if (maxmind == null && ipinfo != null) {
-                return new DatabaseConfiguration(id, name, ipinfo);
+            Provider provider;
+            // TODO yikes should we check that only one of these is not null?
+            if (a[1] != null) {
+                provider = (Maxmind) a[1];
+            } else if (a[2] != null) {
+                provider = (Ipinfo) a[2];
+            } else if (a[3] != null) {
+                provider = (Web) a[3];
             } else {
-                // illegal state exception or assert false or something
-                throw new RuntimeException("narp");
+                provider = (Local) a[4];
             }
+            return new DatabaseConfiguration(id, name, provider);
         }
     );
 
@@ -121,18 +122,22 @@ public record DatabaseConfiguration(String id, String name, Provider provider) i
             (parser, id) -> Maxmind.PARSER.apply(parser, null),
             MAXMIND
         );
-        PARSER.declareObject(ConstructingObjectParser.optionalConstructorArg(), (parser, id) -> IpInfo.PARSER.apply(parser, null), IPINFO);
+        PARSER.declareObject(ConstructingObjectParser.optionalConstructorArg(), (parser, id) -> Ipinfo.PARSER.apply(parser, null), IPINFO);
+        PARSER.declareObject(ConstructingObjectParser.optionalConstructorArg(), (parser, id) -> Web.PARSER.apply(parser, null), WEB);
+        PARSER.declareObject(ConstructingObjectParser.optionalConstructorArg(), (parser, id) -> Local.PARSER.apply(parser, null), LOCAL);
     }
 
     public DatabaseConfiguration(StreamInput in) throws IOException {
-        // todo 8.15.x only understands maxmind, we'll need a feature for this
-        // this(in.readString(), in.readString(), new Maxmind(in));
-        this(in.readString(), in.readString(), in.readString(), in);
+        this(in.readString(), in.readString(), readProvider(in));
     }
 
-    // lols
-    public DatabaseConfiguration(String id, String name, String type, StreamInput in) throws IOException {
-        this(id, name, type.equals("maxmind") ? new Maxmind(in) : type.equals("ipinfo") ? new IpInfo(in) : null);
+    private static Provider readProvider(StreamInput in) throws IOException {
+        if (in.getTransportVersion().onOrAfter(TransportVersions.INGEST_GEO_DATABASE_PROVIDERS)) {
+            return in.readNamedWriteable(Provider.class);
+        } else {
+            // prior to the above version, everything was always a maxmind, so this half of the if is logical
+            return new Maxmind(in.readString());
+        }
     }
 
     public static DatabaseConfiguration parse(XContentParser parser, String id) {
@@ -143,18 +148,19 @@ public record DatabaseConfiguration(String id, String name, Provider provider) i
     public void writeTo(StreamOutput out) throws IOException {
         out.writeString(id);
         out.writeString(name);
-        // todo 8.15.x only understands maxmind, we'll need a feature for this
-        // maxmind.writeTo(out);
-
-        if (provider instanceof Maxmind maxmind) {
-            out.writeString("maxmind");
-            maxmind.writeTo(out);
-        } else if (provider instanceof IpInfo ipInfo) {
-            out.writeString("ipinfo");
-            ipInfo.writeTo(out);
+        if (out.getTransportVersion().onOrAfter(TransportVersions.INGEST_GEO_DATABASE_PROVIDERS)) {
+            out.writeNamedWriteable(provider);
         } else {
-            // illegal state exception or assert false or something
-            throw new RuntimeException("narp");
+            if (provider instanceof Maxmind maxmind) {
+                out.writeString(maxmind.accountId);
+            } else {
+                /*
+                 * The existence of a non-Maxmind providers is gated on the feature get_database_configuration_action.multi_node, and
+                 * get_database_configuration_action.multi_node is only available on or after
+                 * TransportVersions.INGEST_GEO_DATABASE_PROVIDERS.
+                 */
+                assert false : "non-maxmind DatabaseConfiguration.Provider [" + provider.getWriteableName() + "]";
+            }
         }
     }
 
@@ -162,14 +168,7 @@ public record DatabaseConfiguration(String id, String name, Provider provider) i
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
         builder.startObject();
         builder.field("name", name);
-        if (provider instanceof Maxmind maxmind) {
-            builder.field("maxmind", maxmind);
-        } else if (provider instanceof IpInfo ipInfo) {
-            builder.field("ipinfo", ipInfo);
-        } else {
-            // illegal state exception or assert false or something
-            throw new RuntimeException("narp");
-        }
+        builder.field(provider.getWriteableName(), provider);
         builder.endObject();
         return builder;
     }
@@ -215,7 +214,7 @@ public record DatabaseConfiguration(String id, String name, Provider provider) i
             if (MAXMIND_NAMES.contains(name) == false) {
                 err.addValidationError("invalid name [" + name + "]: must be a supported name ([" + MAXMIND_NAMES + "])");
             }
-        } else if (provider instanceof IpInfo) {
+        } else if (provider instanceof Ipinfo) {
             if (IPINFO_NAMES.contains(name) == false) {
                 err.addValidationError("invalid name [" + name + "]: must be a supported name ([" + IPINFO_NAMES + "])");
             }
@@ -234,9 +233,24 @@ public record DatabaseConfiguration(String id, String name, Provider provider) i
         return err.validationErrors().isEmpty() ? null : err;
     }
 
-    public interface Provider extends Writeable, ToXContentObject {}
+    public boolean isReadOnly() {
+        return provider.isReadOnly();
+    }
+
+    /**
+      * A marker interface that all providers need to implement.
+      */
+    public interface Provider extends NamedWriteable, ToXContentObject {
+        boolean isReadOnly();
+    }
 
     public record Maxmind(String accountId) implements Provider {
+        public static final String NAME = "maxmind";
+
+        @Override
+        public String getWriteableName() {
+            return NAME;
+        }
 
         public Maxmind {
             // this is an invariant, not actual validation
@@ -276,20 +290,24 @@ public record DatabaseConfiguration(String id, String name, Provider provider) i
             builder.endObject();
             return builder;
         }
+
+        @Override
+        public boolean isReadOnly() {
+            return false;
+        }
     }
 
-    public record IpInfo() implements Provider {
-
-        public IpInfo {}
+    public record Ipinfo() implements Provider {
+        public static final String NAME = "ipinfo";
 
         // this'll become a ConstructingObjectParser once we accept the token (securely) in the json definition
-        private static final ObjectParser<IpInfo, Void> PARSER = new ObjectParser<>("action", IpInfo::new);
+        private static final ObjectParser<Ipinfo, Void> PARSER = new ObjectParser<>("action", Ipinfo::new);
 
-        public IpInfo(StreamInput in) throws IOException {
+        public Ipinfo(StreamInput in) throws IOException {
             this();
         }
 
-        public static IpInfo parse(XContentParser parser) {
+        public static Ipinfo parse(XContentParser parser) {
             return PARSER.apply(parser, null);
         }
 
@@ -301,6 +319,96 @@ public record DatabaseConfiguration(String id, String name, Provider provider) i
             builder.startObject();
             builder.endObject();
             return builder;
+        }
+
+        @Override
+        public String getWriteableName() {
+            return NAME;
+        }
+
+        @Override
+        public boolean isReadOnly() {
+            return false;
+        }
+    }
+
+    public record Local(String type) implements Provider {
+        public static final String NAME = "local";
+
+        private static final ParseField TYPE = new ParseField("type");
+
+        private static final ConstructingObjectParser<Local, Void> PARSER = new ConstructingObjectParser<>("database", false, (a, id) -> {
+            String type = (String) a[0];
+            return new Local(type);
+        });
+
+        static {
+            PARSER.declareString(ConstructingObjectParser.constructorArg(), TYPE);
+        }
+
+        public Local(StreamInput in) throws IOException {
+            this(in.readString());
+        }
+
+        public static Local parse(XContentParser parser) {
+            return PARSER.apply(parser, null);
+        }
+
+        @Override
+        public void writeTo(StreamOutput out) throws IOException {
+            out.writeString(type);
+        }
+
+        @Override
+        public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
+            builder.startObject();
+            builder.field("type", type);
+            builder.endObject();
+            return builder;
+        }
+
+        @Override
+        public String getWriteableName() {
+            return NAME;
+        }
+
+        @Override
+        public boolean isReadOnly() {
+            return true;
+        }
+    }
+
+    public record Web() implements Provider {
+        public static final String NAME = "web";
+
+        private static final ObjectParser<Web, Void> PARSER = new ObjectParser<>("database", Web::new);
+
+        public Web(StreamInput in) throws IOException {
+            this();
+        }
+
+        public static Web parse(XContentParser parser) {
+            return PARSER.apply(parser, null);
+        }
+
+        @Override
+        public void writeTo(StreamOutput out) throws IOException {}
+
+        @Override
+        public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
+            builder.startObject();
+            builder.endObject();
+            return builder;
+        }
+
+        @Override
+        public String getWriteableName() {
+            return NAME;
+        }
+
+        @Override
+        public boolean isReadOnly() {
+            return true;
         }
     }
 }

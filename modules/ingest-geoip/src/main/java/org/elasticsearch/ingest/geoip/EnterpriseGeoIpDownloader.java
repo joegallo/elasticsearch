@@ -460,7 +460,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
     private ProviderDownload downloaderFor(DatabaseConfiguration database) {
         if (database.provider() instanceof DatabaseConfiguration.Maxmind maxmind) {
             return new MaxmindDownload(database.name(), maxmind);
-        } else if (database.provider() instanceof DatabaseConfiguration.IpInfo ipinfo) {
+        } else if (database.provider() instanceof DatabaseConfiguration.Ipinfo ipinfo) {
             return new IpinfoDownload(database.name(), ipinfo);
         } else {
             throw new IllegalArgumentException(
@@ -548,10 +548,10 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
     class IpinfoDownload implements ProviderDownload {
 
         final String name;
-        final DatabaseConfiguration.IpInfo ipinfo;
+        final DatabaseConfiguration.Ipinfo ipinfo;
         HttpClient.PasswordAuthenticationHolder auth;
 
-        IpinfoDownload(String name, DatabaseConfiguration.IpInfo ipinfo) {
+        IpinfoDownload(String name, DatabaseConfiguration.Ipinfo ipinfo) {
             this.name = name;
             this.ipinfo = ipinfo;
             this.auth = buildCredentials();

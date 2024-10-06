@@ -16,6 +16,7 @@ import com.maxmind.db.Reader;
 
 import org.elasticsearch.common.network.NetworkAddress;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.core.SuppressForbidden;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.TestThreadPool;
@@ -24,6 +25,7 @@ import org.elasticsearch.watcher.ResourceWatcherService;
 import org.junit.After;
 import org.junit.Before;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.file.Path;
@@ -244,7 +246,7 @@ public class IpinfoIpDataLookupsTests extends ESTestCase {
     }
 
     public static void assertDatabaseInvariants(final Path databasePath, final BiConsumer<InetAddress, Map<String, Object>> rowConsumer) {
-        try (Reader reader = new Reader(databasePath.toFile())) {
+        try (Reader reader = new Reader(pathToFile(databasePath))) {
             Networks<?> networks = reader.networks(Map.class);
             while (networks.hasNext()) {
                 DatabaseRecord<?> dbr = networks.next();
@@ -262,5 +264,10 @@ public class IpinfoIpDataLookupsTests extends ESTestCase {
         } catch (Exception e) {
             fail(e);
         }
+    }
+
+    @SuppressForbidden(reason = "Maxmind API requires java.io.File")
+    private static File pathToFile(Path databasePath) {
+        return databasePath.toFile();
     }
 }
