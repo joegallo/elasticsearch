@@ -265,8 +265,8 @@ final class IpinfoIpDataLookups {
         }
     }
 
-    static class City extends AbstractBase<GeolocationResult> {
-        City(final Set<Database.Property> properties) {
+    static class Geolocation extends AbstractBase<GeolocationResult> {
+        Geolocation(final Set<Database.Property> properties) {
             super(properties, GeolocationResult.class);
         }
 

@@ -157,7 +157,7 @@ final class IpDataLookupFactories {
 
             case Database.Asn -> IpinfoIpDataLookups.Asn::new;
             case Database.Country -> IpinfoIpDataLookups.Country::new;
-            case Database.City -> IpinfoIpDataLookups.City::new;
+            case Database.City -> IpinfoIpDataLookups.Geolocation::new;
             default -> null;
         };
     }

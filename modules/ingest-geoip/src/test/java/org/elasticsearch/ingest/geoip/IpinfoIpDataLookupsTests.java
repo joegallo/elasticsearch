@@ -219,7 +219,7 @@ public class IpinfoIpDataLookupsTests extends ESTestCase {
 
         {
             DatabaseReaderLazyLoader loader = configDatabases.getDatabase("ip_geolocation_sample.mmdb");
-            IpDataLookup lookup = new IpinfoIpDataLookups.City(Set.of(Database.Property.values()));
+            IpDataLookup lookup = new IpinfoIpDataLookups.Geolocation(Set.of(Database.Property.values()));
             Map<String, Object> data = lookup.getData(loader, "49.237.132.248");
             assertThat(
                 data,
