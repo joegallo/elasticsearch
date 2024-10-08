@@ -77,7 +77,9 @@ public class IpinfoIpDataLookupsTests extends ESTestCase {
         assertThat(parseAsn(""), nullValue());
         // defensive cases: we strip whitespace and ignore case
         assertThat(parseAsn(" as 456  "), equalTo(456L));
-        // edge case: any non-parsable string is null
+        // defensive cases: we ignore the absence of the 'AS' prefix
+        assertThat(parseAsn("123"), equalTo(123L));
+        // bottom case: a non-parsable string is null
         assertThat(parseAsn("anythingelse"), nullValue());
     }
 

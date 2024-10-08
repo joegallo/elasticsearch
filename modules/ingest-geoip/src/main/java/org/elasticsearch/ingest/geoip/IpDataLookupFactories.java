@@ -146,6 +146,7 @@ final class IpDataLookupFactories {
         return database;
     }
 
+    @Nullable
     static Function<Set<Database.Property>, IpDataLookup> getIpinfoLookup(final Database database) {
         return switch (database) {
             // TODO yikes:
