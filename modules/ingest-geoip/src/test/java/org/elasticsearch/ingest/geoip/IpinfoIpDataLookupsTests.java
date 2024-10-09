@@ -314,17 +314,17 @@ public class IpinfoIpDataLookupsTests extends ESTestCase {
         configDatabases.initialize(resourceWatcherService);
 
         try (DatabaseReaderLazyLoader loader = configDatabases.getDatabase("privacy_detection_sample.mmdb")) {
-            IpDataLookup lookup = new IpinfoIpDataLookups.PrivacyDetection(Set.of(Database.Property.values())); // TODO YIKES
+            IpDataLookup lookup = new IpinfoIpDataLookups.PrivacyDetection(Database.PrivacyDetection.properties());
             Map<String, Object> data = lookup.getData(loader, "1.53.59.33");
             assertThat(
                 data,
                 equalTo(
                     Map.ofEntries(
                         entry("ip", "1.53.59.33"),
-                        entry("hosting_provider", false),
+                        entry("hosting", false),
                         entry("proxy", false),
                         entry("relay", false),
-                        entry("tor_exit_node", false),
+                        entry("tor", false),
                         entry("vpn", true)
                     )
                 )
@@ -332,18 +332,18 @@ public class IpinfoIpDataLookupsTests extends ESTestCase {
         }
 
         try (DatabaseReaderLazyLoader loader = configDatabases.getDatabase("privacy_detection_sample.mmdb")) {
-            IpDataLookup lookup = new IpinfoIpDataLookups.PrivacyDetection(Set.of(Database.Property.values())); // TODO YIKES
+            IpDataLookup lookup = new IpinfoIpDataLookups.PrivacyDetection(Database.PrivacyDetection.properties());
             Map<String, Object> data = lookup.getData(loader, "216.131.74.65");
             assertThat(
                 data,
                 equalTo(
                     Map.ofEntries(
                         entry("ip", "216.131.74.65"),
-                        entry("hosting_provider", true),
+                        entry("hosting", true),
                         entry("proxy", false),
                         entry("service", "FastVPN"),
                         entry("relay", false),
-                        entry("tor_exit_node", false),
+                        entry("tor", false),
                         entry("vpn", true)
                     )
                 )
@@ -356,18 +356,20 @@ public class IpinfoIpDataLookupsTests extends ESTestCase {
         Path configDir = tmpDir;
         copyDatabase("ipinfo/privacy_detection_sample.mmdb", configDir.resolve("privacy_detection_sample.mmdb"));
 
-        final Set<String> expectedColumns = Set.of("network", "service", "hosting", "proxy", "relay", "tor", "vpn");
+        {
+            final Set<String> expectedColumns = Set.of("network", "service", "hosting", "proxy", "relay", "tor", "vpn");
 
-        Path databasePath = configDir.resolve("privacy_detection_sample.mmdb");
-        assertDatabaseInvariants(databasePath, (ip, row) -> {
-            assertThat(row.keySet(), equalTo(expectedColumns));
+            Path databasePath = configDir.resolve("privacy_detection_sample.mmdb");
+            assertDatabaseInvariants(databasePath, (ip, row) -> {
+                assertThat(row.keySet(), equalTo(expectedColumns));
 
-            for (String booleanColumn : Set.of("hosting", "proxy", "relay", "tor", "vpn")) {
-                String bool = (String) row.get(booleanColumn);
-                assertThat(bool, anyOf(equalTo("true"), equalTo(""), equalTo("false")));
-                assertThat(parseBoolean(bool), notNullValue());
-            }
-        });
+                for (String booleanColumn : Set.of("hosting", "proxy", "relay", "tor", "vpn")) {
+                    String bool = (String) row.get(booleanColumn);
+                    assertThat(bool, anyOf(equalTo("true"), equalTo(""), equalTo("false")));
+                    assertThat(parseBoolean(bool), notNullValue());
+                }
+            });
+        }
     }
 
     private static void assertDatabaseInvariants(final Path databasePath, final BiConsumer<InetAddress, Map<String, Object>> rowConsumer) {

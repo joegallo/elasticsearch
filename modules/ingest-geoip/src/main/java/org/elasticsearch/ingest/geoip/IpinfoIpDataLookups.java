@@ -340,14 +340,14 @@ final class IpinfoIpDataLookups {
             for (Database.Property property : this.properties) {
                 switch (property) {
                     case IP -> data.put("ip", result.ip);
-                    case HOSTING_PROVIDER -> {
+                    case HOSTING -> {
                         if (response.hosting != null) {
-                            data.put("hosting_provider", response.hosting); // TODO name in response doc
+                            data.put("hosting", response.hosting);
                         }
                     }
-                    case TOR_EXIT_NODE -> {
+                    case TOR -> {
                         if (response.tor != null) {
-                            data.put("tor_exit_node", response.tor); // TODO name in response doc
+                            data.put("tor", response.tor);
                         }
                     }
                     case PROXY -> {
