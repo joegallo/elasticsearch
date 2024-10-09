@@ -84,7 +84,12 @@ final class IpinfoIpDataLookups {
         }
     }
 
-    static Double parseLocationDouble(String latlon) {
+    /**
+     * Lax-ly parses a string that contains a double into a Double (or null, if such parsing isn't possible).
+     * @param latlon a potentially empty (or null) string that is expected to contain a parsable double
+     * @return the parsed double
+     */
+    static Double parseLocationDouble(final String latlon) {
         if (latlon == null || Strings.hasText(latlon) == false) {
             return null;
         } else {
@@ -92,8 +97,7 @@ final class IpinfoIpDataLookups {
             try {
                 return Double.parseDouble(stripped);
             } catch (NumberFormatException e) {
-                // there's no much we can do in this case
-                // TODO keith logger.trace
+                logger.trace("Unable to parse non-compliant location string [{}]", latlon);
                 return null;
             }
         }
@@ -134,7 +138,7 @@ final class IpinfoIpDataLookups {
         String country,
         Double latitude,
         Double longitude,
-        String postalCode, // what do we want to do with this one?
+        String postalCode,
         String region,
         String timezone
     ) {
@@ -145,8 +149,8 @@ final class IpinfoIpDataLookups {
             @MaxMindDbParameter(name = "country") String country,
             @MaxMindDbParameter(name = "latitude") String latitude,
             @MaxMindDbParameter(name = "longitude") String longitude,
-            // @MaxMindDbParameter(name = "network") String network, // what do we want to do with this one?
-            @MaxMindDbParameter(name = "postal_code") String postalCode, // what do we want to do with this one?
+            // @MaxMindDbParameter(name = "network") String network, // for now we're not exposing this
+            @MaxMindDbParameter(name = "postal_code") String postalCode,
             @MaxMindDbParameter(name = "region") String region,
             @MaxMindDbParameter(name = "timezone") String timezone
         ) {
@@ -300,6 +304,12 @@ final class IpinfoIpDataLookups {
                         String locationTimeZone = response.timezone;
                         if (locationTimeZone != null) {
                             data.put("timezone", locationTimeZone);
+                        }
+                    }
+                    case POSTAL_CODE -> {
+                        String postalCode = response.postalCode;
+                        if (postalCode != null) {
+                            data.put("postal_code", postalCode);
                         }
                     }
                     case LOCATION -> {
