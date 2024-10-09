@@ -58,27 +58,26 @@ final class IpinfoIpDataLookups {
         }
     }
 
+    /**
+     * Lax-ly parses a string that contains a boolean into a Boolean (or null, if such parsing isn't possible).
+     * @param bool a potentially empty (or null) string that is expected to contain a parsable boolean
+     * @return the parsed boolean
+     */
     static Boolean parseBoolean(final String bool) {
-        // TODO yikes convert this to a javadoc
-        // "true" --> true // TODAY
-        // "" --> false // TODAY
-        // "false" --> false // THEY MENTIONED THIS TO US IN SLACK AS A PLAN
-
         if (bool == null) {
             return null;
         } else {
-            String trimmed = bool.trim();
-
-            if ("true".equalsIgnoreCase(trimmed)) {
+            String trimmed = bool.toLowerCase(Locale.ROOT).trim();
+            if ("true".equals(trimmed)) {
                 return true;
-            } else if ("false".equalsIgnoreCase(trimmed)) { // TODO yikes add a comment
+            } else if ("false".equals(trimmed)) {
+                // "false" can represent false -- this an expected future enhancement in how the database represents booleans
                 return false;
             } else if (trimmed.isEmpty()) {
-                // as a fallback, empty string can represent false
+                // empty string can represent false -- this is how the database currently represents 'false' values
                 return false;
             } else {
-                // there's no much we can do in this case
-                // TODO keith logger.trace
+                logger.trace("Unable to parse non-compliant boolean string [{}]", bool);
                 return null;
             }
         }
@@ -163,10 +162,10 @@ final class IpinfoIpDataLookups {
         @MaxMindDbConstructor
         public PrivacyDetectionResult(
             @MaxMindDbParameter(name = "hosting") String hosting,
-            // @MaxMindDbParameter(name = "network") String network, // what do we want to do with this one?
+            // @MaxMindDbParameter(name = "network") String network, // for now we're not exposing this
             @MaxMindDbParameter(name = "proxy") String proxy,
             @MaxMindDbParameter(name = "relay") String relay,
-            @MaxMindDbParameter(name = "service") String service,
+            @MaxMindDbParameter(name = "service") String service, // n.b. this remains a string, the rest are parsed booleans
             @MaxMindDbParameter(name = "tor") String tor,
             @MaxMindDbParameter(name = "vpn") String vpn
         ) {

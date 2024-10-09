@@ -97,16 +97,17 @@ public class IpinfoIpDataLookupsTests extends ESTestCase {
 
     public void testParseBoolean() {
         // expected cases: "true" is true and "" is false
-        assertThat(parseBoolean(""), equalTo(false));
         assertThat(parseBoolean("true"), equalTo(true));
+        assertThat(parseBoolean(""), equalTo(false));
+        assertThat(parseBoolean("false"), equalTo(false)); // future proofing
         // defensive case: null becomes null, this is not expected fwiw
         assertThat(parseBoolean(null), nullValue());
         // defensive cases: we strip whitespace and ignore case
         assertThat(parseBoolean("    "), equalTo(false));
         assertThat(parseBoolean(" TrUe "), equalTo(true));
         assertThat(parseBoolean(" FaLSE "), equalTo(false));
-        // edge case: any non-"true" (ignoring whitespace and casing) string is false
-        assertThat(parseBoolean(randomAlphaOfLength(5)), nullValue());
+        // bottom case: a non-parsable string is null
+        assertThat(parseBoolean(randomAlphaOfLength(8)), nullValue());
     }
 
     public void testParseLocationDouble() {
@@ -313,13 +314,13 @@ public class IpinfoIpDataLookupsTests extends ESTestCase {
         configDatabases.initialize(resourceWatcherService);
 
         try (DatabaseReaderLazyLoader loader = configDatabases.getDatabase("privacy_detection_sample.mmdb")) {
-            IpDataLookup lookup = new IpinfoIpDataLookups.PrivacyDetection(Set.of(Database.Property.values()));
-            Map<String, Object> data = lookup.getData(loader, "2.139.198.28");
+            IpDataLookup lookup = new IpinfoIpDataLookups.PrivacyDetection(Set.of(Database.Property.values())); // TODO YIKES
+            Map<String, Object> data = lookup.getData(loader, "1.53.59.33");
             assertThat(
                 data,
                 equalTo(
                     Map.ofEntries(
-                        entry("ip", "2.139.198.28"),
+                        entry("ip", "1.53.59.33"),
                         entry("hosting_provider", false),
                         entry("proxy", false),
                         entry("relay", false),
@@ -331,16 +332,16 @@ public class IpinfoIpDataLookupsTests extends ESTestCase {
         }
 
         try (DatabaseReaderLazyLoader loader = configDatabases.getDatabase("privacy_detection_sample.mmdb")) {
-            IpDataLookup lookup = new IpinfoIpDataLookups.PrivacyDetection(Set.of(Database.Property.values()));
-            Map<String, Object> data = lookup.getData(loader, "149.50.212.32");
+            IpDataLookup lookup = new IpinfoIpDataLookups.PrivacyDetection(Set.of(Database.Property.values())); // TODO YIKES
+            Map<String, Object> data = lookup.getData(loader, "216.131.74.65");
             assertThat(
                 data,
                 equalTo(
                     Map.ofEntries(
-                        entry("ip", "149.50.212.32"),
+                        entry("ip", "216.131.74.65"),
                         entry("hosting_provider", true),
                         entry("proxy", false),
-                        entry("service", "Private Internet Access"),
+                        entry("service", "FastVPN"),
                         entry("relay", false),
                         entry("tor_exit_node", false),
                         entry("vpn", true)
