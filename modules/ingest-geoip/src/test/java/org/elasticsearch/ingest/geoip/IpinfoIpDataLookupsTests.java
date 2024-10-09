@@ -313,6 +313,7 @@ public class IpinfoIpDataLookupsTests extends ESTestCase {
         ConfigDatabases configDatabases = new ConfigDatabases(configDir, cache);
         configDatabases.initialize(resourceWatcherService);
 
+        // testing the first row in the sample database
         try (DatabaseReaderLazyLoader loader = configDatabases.getDatabase("privacy_detection_sample.mmdb")) {
             IpDataLookup lookup = new IpinfoIpDataLookups.PrivacyDetection(Database.PrivacyDetection.properties());
             Map<String, Object> data = lookup.getData(loader, "1.53.59.33");
@@ -331,6 +332,7 @@ public class IpinfoIpDataLookupsTests extends ESTestCase {
             );
         }
 
+        // testing a row with a non-empty service in the sample database
         try (DatabaseReaderLazyLoader loader = configDatabases.getDatabase("privacy_detection_sample.mmdb")) {
             IpDataLookup lookup = new IpinfoIpDataLookups.PrivacyDetection(Database.PrivacyDetection.properties());
             Map<String, Object> data = lookup.getData(loader, "216.131.74.65");

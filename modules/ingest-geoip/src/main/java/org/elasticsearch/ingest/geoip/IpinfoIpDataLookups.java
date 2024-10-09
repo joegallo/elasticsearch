@@ -165,7 +165,7 @@ final class IpinfoIpDataLookups {
             // @MaxMindDbParameter(name = "network") String network, // for now we're not exposing this
             @MaxMindDbParameter(name = "proxy") String proxy,
             @MaxMindDbParameter(name = "relay") String relay,
-            @MaxMindDbParameter(name = "service") String service, // n.b. this remains a string, the rest are parsed booleans
+            @MaxMindDbParameter(name = "service") String service, // n.b. this remains a string, the rest are parsed as booleans
             @MaxMindDbParameter(name = "tor") String tor,
             @MaxMindDbParameter(name = "vpn") String vpn
         ) {
