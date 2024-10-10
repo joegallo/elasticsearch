@@ -79,14 +79,13 @@ public record DatabaseConfiguration(String id, String name, Provider provider) i
     );
 
     public static final Set<String> IPINFO_NAMES = Set.of(
-        // see https://ipinfo.io/developers/database-filename-reference for details
-        // n.b. these strings are from https://ipinfo.io/account/data-downloads
-        // we might want to confirm the correct 'titling' with ipinfo themselves
-
-        "asn", // free
-        "country", // free
-        "country_asn" // free
-    // etc
+        // these file names are from https://ipinfo.io/developers/database-filename-reference
+        "asn", // "Free IP to ASN"
+        "country", // "Free IP to Country"
+        // "country_asn" // "Free IP to Country + IP to ASN", not supported at present
+        "standard_asn", // commercial "ASN"
+        "standard_location", // commercial "IP Geolocation"
+        "standard_privacy" // commercial "Privacy Detection" (sometimes "Anonymous IP")
     );
 
     private static final ParseField NAME = new ParseField("name");
