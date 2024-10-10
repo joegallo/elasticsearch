@@ -470,7 +470,7 @@ public class IpinfoIpDataLookupsTests extends ESTestCase {
         assertThat(parseDatabaseFromType("ip_asn_sample.mmdb"), is(Database.AsnV2));
         assertThat(parseDatabaseFromType("ip_geolocation_sample.mmdb"), is(Database.CityV2));
         assertThat(parseDatabaseFromType("asn_sample.mmdb"), is(Database.AsnV2));
-        assertThat(parseDatabaseFromType("ip_country_sample.mmdb"), is(Database.Country)); // TODO CountryV2
+        assertThat(parseDatabaseFromType("ip_country_sample.mmdb"), is(Database.CountryV2));
         assertThat(parseDatabaseFromType("privacy_detection_sample.mmdb"), is(Database.PrivacyDetection));
     }
 

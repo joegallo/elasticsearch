@@ -89,7 +89,7 @@ final class IpinfoIpDataLookups {
         if (cleanedType.contains("asn")) {
             return Database.AsnV2;
         } else if (cleanedType.contains("country")) {
-            return Database.Country; // TODO yikes: CountryV2
+            return Database.CountryV2;
         } else if (cleanedType.contains("location")) { // note: catches 'location' and 'geolocation' ;)
             return Database.CityV2;
         } else if (cleanedType.contains("privacy")) {
@@ -105,7 +105,7 @@ final class IpinfoIpDataLookups {
     static Function<Set<Database.Property>, IpDataLookup> getIpinfoLookup(final Database database) {
         return switch (database) {
             case Database.AsnV2 -> IpinfoIpDataLookups.Asn::new;
-            case Database.Country -> IpinfoIpDataLookups.Country::new; // TODO yikes: CountryV2
+            case Database.CountryV2 -> IpinfoIpDataLookups.Country::new;
             case Database.CityV2 -> IpinfoIpDataLookups.Geolocation::new;
             case Database.PrivacyDetection -> IpinfoIpDataLookups.PrivacyDetection::new;
             default -> null;
