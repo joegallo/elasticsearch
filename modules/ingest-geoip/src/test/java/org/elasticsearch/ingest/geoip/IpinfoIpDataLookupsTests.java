@@ -37,6 +37,7 @@ import java.util.function.BiConsumer;
 
 import static java.util.Map.entry;
 import static org.elasticsearch.ingest.geoip.GeoIpTestUtils.copyDatabase;
+import static org.elasticsearch.ingest.geoip.IpinfoIpDataLookups.ipinfoTypeCleanup;
 import static org.elasticsearch.ingest.geoip.IpinfoIpDataLookups.parseAsn;
 import static org.elasticsearch.ingest.geoip.IpinfoIpDataLookups.parseBoolean;
 import static org.elasticsearch.ingest.geoip.IpinfoIpDataLookups.parseLocationDouble;
@@ -372,6 +373,105 @@ public class IpinfoIpDataLookupsTests extends ESTestCase {
                 }
             });
         }
+    }
+
+    public void testIpinfoTypeCleanup() {
+        // database_type strings from upstream:
+        // abuse.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo standard_abuse_mmdb_v4.mmdb"), is("abuse_v4"));
+        // asn.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo generic_asn_mmdb_v4.mmdb"), is("asn_v4"));
+        // carrier.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo standard_carrier_mmdb.mmdb"), is("carrier"));
+        // country.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo generic_country_free.mmdb"), is("country"));
+        // location_extended_v2.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo extended_location_v2.mmdb"), is("location_v2"));
+        // privacy_extended_v2.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo extended_privacy_v2.mmdb"), is("privacy_v2"));
+        // standard_company.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo standard_company.mmdb"), is("company"));
+        // standard_ip_hosted_domains_sample.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo standard_ip_hosted_domains_sample.mmdb"), is("hosted_domains"));
+        // standard_location.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo standard_location_mmdb_v4.mmdb"), is("location_v4"));
+        // standard_privacy.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo standard_privacy.mmdb"), is("privacy"));
+
+        // database_type strings from test files:
+        // ip_asn_sample.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo ip_asn_sample.mmdb"), is("asn"));
+        // ip_country_asn_sample.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo ip_country_asn_sample.mmdb"), is("country_asn"));
+        // ip_geolocation_sample.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo ip_geolocation_sample.mmdb"), is("geolocation"));
+        // privacy_detection_sample.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo privacy_detection_sample.mmdb"), is("privacy_detection"));
+        // abuse_contact_sample.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo abuse_contact_sample.mmdb"), is("abuse_contact"));
+        // asn_sample.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo asn_sample.mmdb"), is("asn"));
+        // hosted_domains_sample.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo hosted_domains_sample.mmdb"), is("hosted_domains"));
+        // ip_asn_sample.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo ip_asn_sample.mmdb"), is("asn"));
+        // ip_carrier_sample.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo ip_carrier_sample.mmdb"), is("carrier"));
+        // ip_company_sample.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo ip_company_sample.mmdb"), is("company"));
+        // ip_country_asn_sample.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo ip_country_asn_sample.mmdb"), is("country_asn"));
+        // ip_country_sample.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo ip_country_sample.mmdb"), is("country"));
+        // ip_geolocation_extended_ipv4_sample.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo ip_geolocation_extended_ipv4_sample.mmdb"), is("geolocation_ipv4"));
+        // ip_geolocation_extended_ipv6_sample.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo ip_geolocation_extended_ipv6_sample.mmdb"), is("geolocation_ipv6"));
+        // ip_geolocation_extended_sample.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo ip_geolocation_extended_sample.mmdb"), is("geolocation"));
+        // ip_geolocation_sample.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo ip_geolocation_sample.mmdb"), is("geolocation"));
+        // ip_rdns_domains_sample.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo ip_rdns_domains_sample.mmdb"), is("rdns_domains"));
+        // ip_rdns_hostnames_sample.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo ip_rdns_hostnames_sample.mmdb"), is("rdns_hostnames"));
+        // privacy_detection_extended_sample.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo privacy_detection_extended_sample.mmdb"), is("privacy_detection"));
+        // privacy_detection_sample.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo privacy_detection_sample.mmdb"), is("privacy_detection"));
+
+        // database_type strings from downloaded (free) files:
+        // asn.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo generic_asn_free.mmdb"), is("asn"));
+        // country.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo generic_country_free.mmdb"), is("country"));
+        // country_asn.mmdb
+        assertThat(ipinfoTypeCleanup("ipinfo generic_country_free_country_asn.mmdb"), is("country_country_asn"));
+    }
+
+    public void testDatabaseTypeParsing() throws IOException {
+        // this test is a little bit overloaded -- it's testing that we're getting the expected sorts of
+        // database_type strings from these files, *and* it's also testing that we dispatch on those strings
+        // correctly and associated those files with the correct high-level Elasticsearch Database type.
+        // down the road it would probably make sense to split these out and find a better home for some of the
+        // logic, but for now it's probably more valuable to have the test *somewhere* than to get especially
+        // pedantic about where precisely it should be.
+
+        copyDatabase("ipinfo/ip_asn_sample.mmdb", tmpDir.resolve("ip_asn_sample.mmdb"));
+        copyDatabase("ipinfo/ip_geolocation_sample.mmdb", tmpDir.resolve("ip_geolocation_sample.mmdb"));
+        copyDatabase("ipinfo/asn_sample.mmdb", tmpDir.resolve("asn_sample.mmdb"));
+        copyDatabase("ipinfo/ip_country_sample.mmdb", tmpDir.resolve("ip_country_sample.mmdb"));
+        copyDatabase("ipinfo/privacy_detection_sample.mmdb", tmpDir.resolve("privacy_detection_sample.mmdb"));
+
+        assertThat(parseDatabaseFromType("ip_asn_sample.mmdb"), is(Database.AsnV2));
+        assertThat(parseDatabaseFromType("ip_geolocation_sample.mmdb"), is(Database.CityV2));
+        assertThat(parseDatabaseFromType("asn_sample.mmdb"), is(Database.AsnV2));
+        assertThat(parseDatabaseFromType("ip_country_sample.mmdb"), is(Database.Country)); // TODO CountryV2
+        assertThat(parseDatabaseFromType("privacy_detection_sample.mmdb"), is(Database.PrivacyDetection));
+    }
+
+    private Database parseDatabaseFromType(String databaseFile) throws IOException {
+        return IpDataLookupFactories.getDatabase(MMDBUtil.getDatabaseType(tmpDir.resolve(databaseFile)));
     }
 
     private static void assertDatabaseInvariants(final Path databasePath, final BiConsumer<InetAddress, Map<String, Object>> rowConsumer) {
