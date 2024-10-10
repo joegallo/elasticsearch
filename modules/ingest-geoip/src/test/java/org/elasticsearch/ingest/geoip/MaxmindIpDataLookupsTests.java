@@ -9,13 +9,8 @@
 
 package org.elasticsearch.ingest.geoip;
 
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.IOUtils;
-import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.test.ESTestCase;
-import org.elasticsearch.threadpool.TestThreadPool;
-import org.elasticsearch.threadpool.ThreadPool;
-import org.elasticsearch.watcher.ResourceWatcherService;
 import org.junit.After;
 import org.junit.Before;
 
@@ -27,24 +22,16 @@ import static org.hamcrest.Matchers.is;
 
 public class MaxmindIpDataLookupsTests extends ESTestCase {
 
-    private ThreadPool threadPool;
-    private ResourceWatcherService resourceWatcherService;
-
     // a temporary directory that mmdb files can be copied to and read from
     private Path tmpDir;
 
     @Before
     public void setup() {
-        threadPool = new TestThreadPool(ConfigDatabases.class.getSimpleName());
-        Settings settings = Settings.builder().put("resource.reload.interval.high", TimeValue.timeValueMillis(100)).build();
-        resourceWatcherService = new ResourceWatcherService(settings, threadPool);
         tmpDir = createTempDir();
     }
 
     @After
     public void cleanup() throws IOException {
-        resourceWatcherService.close();
-        threadPool.shutdownNow();
         IOUtils.rm(tmpDir);
     }
 

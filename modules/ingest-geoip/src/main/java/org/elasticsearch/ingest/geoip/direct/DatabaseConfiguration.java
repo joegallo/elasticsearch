@@ -300,7 +300,7 @@ public record DatabaseConfiguration(String id, String name, Provider provider) i
         public static final String NAME = "ipinfo";
 
         // this'll become a ConstructingObjectParser once we accept the token (securely) in the json definition
-        private static final ObjectParser<Ipinfo, Void> PARSER = new ObjectParser<>("action", Ipinfo::new);
+        private static final ObjectParser<Ipinfo, Void> PARSER = new ObjectParser<>("ipinfo", Ipinfo::new);
 
         public Ipinfo(StreamInput in) throws IOException {
             this();
