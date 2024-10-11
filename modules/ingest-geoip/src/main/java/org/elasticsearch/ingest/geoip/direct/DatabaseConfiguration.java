@@ -26,6 +26,7 @@ import org.elasticsearch.xcontent.XContentParser;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -100,7 +101,13 @@ public record DatabaseConfiguration(String id, String name, Provider provider) i
         (a, id) -> {
             String name = (String) a[0];
             Provider provider;
-            // TODO yikes should we check that only one of these is not null?
+
+            // one and only one provider object must be present
+            final long numNonNulls = Arrays.stream(a, 1, a.length).filter(Objects::nonNull).count();
+            if (numNonNulls != 1) {
+                throw new IllegalArgumentException("Exactly one provider object must be specified, but [" + numNonNulls + "] were found");
+            }
+
             if (a[1] != null) {
                 provider = (Maxmind) a[1];
             } else if (a[2] != null) {
@@ -209,17 +216,16 @@ public record DatabaseConfiguration(String id, String name, Provider provider) i
             err.addValidationError("invalid name [" + name + "]: cannot be empty");
         }
 
+        // provider-specific name validation
         if (provider instanceof Maxmind) {
             if (MAXMIND_NAMES.contains(name) == false) {
                 err.addValidationError("invalid name [" + name + "]: must be a supported name ([" + MAXMIND_NAMES + "])");
             }
-        } else if (provider instanceof Ipinfo) {
+        }
+        if (provider instanceof Ipinfo) {
             if (IPINFO_NAMES.contains(name) == false) {
                 err.addValidationError("invalid name [" + name + "]: must be a supported name ([" + IPINFO_NAMES + "])");
             }
-        } else {
-            // illegal state exception or assert false or something
-            throw new RuntimeException("narp");
         }
 
         // important: the name must be unique across all configurations of this same type,
@@ -258,8 +264,6 @@ public record DatabaseConfiguration(String id, String name, Provider provider) i
 
         private static final ParseField ACCOUNT_ID = new ParseField("account_id");
 
-        // down the road we'd also want to accept the license_key (securely) via the json definition
-
         private static final ConstructingObjectParser<Maxmind, Void> PARSER = new ConstructingObjectParser<>("maxmind", false, (a, id) -> {
             String accountId = (String) a[0];
             return new Maxmind(accountId);
@@ -271,10 +275,6 @@ public record DatabaseConfiguration(String id, String name, Provider provider) i
 
         public Maxmind(StreamInput in) throws IOException {
             this(in.readString());
-        }
-
-        public static Maxmind parse(XContentParser parser) {
-            return PARSER.apply(parser, null);
         }
 
         @Override
@@ -304,10 +304,6 @@ public record DatabaseConfiguration(String id, String name, Provider provider) i
 
         public Ipinfo(StreamInput in) throws IOException {
             this();
-        }
-
-        public static Ipinfo parse(XContentParser parser) {
-            return PARSER.apply(parser, null);
         }
 
         @Override
@@ -349,10 +345,6 @@ public record DatabaseConfiguration(String id, String name, Provider provider) i
             this(in.readString());
         }
 
-        public static Local parse(XContentParser parser) {
-            return PARSER.apply(parser, null);
-        }
-
         @Override
         public void writeTo(StreamOutput out) throws IOException {
             out.writeString(type);
@@ -384,10 +376,6 @@ public record DatabaseConfiguration(String id, String name, Provider provider) i
 
         public Web(StreamInput in) throws IOException {
             this();
-        }
-
-        public static Web parse(XContentParser parser) {
-            return PARSER.apply(parser, null);
         }
 
         @Override

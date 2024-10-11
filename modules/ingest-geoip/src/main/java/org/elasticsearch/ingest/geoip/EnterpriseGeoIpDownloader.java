@@ -23,6 +23,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.CheckedSupplier;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.hash.MessageDigests;
+import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -250,7 +251,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         logger.debug("Processing database [{}] for configuration [{}]", name, database.id());
 
         try (ProviderDownload downloader = downloaderFor(database)) {
-            if (downloader.validCredentials()) {
+            if (downloader != null && downloader.validCredentials()) {
                 // the name that comes from the enterprise downloader cluster state doesn't include the .mmdb extension,
                 // but the downloading and indexing of database code expects it to be there, so we add it on here before continuing
                 final String fileName = name + ".mmdb";
@@ -457,6 +458,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         }
     }
 
+    @Nullable
     private ProviderDownload downloaderFor(DatabaseConfiguration database) {
         if (database.provider() instanceof DatabaseConfiguration.Maxmind maxmind) {
             return new MaxmindDownload(database.name(), maxmind);
