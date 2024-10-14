@@ -58,6 +58,17 @@ final class IpinfoIpDataLookups {
         "mmdb"
     );
 
+    /**
+     * Cleans up the database_type String from an ipinfo database by splitting on punctuation, removing stop words, and then joining
+     * with an underscore.
+     * <p>
+     * e.g. "ipinfo free_foo_sample.mmdb" -> "foo"
+     *
+     * @param type the database_type from an ipinfo database
+     * @return a cleaned up database_type string
+     */
+    // n.b. this is just based on observation of the types from a survey of such databases -- it's like browser user agent sniffing,
+    // there aren't necessarily any amazing guarantees about this behavior
     static String ipinfoTypeCleanup(String type) {
         List<String> parts = Arrays.asList(type.split("[ _.]"));
         return parts.stream().filter((s) -> IPINFO_TYPE_STOP_WORDS.contains(s) == false).collect(Collectors.joining("_"));
