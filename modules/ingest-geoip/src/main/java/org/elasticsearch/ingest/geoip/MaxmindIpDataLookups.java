@@ -86,9 +86,9 @@ final class MaxmindIpDataLookups {
         } else if (databaseType.endsWith(ISP_DB_SUFFIX)) {
             return Database.Isp;
         } else {
-            // no match was found, so log and return null
+            // no match was found
             logger.trace("returning null for unsupported database_type [{}]", databaseType);
-            return null; // no match was found
+            return null;
         }
     }
 

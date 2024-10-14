@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.elasticsearch.ingest.IngestDocumentMatcher.assertIngestDocument;
 import static org.elasticsearch.ingest.geoip.GeoIpProcessor.GEOIP_TYPE;
+import static org.elasticsearch.ingest.geoip.GeoIpProcessor.IP_LOCATION_TYPE;
 import static org.elasticsearch.ingest.geoip.GeoIpTestUtils.copyDatabase;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -48,6 +49,66 @@ public class GeoIpProcessorTests extends ESTestCase {
     @After
     public void cleanup() throws IOException {
         IOUtils.rm(tmpDir);
+    }
+
+    public void testMaxmindCity() throws Exception {
+        String ip = "2602:306:33d3:8000::3257:9652";
+        GeoIpProcessor processor = new GeoIpProcessor(
+            GEOIP_TYPE, // n.b. this is a "geoip" processor
+            randomAlphaOfLength(10),
+            null,
+            "source_field",
+            loader("GeoLite2-City.mmdb"),
+            () -> true,
+            "target_field",
+            getMaxmindCityLookup(),
+            false,
+            false,
+            "filename"
+        );
+
+        Map<String, Object> document = new HashMap<>();
+        document.put("source_field", ip);
+        IngestDocument ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), document);
+        processor.execute(ingestDocument);
+
+        assertThat(ingestDocument.getSourceAndMetadata().get("source_field"), equalTo(ip));
+        @SuppressWarnings("unchecked")
+        Map<String, Object> data = (Map<String, Object>) ingestDocument.getSourceAndMetadata().get("target_field");
+        assertThat(data, notNullValue());
+        assertThat(data.get("ip"), equalTo(ip));
+        assertThat(data.get("city_name"), equalTo("Homestead"));
+        // see MaxmindIpDataLookupsTests for more tests of the data lookup behavior
+    }
+
+    public void testIpinfoGeolocation() throws Exception {
+        String ip = "13.107.39.238";
+        GeoIpProcessor processor = new GeoIpProcessor(
+            IP_LOCATION_TYPE, // n.b. this is an "ip_location" processor
+            randomAlphaOfLength(10),
+            null,
+            "source_field",
+            loader("ipinfo/ip_geolocation_sample.mmdb"),
+            () -> true,
+            "target_field",
+            getIpinfoGeolocationLookup(),
+            false,
+            false,
+            "filename"
+        );
+
+        Map<String, Object> document = new HashMap<>();
+        document.put("source_field", ip);
+        IngestDocument ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), document);
+        processor.execute(ingestDocument);
+
+        assertThat(ingestDocument.getSourceAndMetadata().get("source_field"), equalTo(ip));
+        @SuppressWarnings("unchecked")
+        Map<String, Object> data = (Map<String, Object>) ingestDocument.getSourceAndMetadata().get("target_field");
+        assertThat(data, notNullValue());
+        assertThat(data.get("ip"), equalTo(ip));
+        assertThat(data.get("city_name"), equalTo("Des Moines"));
+        // see IpinfoIpDataLookupsTests for more tests of the data lookup behavior
     }
 
     public void testNullValueWithIgnoreMissing() throws Exception {
@@ -204,11 +265,11 @@ public class GeoIpProcessorTests extends ESTestCase {
         processor.execute(ingestDocument);
 
         @SuppressWarnings("unchecked")
-        List<Map<String, Object>> geoData = (List<Map<String, Object>>) ingestDocument.getSourceAndMetadata().get("target_field");
-        assertThat(geoData, notNullValue());
-        assertThat(geoData.size(), equalTo(2));
-        assertThat(geoData.get(0).get("location"), equalTo(Map.of("lat", 37.751d, "lon", -97.822d)));
-        assertThat(geoData.get(1).get("city_name"), equalTo("Hoensbroek"));
+        List<Map<String, Object>> data = (List<Map<String, Object>>) ingestDocument.getSourceAndMetadata().get("target_field");
+        assertThat(data, notNullValue());
+        assertThat(data.size(), equalTo(2));
+        assertThat(data.get(0).get("location"), equalTo(Map.of("lat", 37.751d, "lon", -97.822d)));
+        assertThat(data.get(1).get("city_name"), equalTo("Hoensbroek"));
     }
 
     public void testListPartiallyValid() throws Exception {
@@ -232,11 +293,11 @@ public class GeoIpProcessorTests extends ESTestCase {
         processor.execute(ingestDocument);
 
         @SuppressWarnings("unchecked")
-        List<Map<String, Object>> geoData = (List<Map<String, Object>>) ingestDocument.getSourceAndMetadata().get("target_field");
-        assertThat(geoData, notNullValue());
-        assertThat(geoData.size(), equalTo(2));
-        assertThat(geoData.get(0).get("location"), equalTo(Map.of("lat", 37.751d, "lon", -97.822d)));
-        assertThat(geoData.get(1), nullValue());
+        List<Map<String, Object>> data = (List<Map<String, Object>>) ingestDocument.getSourceAndMetadata().get("target_field");
+        assertThat(data, notNullValue());
+        assertThat(data.size(), equalTo(2));
+        assertThat(data.get(0).get("location"), equalTo(Map.of("lat", 37.751d, "lon", -97.822d)));
+        assertThat(data.get(1), nullValue());
     }
 
     public void testListNoMatches() throws Exception {
@@ -276,11 +337,11 @@ public class GeoIpProcessorTests extends ESTestCase {
         processor.execute(ingestDocument);
 
         @SuppressWarnings("unchecked")
-        List<Map<String, Object>> geoData = (List<Map<String, Object>>) ingestDocument.getSourceAndMetadata().get("target_field");
-        assertThat(geoData, notNullValue());
-        assertThat(geoData.size(), equalTo(2));
-        assertThat(geoData.get(0).get("location"), equalTo(Map.of("lat", 37.751d, "lon", -97.822d)));
-        assertThat(geoData.get(1).get("city_name"), equalTo("Hoensbroek"));
+        List<Map<String, Object>> data = (List<Map<String, Object>>) ingestDocument.getSourceAndMetadata().get("target_field");
+        assertThat(data, notNullValue());
+        assertThat(data.size(), equalTo(2));
+        assertThat(data.get(0).get("location"), equalTo(Map.of("lat", 37.751d, "lon", -97.822d)));
+        assertThat(data.get(1).get("city_name"), equalTo("Hoensbroek"));
 
         // Check the loader's reference count and attempt to close
         assertThat(loader.current(), equalTo(0));
@@ -309,9 +370,9 @@ public class GeoIpProcessorTests extends ESTestCase {
         processor.execute(ingestDocument);
 
         @SuppressWarnings("unchecked")
-        Map<String, Object> geoData = (Map<String, Object>) ingestDocument.getSourceAndMetadata().get("target_field");
-        assertThat(geoData, notNullValue());
-        assertThat(geoData.get("location"), equalTo(Map.of("lat", 37.751d, "lon", -97.822d)));
+        Map<String, Object> data = (Map<String, Object>) ingestDocument.getSourceAndMetadata().get("target_field");
+        assertThat(data, notNullValue());
+        assertThat(data.get("location"), equalTo(Map.of("lat", 37.751d, "lon", -97.822d)));
     }
 
     public void testListFirstOnlyNoMatches() throws Exception {
@@ -409,7 +470,13 @@ public class GeoIpProcessorTests extends ESTestCase {
     }
 
     private static IpDataLookup getMaxmindCityLookup() {
-        return MaxmindIpDataLookups.getMaxmindLookup(Database.City).apply(Database.City.properties());
+        final var database = Database.City;
+        return MaxmindIpDataLookups.getMaxmindLookup(database).apply(database.properties());
+    }
+
+    private static IpDataLookup getIpinfoGeolocationLookup() {
+        final var database = Database.CityV2;
+        return IpinfoIpDataLookups.getIpinfoLookup(database).apply(database.properties());
     }
 
     private CheckedSupplier<IpDatabase, IOException> loader(final String path) {
@@ -418,7 +485,8 @@ public class GeoIpProcessorTests extends ESTestCase {
     }
 
     private DatabaseReaderLazyLoader loader(final String databaseName, final AtomicBoolean closed) {
-        Path path = tmpDir.resolve(databaseName);
+        int last = databaseName.lastIndexOf("/");
+        final Path path = tmpDir.resolve(last == -1 ? databaseName : databaseName.substring(last + 1));
         copyDatabase(databaseName, path);
 
         final GeoIpCache cache = new GeoIpCache(1000);
