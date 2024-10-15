@@ -23,7 +23,6 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.CheckedSupplier;
 import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.hash.MessageDigests;
-import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.TimeValue;
 import org.elasticsearch.core.Tuple;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -458,7 +457,6 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
         }
     }
 
-    @Nullable
     private ProviderDownload downloaderFor(DatabaseConfiguration database) {
         if (database.provider() instanceof DatabaseConfiguration.Maxmind maxmind) {
             return new MaxmindDownload(database.name(), maxmind);
@@ -502,7 +500,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
 
         @Override
         public boolean validCredentials() {
-            return auth.get() != null;
+            return auth != null && auth.get() != null;
         }
 
         @Override
@@ -543,7 +541,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
 
         @Override
         public void close() throws IOException {
-            auth.close();
+            if (auth != null) auth.close();
         }
     }
 
@@ -574,7 +572,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
 
         @Override
         public boolean validCredentials() {
-            return auth.get() != null;
+            return auth != null && auth.get() != null;
         }
 
         private static final Set<String> FREE_DATABASES = Set.of("asn", "country", "country_asn");
@@ -637,7 +635,7 @@ public class EnterpriseGeoIpDownloader extends AllocatedPersistentTask {
 
         @Override
         public void close() throws IOException {
-            auth.close();
+            if (auth != null) auth.close();
         }
     }
 
