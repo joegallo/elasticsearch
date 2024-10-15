@@ -12,6 +12,7 @@ package org.elasticsearch.ingest.geoip;
 import org.elasticsearch.common.CheckedSupplier;
 import org.elasticsearch.common.logging.DeprecationCategory;
 import org.elasticsearch.common.logging.DeprecationLogger;
+import org.elasticsearch.core.Assertions;
 import org.elasticsearch.core.Strings;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.IngestDocument;
@@ -174,13 +175,12 @@ public final class GeoIpProcessor extends AbstractProcessor {
 
     /**
      * Retrieves and verifies a {@link IpDatabase} instance for each execution of the {@link GeoIpProcessor}. Guards against missing
-     * custom databases, and ensures that database instances are of the proper type before use. (Hmmm... not this last bit anymore, huh?)
+     * custom databases, and ensures that database instances are of the proper type before use.
      */
-    // it really seems like this class isn't holding its weight anymore
     public static final class DatabaseVerifyingSupplier implements CheckedSupplier<IpDatabase, IOException> {
         private final IpDatabaseProvider ipDatabaseProvider;
         private final String databaseFile;
-        private final String databaseType; // TODO HUH... this is interesting.
+        private final String databaseType;
 
         public DatabaseVerifyingSupplier(IpDatabaseProvider ipDatabaseProvider, String databaseFile, String databaseType) {
             this.ipDatabaseProvider = ipDatabaseProvider;
@@ -310,7 +310,7 @@ public final class GeoIpProcessor extends AbstractProcessor {
                 description,
                 ipField,
                 new DatabaseVerifyingSupplier(ipDatabaseProvider, databaseFile, databaseType),
-                () -> ipDatabaseProvider.isValid(databaseFile), // this is the only call to isValid out there what is all this stufffffff
+                () -> ipDatabaseProvider.isValid(databaseFile),
                 targetField,
                 ipDataLookup,
                 ignoreMissing,
