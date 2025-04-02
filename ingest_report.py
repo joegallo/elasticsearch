@@ -46,6 +46,10 @@ def pipelines_summary(data):
                 pipelines.add(pipeline)
 
     pipelines = sorted(pipelines)
+    if len(pipelines) == 0:
+        print("There were no pipelines that actually used ingest")
+        sys.exit(1)
+
     arr = np.zeros((len(pipelines), 2), dtype=np.int64)
 
     for i, pipeline in enumerate(pipelines):
