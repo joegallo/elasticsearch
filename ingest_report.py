@@ -33,7 +33,7 @@ def version_and_date(version, data):
         if ts > timestamp:
             timestamp = ts
 
-    return [version["version"]["number"], datetime.datetime.utcfromtimestamp(timestamp / 1000).strftime("%Y-%m-%d %H:%M:%S")];
+    return [version["version"]["number"], datetime.datetime.fromtimestamp(timestamp / 1000, datetime.UTC).strftime("%Y-%m-%d %H:%M:%S")];
 
 
 def pipelines_summary(data):
