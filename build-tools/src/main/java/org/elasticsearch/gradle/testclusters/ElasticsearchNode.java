@@ -837,7 +837,7 @@ public class ElasticsearchNode implements TestClusterConfiguration {
                 + heapSize
                 + " -Xmx"
                 + heapSize
-                + " -ea -esa "
+                // + " -ea -esa "
                 + systemPropertiesString
                 + " "
                 + featureFlagsString
