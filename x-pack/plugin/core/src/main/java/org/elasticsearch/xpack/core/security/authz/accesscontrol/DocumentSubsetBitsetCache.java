@@ -98,7 +98,7 @@ public final class DocumentSubsetBitsetCache implements IndexReader.ClosedListen
      */
     static final Setting<ByteSizeValue> CACHE_SIZE_SETTING = Setting.memorySizeSetting(
         "xpack.security.dls.bitset.cache.size",
-        "10%",
+        (s) -> ByteSizeValue.ofMb(48).getStringRep(),
         Property.NodeScope
     );
 
