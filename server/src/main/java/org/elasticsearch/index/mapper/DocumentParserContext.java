@@ -192,8 +192,6 @@ public abstract class DocumentParserContext {
 
     private final FieldNamesFieldMapper fieldNamesFieldMapper; // cached from mappingLookup
 
-    private final boolean isSourceSynthetic; // cached from mappingLookup
-
     private DocumentParserContext(
         MappingLookup mappingLookup,
         MappingParserContext mappingParserContext,
@@ -237,7 +235,6 @@ public abstract class DocumentParserContext {
         this.dynamicMappersSize = dynamicMapperSize;
         this.recordedSource = recordedSource;
         this.fieldNamesFieldMapper = (FieldNamesFieldMapper) getMetadataMapper(FieldNamesFieldMapper.NAME);
-        this.isSourceSynthetic = mappingLookup.isSourceSynthetic();
     }
 
     private DocumentParserContext(ObjectMapper parent, ObjectMapper.Dynamic dynamic, DocumentParserContext in) {
@@ -465,7 +462,7 @@ public abstract class DocumentParserContext {
     }
 
     public final boolean canAddIgnoredField() {
-        return isSourceSynthetic && recordedSource == false && indexSettings().getSkipIgnoredSourceWrite() == false;
+        return mappingLookup.isSourceSynthetic() && recordedSource == false && indexSettings().getSkipIgnoredSourceWrite() == false;
     }
 
     Mapper.SourceKeepMode sourceKeepModeFromIndexSettings() {
