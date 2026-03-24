@@ -190,6 +190,8 @@ public abstract class DocumentParserContext {
     // Indicates if the source for this context has been marked to be recorded. Applies to synthetic source only.
     private boolean recordedSource;
 
+    private final FieldNamesFieldMapper fieldNamesFieldMapper; // cached from mappingLookup
+
     private DocumentParserContext(
         MappingLookup mappingLookup,
         MappingParserContext mappingParserContext,
@@ -232,6 +234,7 @@ public abstract class DocumentParserContext {
         this.copyToFields = copyToFields;
         this.dynamicMappersSize = dynamicMapperSize;
         this.recordedSource = recordedSource;
+        this.fieldNamesFieldMapper = (FieldNamesFieldMapper) getMetadataMapper(FieldNamesFieldMapper.NAME);
     }
 
     private DocumentParserContext(ObjectMapper parent, ObjectMapper.Dynamic dynamic, DocumentParserContext in) {
@@ -421,7 +424,6 @@ public abstract class DocumentParserContext {
      * or norms.
      */
     public final void addToFieldNames(String field) {
-        FieldNamesFieldMapper fieldNamesFieldMapper = (FieldNamesFieldMapper) getMetadataMapper(FieldNamesFieldMapper.NAME);
         if (fieldNamesFieldMapper != null) {
             fieldNamesFieldMapper.addFieldNames(this, field);
         }
