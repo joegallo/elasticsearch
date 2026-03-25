@@ -1,0 +1,49 @@
+# JSON parsing (Jackson/XContent)
+jackson
+xcontent
+JsonXContent
+ESUTF8Stream
+UTF8Stream
+ByteQuadsCanonicalizer
+
+# ImmutableCollections$MapN.probe
+ImmutableCollections$MapN.probe
+
+# HashMap operations
+HashMap.put
+HashMap.getNode
+HashMap.resize
+HashMap.putVal
+HashMap.newNode
+HashMap.removeNode
+HashMap$TreeNode.find
+HashMap$HashIterator
+HashMap.afterNodeInsertion
+HashMap.hash
+
+# Document parsing (DocumentParser)
+DocumentParser.
+DocumentParserContext
+
+# Field mappers
+FieldMapper
+KeywordFieldMapper
+NumberFieldMapper
+DateFieldMapper
+FieldTypeLookup
+
+# ArrayList operations
+ArrayList.add
+
+# String.hashCode
+String.hashCode
+
+# vtable/itable stubs
+vtable stub
+itable stub
+
+# DotExpandingXContentParser
+DotExpandingXContentParser
+
+# Date/time parsing
+java/time/format
