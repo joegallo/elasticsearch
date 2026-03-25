@@ -1100,7 +1100,7 @@ public final class DocumentParser {
         private final ContentPath path = new ContentPath();
         private final XContentParser parser;
         private final LuceneDocument document;
-        private final List<LuceneDocument> documents = new ArrayList<>();
+        private final List<LuceneDocument> documents = new ArrayList<>(1); // eagerly allocate space for add(document) below
         private final long maxAllowedNumNestedDocs;
         private long numNestedDocs;
         private boolean docsReversed = false;
