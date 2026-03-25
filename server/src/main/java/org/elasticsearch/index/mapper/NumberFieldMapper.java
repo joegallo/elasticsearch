@@ -2428,13 +2428,24 @@ public class NumberFieldMapper extends FieldMapper {
         if (currentToken == Token.VALUE_NULL) {
             return nullValue;
         }
-        if (coerce() && currentToken == Token.VALUE_STRING && parser.textLength() == 0) {
+        final boolean coerce = coerce();
+        if (coerce && currentToken == Token.VALUE_STRING && parser.textLength() == 0) {
             return nullValue;
         }
         if (currentToken == Token.START_OBJECT) {
             throw new IllegalArgumentException("Cannot parse object as number");
         }
-        return type.parse(parser, coerce());
+
+        // this looks silly, but it gives the JIT an easier time
+        return switch (type) {
+            case HALF_FLOAT -> type.parse(parser, coerce);
+            case FLOAT -> type.parse(parser, coerce);
+            case DOUBLE -> type.parse(parser, coerce);
+            case BYTE -> type.parse(parser, coerce);
+            case SHORT -> type.parse(parser, coerce);
+            case INTEGER -> type.parse(parser, coerce);
+            case LONG -> type.parse(parser, coerce);
+        };
     }
 
     /**
