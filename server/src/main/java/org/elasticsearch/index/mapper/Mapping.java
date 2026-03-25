@@ -20,6 +20,7 @@ import org.elasticsearch.xcontent.XContentBuilder;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -57,6 +58,8 @@ public final class Mapping implements ToXContentFragment {
     private final Map<Class<? extends MetadataFieldMapper>, MetadataFieldMapper> metadataMappersMap;
     private final Map<String, MetadataFieldMapper> metadataMappersByName;
 
+    private final Map<String, Mapper> metadataAndRootMappers;
+
     // IntelliJ doesn't think that we need a rawtypes suppression here, but gradle fails to compile this file without it
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public Mapping(RootObjectMapper rootObjectMapper, MetadataFieldMapper[] metadataMappers, Map<String, Object> meta) {
@@ -74,6 +77,12 @@ public final class Mapping implements ToXContentFragment {
         this.metadataMappersMap = Map.ofEntries(metadataMappersMap);
         this.metadataMappersByName = Map.ofEntries(metadataMappersByName);
         this.meta = meta;
+
+        // squash together the root object mappers, overriding them with the metadataMappers
+        var mappers = new HashMap<String, Mapper>();
+        mappers.putAll(rootObjectMapper.getMappers());
+        mappers.putAll(this.metadataMappersByName);
+        this.metadataAndRootMappers = Map.copyOf(mappers);
     }
 
     /**
@@ -118,6 +127,10 @@ public final class Mapping implements ToXContentFragment {
 
     public MetadataFieldMapper getMetadataMapperByName(String mapperName) {
         return metadataMappersByName.get(mapperName);
+    }
+
+    public Map<String, Mapper> getMetadataAndRootMappers() {
+        return metadataAndRootMappers;
     }
 
     void validate(MappingLookup mappers) {
