@@ -23,7 +23,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -59,31 +58,22 @@ public final class Mapping implements ToXContentFragment {
     private final Map<Class<? extends MetadataFieldMapper>, MetadataFieldMapper> metadataMappersMap;
     private final Map<String, MetadataFieldMapper> metadataMappersByName;
 
-    private final Map<String, Mapper> metadataAndRootMappers;
-
     // IntelliJ doesn't think that we need a rawtypes suppression here, but gradle fails to compile this file without it
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public Mapping(RootObjectMapper rootObjectMapper, MetadataFieldMapper[] metadataMappers, Map<String, Object> meta) {
         this.metadataMappers = metadataMappers;
-        Map.Entry<Class<? extends MetadataFieldMapper>, MetadataFieldMapper>[] metadataMappersMap = new Map.Entry[metadataMappers.length];
-        Map.Entry<String, MetadataFieldMapper>[] metadataMappersByName = new Map.Entry[metadataMappers.length];
-        for (int i = 0; i < metadataMappers.length; i++) {
-            MetadataFieldMapper metadataMapper = metadataMappers[i];
-            metadataMappersMap[i] = Map.entry(metadataMapper.getClass(), metadataMapper);
-            metadataMappersByName[i] = Map.entry(metadataMapper.fullPath(), metadataMapper);
+        Map<Class<? extends MetadataFieldMapper>, MetadataFieldMapper> metadataMappersMap = HashMap.newHashMap(metadataMappers.length);
+        Map<String, MetadataFieldMapper> metadataMappersByName = HashMap.newHashMap(metadataMappers.length);
+        for (MetadataFieldMapper metadataMapper : metadataMappers) {
+            metadataMappersMap.put(metadataMapper.getClass(), metadataMapper);
+            metadataMappersByName.put(metadataMapper.fullPath(), metadataMapper);
         }
         this.root = rootObjectMapper;
         // keep root mappers sorted for consistent serialization
         Arrays.sort(metadataMappers, Comparator.comparing(Mapper::fullPath));
-        this.metadataMappersMap = Map.ofEntries(metadataMappersMap);
-        this.metadataMappersByName = Map.ofEntries(metadataMappersByName);
+        this.metadataMappersMap = metadataMappersMap;
+        this.metadataMappersByName = metadataMappersByName;
         this.meta = meta;
-
-        // squash together the root object mappers, overriding them with the metadataMappers
-        var mappers = new HashMap<String, Mapper>();
-        mappers.putAll(rootObjectMapper.getMappers());
-        mappers.putAll(this.metadataMappersByName);
-        this.metadataAndRootMappers = Collections.unmodifiableMap(mappers); // hashmaps have better get() performance on large N
     }
 
     /**
@@ -117,7 +107,7 @@ public final class Mapping implements ToXContentFragment {
     }
 
     Map<Class<? extends MetadataFieldMapper>, MetadataFieldMapper> getMetadataMappersMap() {
-        return metadataMappersMap;
+        return Collections.unmodifiableMap(metadataMappersMap);
     }
 
     /** Get the metadata mapper with the given class. */
@@ -128,10 +118,6 @@ public final class Mapping implements ToXContentFragment {
 
     public MetadataFieldMapper getMetadataMapperByName(String mapperName) {
         return metadataMappersByName.get(mapperName);
-    }
-
-    public Mapper getMetadataAndRootMapperByName(String mapperName) {
-        return metadataAndRootMappers.get(mapperName);
     }
 
     void validate(MappingLookup mappers) {
@@ -160,16 +146,13 @@ public final class Mapping implements ToXContentFragment {
     }
 
     public SourceLoader.SyntheticFieldLoader syntheticFieldLoader(@Nullable SourceFilter filter) {
-        var mappers = Stream.concat(Stream.of(metadataMappers), root.mappers.values().stream()).collect(Collectors.toList());
+        var mappers = Stream.concat(Stream.of(metadataMappers), root.mappers().values().stream()).toList();
         return root.syntheticFieldLoader(filter, mappers, false);
     }
 
     public IgnoredSourceFieldMapper.IgnoredSourceFormat ignoredSourceFormat() {
         IgnoredSourceFieldMapper isfm = (IgnoredSourceFieldMapper) metadataMappersByName.get(IgnoredSourceFieldMapper.NAME);
-        if (isfm == null) {
-            return IgnoredSourceFieldMapper.IgnoredSourceFormat.NO_IGNORED_SOURCE;
-        }
-        return isfm.ignoredSourceFormat();
+        return isfm == null ? IgnoredSourceFieldMapper.IgnoredSourceFormat.NO_IGNORED_SOURCE : isfm.ignoredSourceFormat();
     }
 
     @Override

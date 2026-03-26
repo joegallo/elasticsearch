@@ -626,7 +626,7 @@ public class ObjectMapperTests extends MapperServiceTestCase {
         ObjectMapper objectMapper = new ObjectMapper.Builder("parent", Explicit.of(ObjectMapper.Subobjects.DISABLED)).add(
             new ObjectMapper.Builder("child").add(new KeywordFieldMapper.Builder("keyword2", defaultIndexSettings()))
         ).add(new KeywordFieldMapper.Builder("keyword1", defaultIndexSettings())).build(rootContext);
-        List<String> fields = objectMapper.mappers.values().stream().map(Mapper::fullPath).toList();
+        List<String> fields = objectMapper.mappers().values().stream().map(Mapper::fullPath).toList();
         assertThat(fields, containsInAnyOrder("parent.keyword1", "parent.child.keyword2"));
     }
 

@@ -203,25 +203,25 @@ public class MappingParserTests extends MapperServiceTestCase {
             }
             """;
         Mapping mapping = createMappingParser(Settings.EMPTY).parse("_doc", new CompressedXContent(mappingAsString));
-        assertEquals(1, mapping.getRoot().mappers.size());
+        assertEquals(1, mapping.getRoot().mappers().size());
         Mapper object = mapping.getRoot().getMapper("obj");
         assertThat(object, CoreMatchers.instanceOf(ObjectMapper.class));
         assertEquals("obj", object.leafName());
         assertEquals("obj", object.fullPath());
         ObjectMapper objectMapper = (ObjectMapper) object;
-        assertEquals(1, objectMapper.mappers.size());
+        assertEquals(1, objectMapper.mappers().size());
         object = objectMapper.getMapper("source");
         assertThat(object, CoreMatchers.instanceOf(ObjectMapper.class));
         assertEquals("source", object.leafName());
         assertEquals("obj.source", object.fullPath());
         objectMapper = (ObjectMapper) object;
-        assertEquals(1, objectMapper.mappers.size());
+        assertEquals(1, objectMapper.mappers().size());
         object = objectMapper.getMapper("geo");
         assertThat(object, CoreMatchers.instanceOf(ObjectMapper.class));
         assertEquals("geo", object.leafName());
         assertEquals("obj.source.geo", object.fullPath());
         objectMapper = (ObjectMapper) object;
-        assertEquals(1, objectMapper.mappers.size());
+        assertEquals(1, objectMapper.mappers().size());
         Mapper location = objectMapper.getMapper("location");
         assertThat(location, CoreMatchers.instanceOf(GeoPointFieldMapper.class));
         GeoPointFieldMapper geoPointFieldMapper = (GeoPointFieldMapper) location;
@@ -248,8 +248,8 @@ public class MappingParserTests extends MapperServiceTestCase {
         XContentBuilder builder = mapping(b -> b.startObject("foo.").field("type", randomFieldType()).endObject());
         Mapping mapping = createMappingParser(Settings.EMPTY).parse("_doc", new CompressedXContent(BytesReference.bytes(builder)));
         // TODO this needs fixing as part of addressing https://github.com/elastic/elasticsearch/issues/28948
-        assertNotNull(mapping.getRoot().mappers.get("foo"));
-        assertNull(mapping.getRoot().mappers.get("foo."));
+        assertNotNull(mapping.getRoot().mappers().get("foo"));
+        assertNull(mapping.getRoot().mappers().get("foo."));
     }
 
     public void testFieldTrailingDots() throws Exception {
@@ -266,8 +266,8 @@ public class MappingParserTests extends MapperServiceTestCase {
         XContentBuilder builder = mapping(b -> b.startObject("foo.bar.").field("type", randomFieldType()).endObject());
         Mapping mapping = createMappingParser(Settings.EMPTY).parse("_doc", new CompressedXContent(BytesReference.bytes(builder)));
         // TODO this needs fixing as part of addressing https://github.com/elastic/elasticsearch/issues/28948
-        assertNotNull(((ObjectMapper) mapping.getRoot().mappers.get("foo")).mappers.get("bar"));
-        assertNull(((ObjectMapper) mapping.getRoot().mappers.get("foo")).mappers.get("bar."));
+        assertNotNull(((ObjectMapper) mapping.getRoot().mappers().get("foo")).mappers().get("bar"));
+        assertNull(((ObjectMapper) mapping.getRoot().mappers().get("foo")).mappers().get("bar."));
     }
 
     public void testFieldStartingAndEndingWithDot() throws Exception {

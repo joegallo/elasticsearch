@@ -750,7 +750,7 @@ public class DocumentParserTests extends MapperServiceTestCase {
         assertNotNull(mapping);
         Mapper foo = mapping.getRoot().getMapper("foo");
         assertThat(foo, instanceOf(ObjectMapper.class));
-        assertEquals(0, ((ObjectMapper) foo).mappers.size());
+        assertEquals(0, ((ObjectMapper) foo).mappers().size());
     }
 
     public void testDynamicGeoPointArrayWithTemplate() throws Exception {
@@ -2252,7 +2252,7 @@ public class DocumentParserTests extends MapperServiceTestCase {
     private void assertNoSubobjects(ParsedDocument doc) {
         Mapping mappingsUpdate = parseDynamicUpdate(doc.dynamicMappingsUpdate());
         assertNotNull(mappingsUpdate);
-        Mapper metrics = mappingsUpdate.getRoot().mappers.get("metrics");
+        Mapper metrics = mappingsUpdate.getRoot().mappers().get("metrics");
         assertThat(metrics, instanceOf(ObjectMapper.class));
         ObjectMapper metricsObject = (ObjectMapper) metrics;
         Mapper service = metricsObject.getMapper("service");
@@ -2721,7 +2721,7 @@ public class DocumentParserTests extends MapperServiceTestCase {
             assertThat(parsedDocument.rootDoc().getField(s), instanceOf(LongField.class));
         }
         ObjectMapper metrics = (ObjectMapper) parseDynamicUpdate(parsedDocument.dynamicMappingsUpdate()).getRoot().getMapper("metrics");
-        assertEquals(2, metrics.mappers.size());
+        assertEquals(2, metrics.mappers().size());
         ObjectMapper object = (ObjectMapper) metrics.getMapper("object");
         assertThat(object.getMapper("field"), instanceOf(NumberFieldMapper.class));
         ObjectMapper service = (ObjectMapper) metrics.getMapper("service");
@@ -2759,7 +2759,7 @@ public class DocumentParserTests extends MapperServiceTestCase {
             assertThat(parsedDocument.rootDoc().getField(s), instanceOf(LongField.class));
         }
         RootObjectMapper root = parseDynamicUpdate(parsedDocument.dynamicMappingsUpdate()).getRoot();
-        assertEquals(4, root.mappers.size());
+        assertEquals(4, root.mappers().size());
         assertThat(root.getMapper("host.id"), instanceOf(TextFieldMapper.class));
         for (String s : Arrays.asList("time", "time.min", "time.max")) {
             assertThat(root.getMapper(s), instanceOf(NumberFieldMapper.class));
@@ -2868,7 +2868,7 @@ public class DocumentParserTests extends MapperServiceTestCase {
         }
         assertNotNull(parsedDocument.dynamicMappingsUpdate());
         RootObjectMapper root = parseDynamicUpdate(parsedDocument.dynamicMappingsUpdate()).getRoot();
-        assertEquals(4, root.mappers.size());
+        assertEquals(4, root.mappers().size());
         for (String s : Arrays.asList("service.time", "service.time.min", "service.time.max", "service.time.avg")) {
             assertThat(root.getMapper(s), instanceOf(NumberFieldMapper.class));
         }
@@ -2998,7 +2998,7 @@ public class DocumentParserTests extends MapperServiceTestCase {
         assertThat(parsedDocument.rootDoc().getField("metrics.service.time.min"), instanceOf(LongField.class));
         assertNotNull(parsedDocument.dynamicMappingsUpdate());
         RootObjectMapper root = parseDynamicUpdate(parsedDocument.dynamicMappingsUpdate()).getRoot();
-        assertEquals(1, root.mappers.size());
+        assertEquals(1, root.mappers().size());
         ObjectMapper metrics = (ObjectMapper) root.getMapper("metrics");
         assertNotNull(metrics);
         assertThat((FieldMapper) metrics.getMapper("service.time.min"), instanceOf(NumberFieldMapper.class));
@@ -3036,7 +3036,7 @@ public class DocumentParserTests extends MapperServiceTestCase {
         assertThat(parsedDocument.rootDoc().getField("metrics.service.time.current.max"), instanceOf(LongField.class));
         assertNotNull(parsedDocument.dynamicMappingsUpdate());
         RootObjectMapper root = parseDynamicUpdate(parsedDocument.dynamicMappingsUpdate()).getRoot();
-        assertEquals(1, root.mappers.size());
+        assertEquals(1, root.mappers().size());
         Mapper metrics = root.getMapper("metrics");
         assertNotNull(metrics);
         assertThat(((ObjectMapper) metrics).getMapper("service.time.current.min"), instanceOf(NumberFieldMapper.class));
@@ -3119,9 +3119,9 @@ public class DocumentParserTests extends MapperServiceTestCase {
 
         assertNotNull(parsedDocument.dynamicMappingsUpdate());
         RootObjectMapper root = parseDynamicUpdate(parsedDocument.dynamicMappingsUpdate()).getRoot();
-        assertEquals(1, root.mappers.size());
+        assertEquals(1, root.mappers().size());
         ObjectMapper metrics = (ObjectMapper) root.getMapper("metrics");
-        assertEquals(4, metrics.mappers.size());
+        assertEquals(4, metrics.mappers().size());
         for (String s : Arrays.asList("service.time", "service.time.min", "service.time.max", "service.time.avg")) {
             assertThat(metrics.getMapper(s), instanceOf(NumberFieldMapper.class));
         }
@@ -3148,9 +3148,9 @@ public class DocumentParserTests extends MapperServiceTestCase {
 
         assertNotNull(parsedDocument.dynamicMappingsUpdate());
         RootObjectMapper root = parseDynamicUpdate(parsedDocument.dynamicMappingsUpdate()).getRoot();
-        assertEquals(1, root.mappers.size());
+        assertEquals(1, root.mappers().size());
         ObjectMapper metrics = (ObjectMapper) root.getMapper("metrics");
-        assertEquals(2, metrics.mappers.size());
+        assertEquals(2, metrics.mappers().size());
         for (String s : Arrays.asList("service.time", "service.time.max")) {
             assertThat(metrics.getMapper(s), instanceOf(NumberFieldMapper.class));
         }
@@ -3189,7 +3189,7 @@ public class DocumentParserTests extends MapperServiceTestCase {
 
         assertThat(parsedDocument.rootDoc().getField("location"), instanceOf(GeoPointFieldMapper.LatLonPointWithDocValues.class));
         RootObjectMapper root = parseDynamicUpdate(parsedDocument.dynamicMappingsUpdate()).getRoot();
-        assertEquals(1, root.mappers.size());
+        assertEquals(1, root.mappers().size());
         assertThat(root.getMapper("location"), instanceOf(GeoPointFieldMapper.class));
         assertNotNull(parsedDocument.dynamicMappingsUpdate());
     }

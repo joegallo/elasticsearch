@@ -253,7 +253,7 @@ public final class MappingLookup {
         assert mapper.fullPath() == mapper.fullPath().intern();
         assert mapper.leafName() == mapper.leafName().intern();
         if (mapper instanceof ObjectMapper) {
-            ((ObjectMapper) mapper).mappers.forEach(MappingLookup::assertNamesInterned);
+            ((ObjectMapper) mapper).mappers().forEach(MappingLookup::assertNamesInterned);
         }
     }
 

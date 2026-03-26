@@ -99,7 +99,7 @@ public class LuceneDocument implements Iterable<IndexableField> {
     public void onlyAddKey(final Object key, final IndexableField field) {
         assert field != null : "field must not be null";
         if (keyedFields == null) {
-            keyedFields = new HashMap<>();
+            keyedFields = new HashMap<>(24, 0.5f); // trade space for time as compared to 16/0.75
         }
         final var existing = keyedFields.put(key, field);
         if (existing != null) {

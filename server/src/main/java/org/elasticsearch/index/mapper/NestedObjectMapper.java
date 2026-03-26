@@ -321,7 +321,7 @@ public class NestedObjectMapper extends ObjectMapper {
     }
 
     public Map<String, Mapper> getChildren() {
-        return this.mappers;
+        return this.mappers();
     }
 
     @Override

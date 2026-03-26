@@ -106,7 +106,7 @@ final class FieldTypeLookup {
         // MappedFieldType using the remaining suffix.
         Map<String, PassThroughObjectMapper> passThroughFieldAliases = new HashMap<>();
         for (PassThroughObjectMapper passThroughMapper : passThroughMappers) {
-            for (Mapper subfield : passThroughMapper.mappers.values()) {
+            for (Mapper subfield : passThroughMapper) {
                 if (subfield instanceof FieldMapper fieldMapper) {
                     String name = fieldMapper.leafName();
                     // Check for conflict between PassThroughObjectMapper subfields.

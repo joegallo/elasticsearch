@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -687,7 +688,7 @@ public class ObjectMapper extends Mapper {
     protected final Optional<SourceKeepMode> sourceKeepMode;
     protected final Dynamic dynamic;
 
-    protected final Map<String, Mapper> mappers;
+    private final Map<String, Mapper> mappers;
 
     ObjectMapper(
         String name,
@@ -706,11 +707,7 @@ public class ObjectMapper extends Mapper {
         this.subobjects = subobjects;
         this.sourceKeepMode = sourceKeepMode;
         this.dynamic = dynamic;
-        if (mappers == null) {
-            this.mappers = Map.of();
-        } else {
-            this.mappers = Map.copyOf(mappers);
-        }
+        this.mappers = Objects.requireNonNullElse(mappers, Map.of());
         assert subobjects.value() != Subobjects.DISABLED || this.mappers.values().stream().noneMatch(m -> m instanceof ObjectMapper)
             : "When subobjects is false, mappers must not contain an ObjectMapper";
     }
@@ -756,13 +753,13 @@ public class ObjectMapper extends Mapper {
         return mappers.get(field);
     }
 
-    public Map<String, Mapper> getMappers() {
-        return mappers;
+    public Map<String, Mapper> mappers() {
+        return Collections.unmodifiableMap(mappers);
     }
 
     @Override
     public Iterator<Mapper> iterator() {
-        return mappers.values().iterator();
+        return Collections.unmodifiableCollection(mappers.values()).iterator();
     }
 
     public final Dynamic dynamic() {
@@ -936,7 +933,7 @@ public class ObjectMapper extends Mapper {
     }
 
     final SourceLoader.SyntheticFieldLoader syntheticFieldLoader(@Nullable SourceFilter filter) {
-        return syntheticFieldLoader(filter, mappers.values(), false);
+        return syntheticFieldLoader(filter, Collections.unmodifiableCollection(mappers.values()), false);
     }
 
     private SourceLoader.SyntheticFieldLoader innerSyntheticFieldLoader(SourceFilter filter, Mapper mapper) {

@@ -1319,10 +1319,10 @@ public class DynamicTemplatesTests extends MapperServiceTestCase {
         assertNotNull(doc.dynamicMappingsUpdate());
         ObjectMapper metrics = (ObjectMapper) parseDynamicUpdate(doc.dynamicMappingsUpdate()).getRoot().getMapper("metrics");
         assertEquals(ObjectMapper.Dynamic.FALSE, metrics.dynamic());
-        assertEquals(1, metrics.mappers.size());
+        assertEquals(1, metrics.mappers().size());
         ObjectMapper service = (ObjectMapper) metrics.getMapper("service");
         assertEquals(ObjectMapper.Subobjects.DISABLED, service.subobjects());
-        assertEquals(1, service.mappers.size());
+        assertEquals(1, service.mappers().size());
         assertNotNull(service.getMapper("time"));
     }
 
@@ -1606,7 +1606,7 @@ public class DynamicTemplatesTests extends MapperServiceTestCase {
         ObjectMapper dynamic = (ObjectMapper) artifacts.getMapper("dynamic");
         ObjectMapper identifiers = (ObjectMapper) dynamic.getMapper("identifiers");
         assertEquals(ObjectMapper.Dynamic.FALSE, identifiers.dynamic);
-        assertEquals(1, identifiers.mappers.size());
+        assertEquals(1, identifiers.mappers().size());
         ObjectMapper subobject = (ObjectMapper) identifiers.getMapper("subobject");
         assertEquals(ObjectMapper.Dynamic.TRUE, subobject.dynamic);
         assertNotNull(subobject.getMapper("anything"));
