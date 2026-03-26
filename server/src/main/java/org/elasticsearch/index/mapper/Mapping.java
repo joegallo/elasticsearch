@@ -19,6 +19,7 @@ import org.elasticsearch.xcontent.XContentBuilder;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
@@ -82,7 +83,7 @@ public final class Mapping implements ToXContentFragment {
         var mappers = new HashMap<String, Mapper>();
         mappers.putAll(rootObjectMapper.getMappers());
         mappers.putAll(this.metadataMappersByName);
-        this.metadataAndRootMappers = Map.copyOf(mappers);
+        this.metadataAndRootMappers = Collections.unmodifiableMap(mappers); // hashmaps have better get() performance on large N
     }
 
     /**
@@ -129,8 +130,8 @@ public final class Mapping implements ToXContentFragment {
         return metadataMappersByName.get(mapperName);
     }
 
-    public Map<String, Mapper> getMetadataAndRootMappers() {
-        return metadataAndRootMappers;
+    public Mapper getMetadataAndRootMapperByName(String mapperName) {
+        return metadataAndRootMappers.get(mapperName);
     }
 
     void validate(MappingLookup mappers) {

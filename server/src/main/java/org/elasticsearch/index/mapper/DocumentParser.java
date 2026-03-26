@@ -1151,7 +1151,7 @@ public final class DocumentParser {
 
         @Override
         public final Mapper getMapper(String name) {
-            return mappingLookup().getMapping().getMetadataAndRootMappers().get(name);
+            return mappingLookup().getMapping().getMetadataAndRootMapperByName(name);
         }
 
         @Override
