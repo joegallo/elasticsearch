@@ -38,6 +38,7 @@ import java.nio.CharBuffer;
 public class JsonXContentParser extends AbstractXContentParser {
 
     final JsonParser parser;
+    private Token currentToken;
 
     public JsonXContentParser(XContentParserConfiguration config, JsonParser parser) {
         super(config.registry(), config.deprecationHandler(), config.restApiVersion());
@@ -87,7 +88,8 @@ public class JsonXContentParser extends AbstractXContentParser {
     @Override
     public Token nextToken() throws IOException {
         try {
-            return convertToken(parser.nextToken());
+            currentToken = convertToken(parser.nextToken());
+            return currentToken;
         } catch (IOException e) {
             throw handleParserException(e);
         }
@@ -96,7 +98,13 @@ public class JsonXContentParser extends AbstractXContentParser {
     @Override
     public String nextFieldName() throws IOException {
         try {
-            return parser.nextFieldName();
+            String name = parser.nextFieldName();
+            if (name != null) {
+                currentToken = Token.FIELD_NAME;
+            } else {
+                updateCurrentToken();
+            }
+            return name;
         } catch (IOException e) {
             throw handleParserException(e);
         }
@@ -105,11 +113,21 @@ public class JsonXContentParser extends AbstractXContentParser {
     @Override
     public void skipChildren() throws IOException {
         parser.skipChildren();
+        updateCurrentToken();
     }
 
     @Override
     public Token currentToken() {
-        return convertToken(parser.getCurrentToken());
+        return currentToken == null ? convertToken(parser.currentToken()) : currentToken;
+    }
+
+    /**
+     * Resync the cached currentToken with the underlying Jackson parser.
+     * This is needed after operations that advance the Jackson parser directly
+     * (bypassing JsonXContentParser), such as {@link JsonXContentGenerator#copyCurrentStructure}.
+     */
+    void updateCurrentToken() {
+        currentToken = convertToken(parser.currentToken());
     }
 
     @Override
