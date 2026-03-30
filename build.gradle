@@ -1,0 +1,22 @@
+plugins {
+    id 'java'
+    id 'me.champeau.jmh' version '0.7.3'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+jmh {
+    fork = 2
+    warmupIterations = 3
+    iterations = 5
+    timeUnit = 'ns'
+    benchmarkMode = ['avgt']
+}
