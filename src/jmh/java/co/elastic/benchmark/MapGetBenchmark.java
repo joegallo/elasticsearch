@@ -10,7 +10,7 @@ import org.openjdk.jmh.annotations.*;
 @State(Scope.Thread)
 public class MapGetBenchmark {
 
-    @Param({"16", "32", "64", "128", "256"})
+    @Param({"20", "40", "80", "160", "250"})
     int size;
 
     @Param({"hit", "miss"})
