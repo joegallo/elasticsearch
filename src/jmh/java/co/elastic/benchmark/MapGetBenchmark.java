@@ -19,7 +19,7 @@ public class MapGetBenchmark {
     private Map<String, String> hashMap;
     private Map<String, String> hashMap_lf050;
     private Map<String, String> hashMap_lf025;
-    private Map<String, String> mapCopyOf;
+    private Map<String, String> mapOf;
     private Map<String, String> unmodifiableMap;
 
     private String[] lookupKeys;
@@ -47,7 +47,7 @@ public class MapGetBenchmark {
         hashMap_lf025 = new HashMap<>(16, 0.25f);
         hashMap_lf025.putAll(base);
 
-        mapCopyOf = Map.copyOf(base);
+        mapOf = Map.copyOf(base);
         unmodifiableMap = Collections.unmodifiableMap(new HashMap<>(base));
     }
 
@@ -71,8 +71,8 @@ public class MapGetBenchmark {
     }
 
     @Benchmark
-    public String mapCopyOf() {
-        return mapCopyOf.get(randomKey());
+    public String mapOf() {
+        return mapOf.get(randomKey());
     }
 
     @Benchmark
