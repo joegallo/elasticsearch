@@ -19,7 +19,6 @@ public class MapGetBenchmark {
     private Map<String, String> hashMap;
     private Map<String, String> hashMap_lf050;
     private Map<String, String> hashMap_lf025;
-    private Map<String, String> mapOf;
     private Map<String, String> mapCopyOf;
     private Map<String, String> unmodifiableMap;
 
@@ -50,11 +49,6 @@ public class MapGetBenchmark {
 
         mapCopyOf = Map.copyOf(base);
         unmodifiableMap = Collections.unmodifiableMap(new HashMap<>(base));
-
-        // Map.of supports up to 10 entries via varargs, use Map.ofEntries beyond that
-        @SuppressWarnings("unchecked")
-        Map.Entry<String, String>[] entries = base.entrySet().toArray(Map.Entry[]::new);
-        mapOf = Map.ofEntries(entries);
     }
 
     private String randomKey() {
@@ -74,11 +68,6 @@ public class MapGetBenchmark {
     @Benchmark
     public String hashMap_lf025() {
         return hashMap_lf025.get(randomKey());
-    }
-
-    @Benchmark
-    public String mapOf() {
-        return mapOf.get(randomKey());
     }
 
     @Benchmark
