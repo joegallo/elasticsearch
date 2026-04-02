@@ -111,6 +111,25 @@ uv run main.py categorize -m IndexShard.prepareIndex -c categories.txt *.txt
 | `-m`, `--marker` | Filter to stacks containing this method substring (required for most commands, optional for `callers`/`callees`) |
 | `-n`, `--top` | Number of results to show (default: 20) |
 | `-d`, `--depth` | Depth for `subtrees` (default: 2) and `bottomup` (default: 3) |
+| `-f`, `--filter` | Keep only stacks where the full stack contains this substring (repeatable, ANDed) |
+| `-x`, `--exclude` | Drop stacks where the full stack contains this substring (repeatable, ORed) |
+
+### Stack filtering
+
+The `-f`/`--filter` and `-x`/`--exclude` options are available on all commands. They apply after the `-m` marker filter, further narrowing which stacks are analyzed. This is useful for isolating specific code paths or removing noise.
+
+Multiple `-f` filters are ANDed (all must match). Multiple `-x` excludes are ORed (any match causes exclusion).
+
+```sh
+# HashMap leaf frames, excluding Jackson's DupDetector
+uv run main.py leaves -m IndexShard.prepareIndex -f HashMap -x DupDetector -x HashSet *.txt
+
+# Bottom-up view only for stacks passing through MappingLookup
+uv run main.py bottomup -m IndexShard.prepareIndex -f MappingLookup -d 4 *.txt
+
+# Categorize excluding java.time internals
+uv run main.py categorize -m IndexShard.prepareIndex -x java/time -c categories.txt *.txt
+```
 
 ## Categories file format
 

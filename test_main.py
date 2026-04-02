@@ -3,7 +3,7 @@ import textwrap
 import pytest
 from click.testing import CliRunner
 
-from main import cli, filter_stacks, fmt_pct, load_categories, parse_file, short_name
+from main import apply_stack_filters, cli, filter_stacks, fmt_pct, load_categories, parse_file, short_name
 
 # ---------------------------------------------------------------------------
 # Test data
@@ -98,6 +98,62 @@ class TestFilterStacks:
         assert filtered == []
 
 
+class TestApplyStackFilters:
+    def _marker_stacks(self, sample_file):
+        all_stacks = list(parse_file(sample_file))
+        return list(filter_stacks(all_stacks, "X.target"))
+
+    def test_filter_keeps_matching(self, sample_file):
+        ms = self._marker_stacks(sample_file)
+        result = list(apply_stack_filters(ms, filters=("leaf1",), excludes=()))
+        assert len(result) == 1
+        assert result[0][0][-1] == "leaf1_[j]"
+
+    def test_filter_ands_multiple(self, sample_file):
+        ms = self._marker_stacks(sample_file)
+        # Only first stack has both 'leaf1' and 'e' in its frames
+        result = list(apply_stack_filters(ms, filters=("leaf1", "e"), excludes=()))
+        assert len(result) == 1
+        assert result[0][1] == 100
+
+    def test_filter_no_match_returns_empty(self, sample_file):
+        ms = self._marker_stacks(sample_file)
+        result = list(apply_stack_filters(ms, filters=("NoSuch",), excludes=()))
+        assert result == []
+
+    def test_exclude_drops_matching(self, sample_file):
+        ms = self._marker_stacks(sample_file)
+        # Exclude stacks containing 'leaf1'
+        result = list(apply_stack_filters(ms, filters=(), excludes=("leaf1",)))
+        assert len(result) == 3
+        assert all("leaf1" not in ";".join(f) for f, _, _ in result)
+
+    def test_exclude_ors_multiple(self, sample_file):
+        ms = self._marker_stacks(sample_file)
+        # Exclude leaf1 or leaf2 -> only leaf3 and itable stub stacks remain
+        result = list(apply_stack_filters(ms, filters=(), excludes=("leaf1", "leaf2")))
+        assert len(result) == 2
+
+    def test_filter_and_exclude_combined(self, sample_file):
+        ms = self._marker_stacks(sample_file)
+        # Filter to stacks with 'd', then exclude leaf2
+        result = list(apply_stack_filters(ms, filters=("d",), excludes=("leaf2",)))
+        assert len(result) == 1
+        assert result[0][0][-1] == "leaf1_[j]"
+
+    def test_empty_filters_and_excludes_passes_all(self, sample_file):
+        ms = self._marker_stacks(sample_file)
+        result = list(apply_stack_filters(ms, filters=(), excludes=()))
+        assert len(result) == len(ms)
+
+    def test_preserves_marker_index(self, sample_file):
+        ms = self._marker_stacks(sample_file)
+        result = list(apply_stack_filters(ms, filters=("leaf3",), excludes=()))
+        assert len(result) == 1
+        # a;X.target_[j];g;leaf3_[k] -> marker index should be 1
+        assert result[0][2] == 1
+
+
 class TestFmtPct:
     def test_basic(self):
         assert fmt_pct(50, 200) == " 25.0%"
@@ -155,6 +211,18 @@ class TestSummaryCommand:
         # 'd' is callee from first two stacks (100+50=150), 'g' from third (30), 'b' from fourth (10)
         assert "d" in result.output
 
+    def test_with_filter(self, runner, sample_file):
+        result = runner.invoke(cli, ["summary", "-m", "X.target", "-f", "leaf1", sample_file])
+        assert result.exit_code == 0
+        # Only the leaf1 stack (100 samples) should remain as marker samples
+        assert "100" in result.output
+
+    def test_with_exclude(self, runner, sample_file):
+        result = runner.invoke(cli, ["summary", "-m", "X.target", "-x", "leaf1", sample_file])
+        assert result.exit_code == 0
+        # Marker samples = 50 + 30 + 10 = 90 (leaf1 stack excluded)
+        assert "90" in result.output
+
     def test_marker_required(self, runner, sample_file):
         result = runner.invoke(cli, ["summary", sample_file])
         assert result.exit_code != 0
@@ -167,6 +235,21 @@ class TestLeavesCommand:
         assert "leaf1_[j]" in result.output
         assert "leaf2_[i]" in result.output
         assert "leaf3_[k]" in result.output
+
+    def test_with_filter(self, runner, sample_file):
+        result = runner.invoke(cli, ["leaves", "-m", "X.target", "-f", "leaf2", sample_file])
+        assert result.exit_code == 0
+        assert "leaf2_[i]" in result.output
+        assert "leaf1_[j]" not in result.output
+        assert "leaf3_[k]" not in result.output
+
+    def test_with_exclude(self, runner, sample_file):
+        result = runner.invoke(cli, ["leaves", "-m", "X.target", "-x", "leaf1", "-x", "leaf2", sample_file])
+        assert result.exit_code == 0
+        # Only leaf3 and itable stub stacks remain
+        assert "leaf3_[k]" in result.output
+        assert "leaf1_[j]" not in result.output
+        assert "leaf2_[i]" not in result.output
 
     def test_top_limits_output(self, runner, sample_file):
         result = runner.invoke(cli, ["leaves", "-m", "X.target", "-n", "1", sample_file])
@@ -187,6 +270,18 @@ class TestCallersCommand:
         assert result.exit_code == 0
         assert "e" in result.output
 
+    def test_with_filter(self, runner, sample_file):
+        # Filter to stacks with 'leaf1', then look for callers of leaf1
+        result = runner.invoke(cli, ["callers", "-t", "leaf1", "-m", "X.target", "-f", "leaf1", sample_file])
+        assert result.exit_code == 0
+        assert "e" in result.output
+
+    def test_with_exclude(self, runner, sample_file):
+        # Exclude leaf1 stacks; callers of 'd' should only come from the leaf2 stack
+        result = runner.invoke(cli, ["callers", "-t", "d", "-m", "X.target", "-x", "leaf1", sample_file])
+        assert result.exit_code == 0
+        assert "X.target" in result.output
+
     def test_target_required(self, runner, sample_file):
         result = runner.invoke(cli, ["callers", "-m", "X.target", sample_file])
         assert result.exit_code != 0
@@ -198,6 +293,12 @@ class TestCalleesCommand:
         assert result.exit_code == 0
         # X.target calls d (100+50), g (30), b (10)
         assert "d" in result.output
+        assert "g" in result.output
+
+    def test_with_filter(self, runner, sample_file):
+        # Filter to leaf3 stacks, callees of X.target should only be 'g'
+        result = runner.invoke(cli, ["callees", "-t", "X.target", "-m", "X.target", "-f", "leaf3", sample_file])
+        assert result.exit_code == 0
         assert "g" in result.output
 
     def test_without_marker(self, runner, sample_file):
