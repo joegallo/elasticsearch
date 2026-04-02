@@ -138,10 +138,17 @@ Folded stack traces, one per line:
 package/Class.method_[j];package/Other.method_[i];leaf_[j] 42
 ```
 
-The suffix annotations (`_[j]`, `_[i]`, `_[k]`, `_[0]`, `_[1]`) indicate frame type:
-- `_[j]` — JIT-compiled Java
-- `_[i]` — Interpreted Java
-- `_[k]` — Kernel
-- `_[0]`, `_[1]` — Other (native, etc.)
+The suffix annotations indicate frame type, as defined by the `FRAME_SUFFIX` array in async-profiler's `FlameGraph.java`, indexed by the `TYPE_*` constants in `Frame.java`:
 
-These files can be generated from `.jfr` recordings using tools like [async-profiler](https://github.com/async-profiler/async-profiler)'s converter.
+| Suffix | Type | Meaning |
+|--------|------|---------|
+| `_[j]` | `TYPE_JIT_COMPILED` | JIT-compiled (C2) Java |
+| `_[i]` | `TYPE_INLINED` | Inlined Java |
+| `_[k]` | `TYPE_KERNEL` | Kernel |
+| `_[0]` | `TYPE_INTERPRETED` | Interpreted Java |
+| `_[1]` | `TYPE_C1_COMPILED` | C1-compiled Java |
+| *(none)* | `TYPE_NATIVE` / `TYPE_CPP` | Native or C++ |
+
+Note: `_[i]` is **inlined**, not interpreted — `_[0]` is interpreted. The numeric suffixes correspond directly to the type constant values (0 = interpreted, 1 = C1-compiled).
+
+These files can be generated from `.jfr` recordings using [async-profiler](https://github.com/async-profiler/async-profiler)'s converter (see `FlameGraph.printFrameCollapsed`).
