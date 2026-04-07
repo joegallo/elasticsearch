@@ -18,7 +18,7 @@ This tool provides a set of commands for slicing and aggregating those stacks to
 - Which call sites are megamorphic (vtable/itable dispatch)?
 - What are the heaviest call chains when viewed bottom-up from the leaf?
 
-All commands support a `-m`/`--marker` option to filter stacks to only those containing a specific method (e.g. `IndexShard.prepareIndex`), so you can focus analysis on a particular code path.
+All commands support a `-m`/`--marker` option to filter stacks to only those containing a specific method (e.g. `IndexShard.prepareIndex`), so you can focus analysis on a particular code path. The `-m` option is repeatable — multiple markers are ORed, so `-m foo -m bar` matches stacks containing either substring.
 
 ## Setup
 
@@ -108,7 +108,7 @@ uv run main.py categorize -m IndexShard.prepareIndex -c categories.txt *.txt
 
 | Option | Description |
 |--------|-------------|
-| `-m`, `--marker` | Filter to stacks containing this method substring (required for most commands, optional for `callers`/`callees`) |
+| `-m`, `--marker` | Filter to stacks containing this method substring (repeatable, ORed; required for most commands, optional for `callers`/`callees`) |
 | `-n`, `--top` | Number of results to show (default: 20) |
 | `-d`, `--depth` | Depth for `subtrees` (default: 2) and `bottomup` (default: 3) |
 | `-f`, `--filter` | Keep only stacks where the full stack contains this substring (repeatable, ANDed) |

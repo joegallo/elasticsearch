@@ -51,11 +51,18 @@ def parse_file(path):
             yield stack_str.split(";"), count
 
 
-def filter_stacks(stacks, marker):
-    """Yield (frames, count, marker_index) for stacks containing the marker."""
+def filter_stacks(stacks, markers):
+    """Yield (frames, count, marker_index) for stacks containing any of the markers.
+
+    markers can be a single string or a tuple/list of strings. A stack matches if
+    any frame contains any of the marker substrings. The marker_index is set to the
+    first matching frame.
+    """
+    if isinstance(markers, str):
+        markers = (markers,)
     for frames, count in stacks:
         for i, frame in enumerate(frames):
-            if marker in frame:
+            if any(m in frame for m in markers):
                 yield frames, count, i
                 break
 
@@ -91,7 +98,7 @@ _top_option = click.option("-n", "--top", default=20, show_default=True, help="N
 
 
 def marker_option(required=True):
-    return click.option("-m", "--marker", required=required, help="Filter to stacks containing this method substring.")
+    return click.option("-m", "--marker", "markers", multiple=True, required=required, help="Filter to stacks containing this method substring (repeatable, ORed).")
 
 
 _filter_option = click.option(
@@ -104,10 +111,10 @@ _exclude_option = click.option(
 )
 
 
-def get_marker_stacks(path, marker, filters, excludes):
+def get_marker_stacks(path, markers, filters, excludes):
     """Parse file, apply marker filter, then apply --filter/--exclude. Returns (all_stacks, filtered_marker_stacks)."""
     all_stacks = list(parse_file(path))
-    marker_stacks = list(filter_stacks(all_stacks, marker))
+    marker_stacks = list(filter_stacks(all_stacks, markers))
     if filters or excludes:
         marker_stacks = list(apply_stack_filters(marker_stacks, filters, excludes))
     return all_stacks, marker_stacks
@@ -127,10 +134,10 @@ def cli():
 @_top_option
 @_filter_option
 @_exclude_option
-def summary(files, marker, top, filters, excludes):
+def summary(files, markers, top, filters, excludes):
     """High-level summary: total samples, marker samples, top-level callees."""
     for path in files:
-        all_stacks, marker_stacks = get_marker_stacks(path, marker, filters, excludes)
+        all_stacks, marker_stacks = get_marker_stacks(path, markers, filters, excludes)
         total = sum(c for _, c in all_stacks)
         marker_total = sum(c for _, c, _ in marker_stacks)
 
@@ -156,10 +163,10 @@ def summary(files, marker, top, filters, excludes):
 @_top_option
 @_filter_option
 @_exclude_option
-def leaves(files, marker, top, filters, excludes):
+def leaves(files, markers, top, filters, excludes):
     """Top leaf frames (where CPU is actually spent) under the marker."""
     for path in files:
-        _, marker_stacks = get_marker_stacks(path, marker, filters, excludes)
+        _, marker_stacks = get_marker_stacks(path, markers, filters, excludes)
         marker_total = sum(c for _, c, _ in marker_stacks)
 
         leaf_counts = defaultdict(int)
@@ -179,12 +186,12 @@ def leaves(files, marker, top, filters, excludes):
 @_filter_option
 @_exclude_option
 @click.option("-t", "--target", required=True, help="Target frame substring to find callers of.")
-def callers(files, marker, top, filters, excludes, target):
+def callers(files, markers, top, filters, excludes, target):
     """Find who calls a target frame (within stacks that contain the marker)."""
     for path in files:
         all_stacks = list(parse_file(path))
-        if marker:
-            stacks = list(filter_stacks(all_stacks, marker))
+        if markers:
+            stacks = list(filter_stacks(all_stacks, markers))
             if filters or excludes:
                 stacks = list(apply_stack_filters(stacks, filters, excludes))
             total = sum(c for _, c, _ in stacks)
@@ -213,12 +220,12 @@ def callers(files, marker, top, filters, excludes, target):
 @_filter_option
 @_exclude_option
 @click.option("-t", "--target", required=True, help="Target frame substring to find callees of.")
-def callees(files, marker, top, filters, excludes, target):
+def callees(files, markers, top, filters, excludes, target):
     """Find what a target frame calls (within stacks that contain the marker)."""
     for path in files:
         all_stacks = list(parse_file(path))
-        if marker:
-            stacks = list(filter_stacks(all_stacks, marker))
+        if markers:
+            stacks = list(filter_stacks(all_stacks, markers))
             if filters or excludes:
                 stacks = list(apply_stack_filters(stacks, filters, excludes))
             total = sum(c for _, c, _ in stacks)
@@ -246,10 +253,10 @@ def callees(files, marker, top, filters, excludes, target):
 @_top_option
 @_filter_option
 @_exclude_option
-def megamorphic(files, marker, top, filters, excludes):
+def megamorphic(files, markers, top, filters, excludes):
     """Find megamorphic call sites (callers of vtable/itable stubs)."""
     for path in files:
-        _, marker_stacks = get_marker_stacks(path, marker, filters, excludes)
+        _, marker_stacks = get_marker_stacks(path, markers, filters, excludes)
         marker_total = sum(c for _, c, _ in marker_stacks)
 
         caller_counts = defaultdict(int)
@@ -272,10 +279,10 @@ def megamorphic(files, marker, top, filters, excludes):
 @_filter_option
 @_exclude_option
 @click.option("-d", "--depth", default=2, show_default=True, help="Depth of sub-path.")
-def subtrees(files, marker, top, filters, excludes, depth):
+def subtrees(files, markers, top, filters, excludes, depth):
     """Show top sub-paths of a given depth below the marker."""
     for path in files:
-        _, marker_stacks = get_marker_stacks(path, marker, filters, excludes)
+        _, marker_stacks = get_marker_stacks(path, markers, filters, excludes)
         marker_total = sum(c for _, c, _ in marker_stacks)
 
         subtree_counts = defaultdict(int)
@@ -298,7 +305,7 @@ def subtrees(files, marker, top, filters, excludes, depth):
 @_filter_option
 @_exclude_option
 @click.option("-d", "--depth", default=3, show_default=True, help="Number of frames from the leaf to group by.")
-def bottomup(files, marker, top, filters, excludes, depth):
+def bottomup(files, markers, top, filters, excludes, depth):
     """Bottom-up view: group stacks by their last N frames (leaf chain).
 
     This aggregates call chains that arrive at the same hot path from different
@@ -311,7 +318,7 @@ def bottomup(files, marker, top, filters, excludes, depth):
     both contribute to the chain "x -> y -> z" with 75 total samples.
     """
     for path in files:
-        _, marker_stacks = get_marker_stacks(path, marker, filters, excludes)
+        _, marker_stacks = get_marker_stacks(path, markers, filters, excludes)
         marker_total = sum(c for _, c, _ in marker_stacks)
 
         chain_counts = defaultdict(int)
@@ -368,12 +375,12 @@ def load_categories(cat_file):
 @_filter_option
 @_exclude_option
 @click.option("-c", "--categories", required=True, type=click.Path(exists=True), help="Path to categories file.")
-def categorize(files, marker, top, filters, excludes, categories):
+def categorize(files, markers, top, filters, excludes, categories):
     """Categorize leaf frames into buckets defined in a categories file."""
     cats = load_categories(categories)
 
     for path in files:
-        _, marker_stacks = get_marker_stacks(path, marker, filters, excludes)
+        _, marker_stacks = get_marker_stacks(path, markers, filters, excludes)
         marker_total = sum(c for _, c, _ in marker_stacks)
 
         leaf_counts = defaultdict(int)

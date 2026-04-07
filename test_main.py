@@ -97,6 +97,28 @@ class TestFilterStacks:
         filtered = list(filter_stacks(all_stacks, "NoSuchMethod"))
         assert filtered == []
 
+    def test_multiple_markers_or(self, sample_file):
+        all_stacks = list(parse_file(sample_file))
+        # "other" matches the 4th stack, "vtable stub" matches the 5th
+        filtered = list(filter_stacks(all_stacks, ("other", "vtable stub")))
+        assert len(filtered) == 2
+        assert sum(c for _, c, _ in filtered) == 200 + 40
+
+    def test_multiple_markers_first_frame_wins(self, sample_file):
+        all_stacks = list(parse_file(sample_file))
+        # Both markers could appear; marker_index should be the first matching frame
+        filtered = list(filter_stacks(all_stacks, ("X.target", "leaf1")))
+        # First stack has X.target at index 3 and leaf1 at index 6; should get index 3
+        first = [r for r in filtered if r[0][-1] == "leaf1_[j]"][0]
+        assert first[2] == 3
+
+    def test_single_string_marker_still_works(self, sample_file):
+        all_stacks = list(parse_file(sample_file))
+        # Passing a plain string (not a tuple) should still work
+        filtered = list(filter_stacks(all_stacks, "other"))
+        assert len(filtered) == 1
+        assert filtered[0][1] == 200
+
 
 class TestApplyStackFilters:
     def _marker_stacks(self, sample_file):
@@ -223,6 +245,13 @@ class TestSummaryCommand:
         # Marker samples = 50 + 30 + 10 = 90 (leaf1 stack excluded)
         assert "90" in result.output
 
+    def test_multiple_markers(self, runner, sample_file):
+        # -m X.target matches 4 stacks (190 samples), -m other matches 1 stack (200 samples)
+        result = runner.invoke(cli, ["summary", "-m", "X.target", "-m", "other", sample_file])
+        assert result.exit_code == 0
+        # 190 + 200 = 390 marker samples
+        assert "390" in result.output
+
     def test_marker_required(self, runner, sample_file):
         result = runner.invoke(cli, ["summary", sample_file])
         assert result.exit_code != 0
@@ -269,6 +298,12 @@ class TestCallersCommand:
         result = runner.invoke(cli, ["callers", "-t", "leaf1", sample_file])
         assert result.exit_code == 0
         assert "e" in result.output
+
+    def test_multiple_markers(self, runner, sample_file):
+        # Use two markers to widen the search scope
+        result = runner.invoke(cli, ["callers", "-t", "d", "-m", "leaf1", "-m", "leaf2", sample_file])
+        assert result.exit_code == 0
+        assert "X.target" in result.output
 
     def test_with_filter(self, runner, sample_file):
         # Filter to stacks with 'leaf1', then look for callers of leaf1
