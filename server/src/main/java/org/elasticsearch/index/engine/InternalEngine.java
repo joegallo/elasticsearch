@@ -1476,7 +1476,25 @@ public class InternalEngine extends Engine {
         }
 
         try {
-            // Create Indexing Operation
+            // Create Indexing Operation — for batches of 2+ real ops, reserve all sequence numbers
+            // atomically up front (before any Lucene writes) so the checkpoint can be updated in one
+            // shot. For a single real op, fall through to generateSeqNoForOperationOnPrimary so that
+            // any subclass override (including test stalling generators) is honoured.
+            long firstPrimarySeqNo = -1;
+            int nonPreflightCount = 0;
+            long maxNonPrimarySeqNo = SequenceNumbers.NO_OPS_PERFORMED;
+            if (subBatchOps[0].origin() == Operation.Origin.PRIMARY) {
+                // Pre-scan to count ops that will receive a seq no (exclude preflight errors).
+                for (int i = 0; i < subBatchSize; i++) {
+                    if (plans[i].earlyResultOnPreflightError.isPresent() == false) {
+                        nonPreflightCount++;
+                    }
+                }
+                if (nonPreflightCount > 1) {
+                    firstPrimarySeqNo = localCheckpointTracker.generateSeqNos(nonPreflightCount);
+                }
+            }
+            int batchSeqNoIdx = 0;
             for (int i = 0; i < subBatchSize; i++) {
                 Index index = subBatchOps[i];
                 IndexingStrategy plan = plans[i];
@@ -1490,10 +1508,13 @@ public class InternalEngine extends Engine {
                 }
 
                 if (index.origin() == Operation.Origin.PRIMARY) {
+                    final long seqNo = nonPreflightCount > 1
+                        ? firstPrimarySeqNo + batchSeqNoIdx++
+                        : generateSeqNoForOperationOnPrimary(index);
                     index = new Index(
                         index.uid(),
                         index.parsedDoc(),
-                        generateSeqNoForOperationOnPrimary(index),
+                        seqNo,
                         index.primaryTerm(),
                         index.version(),
                         index.versionType(),
@@ -1509,14 +1530,19 @@ public class InternalEngine extends Engine {
                     final boolean toAppend = plan.indexIntoLucene && plan.useLuceneUpdateDocument == false;
 
                     if (toAppend == false) {
-                        advanceMaxSeqNoOfUpdatesOnPrimary(index.seqNo());
+                        advanceMaxSeqNoOfUpdatesOnPrimary(seqNo);
                     }
                 } else {
-                    // TODO: Can probably move to just the max for this batch
-                    markSeqNoAsSeen(index.seqNo());
+                    if (index.seqNo() > maxNonPrimarySeqNo) {
+                        maxNonPrimarySeqNo = index.seqNo();
+                    }
                 }
 
                 assert index.seqNo() >= 0 : "ops should have an assigned seq no.; origin: " + index.origin();
+            }
+            // Advance the seen marker for non-primary ops with a single call to the highest seq no in the batch.
+            if (maxNonPrimarySeqNo != SequenceNumbers.NO_OPS_PERFORMED) {
+                markSeqNoAsSeen(maxNonPrimarySeqNo);
             }
 
             // Lucene
@@ -1569,7 +1595,7 @@ public class InternalEngine extends Engine {
                 }
             }
 
-            // Update versionMap and checkpoint tracker
+            // Update versionMap
             for (int i = 0; i < subBatchSize; i++) {
                 IndexingStrategy plan = plans[i];
                 Index index = subBatchOps[i];
@@ -1582,14 +1608,34 @@ public class InternalEngine extends Engine {
                         new IndexVersionValue(translogLocation, plan.versionForIndexing, index.seqNo(), index.primaryTerm())
                     );
                 }
-                // TODO: Batch Optimize the processed seqNo
-                localCheckpointTracker.markSeqNoAsProcessed(result.getSeqNo());
-                if (result.getTranslogLocation() == null) {
-                    // TODO: Batch Optimize the persisted seqNo
-                    localCheckpointTracker.markSeqNoAsPersisted(result.getSeqNo());
-                }
                 result.setTook(relativeTimeInNanosSupplier.getAsLong() - index.startTime());
                 result.freeze();
+            }
+            // Update checkpoint tracker. For primary batches of 2+ ops the reserved seq no range is
+            // contiguous (guaranteed by generateSeqNos), so one lock acquisition covers the whole
+            // batch. For a single primary op, or for non-primary ops, mark per-operation.
+            // markSeqNoAsPersisted is vacuous for PRIMARY (fromTranslog is always false): every result
+            // with a real seq no has a translog location, so nothing needs immediate persistence marking.
+            if (subBatchOps[0].origin() == Operation.Origin.PRIMARY) {
+                if (nonPreflightCount > 1) {
+                    localCheckpointTracker.markSeqNoRangeAsProcessed(firstPrimarySeqNo, firstPrimarySeqNo + nonPreflightCount - 1);
+                } else if (nonPreflightCount == 1) {
+                    for (int i = 0; i < subBatchSize; i++) {
+                        final long seqNo = allResults[subBatchIdx + i].getSeqNo();
+                        if (seqNo != UNASSIGNED_SEQ_NO) {
+                            localCheckpointTracker.markSeqNoAsProcessed(seqNo);
+                            break;
+                        }
+                    }
+                }
+            } else {
+                for (int i = 0; i < subBatchSize; i++) {
+                    IndexResult result = allResults[subBatchIdx + i];
+                    localCheckpointTracker.markSeqNoAsProcessed(result.getSeqNo());
+                    if (result.getTranslogLocation() == null) {
+                        localCheckpointTracker.markSeqNoAsPersisted(result.getSeqNo());
+                    }
+                }
             }
         } finally {
             releaseInFlightDocs(reservedDocs);

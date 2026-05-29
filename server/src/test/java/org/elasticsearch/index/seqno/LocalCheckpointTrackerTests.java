@@ -233,6 +233,112 @@ public class LocalCheckpointTrackerTests extends ESTestCase {
         }
     }
 
+    public void testGenerateSeqNos() {
+        assertThat(tracker.generateSeqNos(1), equalTo(0L));
+        assertThat(tracker.generateSeqNos(3), equalTo(1L));
+        assertThat(tracker.getMaxSeqNo(), equalTo(3L));
+        assertThat(tracker.generateSeqNos(1), equalTo(4L));
+        assertThat(tracker.getMaxSeqNo(), equalTo(4L));
+    }
+
+    public void testMarkSeqNoRangeAsProcessed() {
+        long base = tracker.generateSeqNos(5); // reserves [0, 4]
+        assertThat(base, equalTo(0L));
+        assertThat(tracker.getProcessedCheckpoint(), equalTo(SequenceNumbers.NO_OPS_PERFORMED));
+
+        tracker.markSeqNoRangeAsProcessed(0, 4);
+
+        assertThat(tracker.getProcessedCheckpoint(), equalTo(4L));
+        for (long seqNo = 0; seqNo <= 4; seqNo++) {
+            assertThat(tracker.hasProcessed(seqNo), equalTo(true));
+        }
+        assertThat(tracker.hasProcessed(5), equalTo(false));
+    }
+
+    public void testMarkSeqNoRangeAsProcessedPartialOverlapWithExistingCheckpoint() {
+        // Checkpoint at 2; range [1, 4] partially overlaps — should still advance to 4.
+        tracker.markSeqNoAsProcessed(0L);
+        tracker.markSeqNoAsProcessed(1L);
+        tracker.markSeqNoAsProcessed(2L);
+        assertThat(tracker.getProcessedCheckpoint(), equalTo(2L));
+
+        tracker.markSeqNoRangeAsProcessed(1, 4);
+
+        assertThat(tracker.getProcessedCheckpoint(), equalTo(4L));
+    }
+
+    public void testMarkSeqNoRangeAsProcessedSpanningBitSets() {
+        // Range that spans multiple bit sets (BIT_SET_SIZE = 1024)
+        long from = BIT_SET_SIZE - 2;
+        long to = BIT_SET_SIZE + 1;
+        // Fill in all seq nos up to from-1 so the checkpoint can advance through the range.
+        for (long seqNo = 0; seqNo < from; seqNo++) {
+            tracker.markSeqNoAsProcessed(seqNo);
+        }
+        assertThat(tracker.getProcessedCheckpoint(), equalTo(from - 1));
+
+        tracker.markSeqNoRangeAsProcessed(from, to);
+
+        assertThat(tracker.getProcessedCheckpoint(), equalTo(to));
+    }
+
+    public void testMarkSeqNoRangeAsProcessedSingleElement() {
+        long seqNo = tracker.generateSeqNo();
+        tracker.markSeqNoRangeAsProcessed(seqNo, seqNo);
+        assertThat(tracker.getProcessedCheckpoint(), equalTo(seqNo));
+    }
+
+    public void testMarkSeqNoRangeAsPersisted() {
+        long base = tracker.generateSeqNos(5); // reserves [0, 4]
+        assertThat(base, equalTo(0L));
+        assertThat(tracker.getPersistedCheckpoint(), equalTo(SequenceNumbers.NO_OPS_PERFORMED));
+
+        tracker.markSeqNoRangeAsPersisted(0, 4);
+
+        assertThat(tracker.getPersistedCheckpoint(), equalTo(4L));
+        assertThat(tracker.getProcessedCheckpoint(), equalTo(SequenceNumbers.NO_OPS_PERFORMED));
+    }
+
+    public void testMarkSeqNoRangeAsPersistedPartialOverlapWithExistingCheckpoint() {
+        tracker.markSeqNoAsPersisted(0L);
+        tracker.markSeqNoAsPersisted(1L);
+        tracker.markSeqNoAsPersisted(2L);
+        assertThat(tracker.getPersistedCheckpoint(), equalTo(2L));
+
+        tracker.markSeqNoRangeAsPersisted(1, 4);
+
+        assertThat(tracker.getPersistedCheckpoint(), equalTo(4L));
+    }
+
+    public void testMarkSeqNoRangeAsProcessedWithTailScan() {
+        // Seq no 5 is marked individually before the range [0, 4] arrives. When the range is
+        // applied, the checkpoint should advance through the already-set tail bit to 5.
+        tracker.markSeqNoAsProcessed(5L);
+        assertThat(tracker.getProcessedCheckpoint(), equalTo(SequenceNumbers.NO_OPS_PERFORMED));
+
+        tracker.markSeqNoRangeAsProcessed(0, 4);
+
+        assertThat(tracker.getProcessedCheckpoint(), equalTo(5L));
+    }
+
+    public void testMarkSeqNoRangeAsProcessedCleansUpFullBitSets() {
+        // A range covering an entire bit set should leave no entry in processedSeqNo.
+        tracker.markSeqNoRangeAsProcessed(0, BIT_SET_SIZE - 1);
+
+        assertThat(tracker.getProcessedCheckpoint(), equalTo((long) BIT_SET_SIZE - 1));
+        assertThat(tracker.processedSeqNo.size(), equalTo(0));
+    }
+
+    public void testMarkSeqNoRangeAsProcessedWithGapDoesNotAdvanceCheckpoint() {
+        // A range that starts above checkpoint + 1 must not advance the checkpoint; only filling
+        // the gap should trigger the advancement.
+        tracker.markSeqNoRangeAsProcessed(1, 3);
+        assertThat(tracker.getProcessedCheckpoint(), equalTo(SequenceNumbers.NO_OPS_PERFORMED));
+
+        tracker.markSeqNoAsProcessed(0L);
+        assertThat(tracker.getProcessedCheckpoint(), equalTo(3L));
+    }
+
     public void testContains() {
         final long maxSeqNo = randomLongBetween(SequenceNumbers.NO_OPS_PERFORMED, 100);
         final long localCheckpoint = randomLongBetween(SequenceNumbers.NO_OPS_PERFORMED, maxSeqNo);

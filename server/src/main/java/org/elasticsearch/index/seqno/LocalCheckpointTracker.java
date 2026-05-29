@@ -86,6 +86,18 @@ public class LocalCheckpointTracker {
     }
 
     /**
+     * Issues the next {@code count} sequence numbers as a contiguous range.
+     *
+     * @param count the number of sequence numbers to reserve; must be positive
+     * @return the first (lowest) sequence number in the reserved range; the caller owns
+     *         {@code [result, result + count - 1]}
+     */
+    public long generateSeqNos(final int count) {
+        assert count > 0 : "count must be positive, got: " + count;
+        return nextSeqNo.getAndAdd(count);
+    }
+
+    /**
      * Marks the provided sequence number as seen and updates the max_seq_no if needed.
      */
     public void advanceMaxSeqNo(final long seqNo) {
@@ -102,12 +114,30 @@ public class LocalCheckpointTracker {
     }
 
     /**
+     * Marks all sequence numbers in {@code [from, to]} (inclusive) as processed and updates the
+     * processed checkpoint if possible. Acquires the lock once for the entire range rather than once
+     * per sequence number.
+     */
+    public synchronized void markSeqNoRangeAsProcessed(final long from, final long to) {
+        markSeqNoRange(from, to, processedCheckpoint, processedSeqNo);
+    }
+
+    /**
      * Marks the provided sequence number as persisted and updates the checkpoint if possible.
      *
      * @param seqNo the sequence number to mark as persisted
      */
     public synchronized void markSeqNoAsPersisted(final long seqNo) {
         markSeqNo(seqNo, persistedCheckpoint, persistedSeqNo);
+    }
+
+    /**
+     * Marks all sequence numbers in {@code [from, to]} (inclusive) as persisted and updates the
+     * persisted checkpoint if possible. Acquires the lock once for the entire range rather than once
+     * per sequence number.
+     */
+    public synchronized void markSeqNoRangeAsPersisted(final long from, final long to) {
+        markSeqNoRange(from, to, persistedCheckpoint, persistedSeqNo);
     }
 
     private void markSeqNo(final long seqNo, final AtomicLong checkPoint, final Map<Long, CountedBitSet> bitSetMap) {
@@ -122,6 +152,48 @@ public class LocalCheckpointTracker {
         final int offset = seqNoToBitSetOffset(seqNo);
         bitSet.set(offset);
         if (seqNo == checkPoint.get() + 1) {
+            updateCheckpoint(checkPoint, bitSetMap);
+        }
+    }
+
+    /**
+     * Marks all sequence numbers in {@code [from, to]} (inclusive) as complete in {@code bitSetMap}
+     * and advances {@code checkPoint} if possible. Optimised for ranges: one {@link #advanceMaxSeqNo}
+     * CAS, one HashMap lookup per bit set (rather than one per sequence number), and a single atomic
+     * checkpoint update instead of N increments.
+     */
+    private void markSeqNoRange(final long from, final long to, final AtomicLong checkPoint, final Map<Long, CountedBitSet> bitSetMap) {
+        assert from <= to : "invalid range [" + from + ", " + to + "]";
+        assert Thread.holdsLock(this);
+        advanceMaxSeqNo(to);
+        final long currentCheckpoint = checkPoint.get();
+        if (to <= currentCheckpoint) {
+            return;
+        }
+        final long effectiveFrom = Math.max(from, currentCheckpoint + 1);
+        final long firstKey = getBitSetKey(effectiveFrom);
+        final long lastKey = getBitSetKey(to);
+        for (long key = firstKey; key <= lastKey; key++) {
+            final CountedBitSet bitSet = bitSetMap.computeIfAbsent(key, ignored -> new CountedBitSet(BIT_SET_SIZE));
+            final int startOffset = (key == firstKey) ? seqNoToBitSetOffset(effectiveFrom) : 0;
+            final int endOffset = (key == lastKey) ? seqNoToBitSetOffset(to) : BIT_SET_SIZE - 1;
+            for (int offset = startOffset; offset <= endOffset; offset++) {
+                bitSet.set(offset);
+            }
+        }
+        if (effectiveFrom != currentCheckpoint + 1) {
+            // There is a gap before this range; the checkpoint cannot advance until the gap is filled.
+            return;
+        }
+        checkPoint.set(to);
+        // Remove bit sets that are now fully consumed (their entire seq no range is within the checkpoint).
+        for (long key = firstKey; lastSeqNoInBitSet(key) <= to; key++) {
+            bitSetMap.remove(key);
+        }
+        // Tail scan: if the very next seq no is already marked, continue advancing the checkpoint.
+        final long nextSeq = to + 1;
+        final CountedBitSet nextBitSet = bitSetMap.get(getBitSetKey(nextSeq));
+        if (nextBitSet != null && nextBitSet.get(seqNoToBitSetOffset(nextSeq))) {
             updateCheckpoint(checkPoint, bitSetMap);
         }
     }
