@@ -22,16 +22,16 @@ All commands support a `-m`/`--marker` option to filter stacks to only those con
 
 ## Setup
 
-Requires Python 3.12+ and [uv](https://docs.astral.sh/uv/).
+Requires Go 1.21+.
 
 ```sh
-uv sync
+go build -o profile-analyzer .
 ```
 
 ## Usage
 
 ```sh
-uv run main.py <command> [options] <files...>
+profile-analyzer <command> [options] <files...>
 ```
 
 ### Commands
@@ -41,7 +41,7 @@ uv run main.py <command> [options] <files...>
 High-level overview: total vs marker samples, and the first callees after the marker method.
 
 ```sh
-uv run main.py summary -m IndexShard.prepareIndex *.txt
+profile-analyzer summary -m IndexShard.prepareIndex *.txt
 ```
 
 #### `leaves`
@@ -49,7 +49,7 @@ uv run main.py summary -m IndexShard.prepareIndex *.txt
 Top leaf frames (where CPU is actually spent) under the marker. These are the innermost frames on the stack — the methods that were executing when the sample was taken.
 
 ```sh
-uv run main.py leaves -m IndexShard.prepareIndex *.txt
+profile-analyzer leaves -m IndexShard.prepareIndex *.txt
 ```
 
 #### `callers`
@@ -57,7 +57,7 @@ uv run main.py leaves -m IndexShard.prepareIndex *.txt
 Find who calls a target frame. Useful for answering "why is this method hot — who's calling it?"
 
 ```sh
-uv run main.py callers -t 'MapN.probe' -m IndexShard.prepareIndex *.txt
+profile-analyzer callers -t 'MapN.probe' -m IndexShard.prepareIndex *.txt
 ```
 
 The `-m` marker is optional for this command — omit it to search across all stacks.
@@ -67,7 +67,7 @@ The `-m` marker is optional for this command — omit it to search across all st
 Find what a target frame calls. The inverse of `callers`.
 
 ```sh
-uv run main.py callees -t 'DocumentParser.parseValue' -m IndexShard.prepareIndex *.txt
+profile-analyzer callees -t 'DocumentParser.parseValue' -m IndexShard.prepareIndex *.txt
 ```
 
 The `-m` marker is optional for this command.
@@ -77,7 +77,7 @@ The `-m` marker is optional for this command.
 Find megamorphic call sites — methods whose virtual calls go through vtable/itable stubs because the JVM sees too many receiver types to devirtualize.
 
 ```sh
-uv run main.py megamorphic -m IndexShard.prepareIndex *.txt
+profile-analyzer megamorphic -m IndexShard.prepareIndex *.txt
 ```
 
 #### `subtrees`
@@ -85,7 +85,7 @@ uv run main.py megamorphic -m IndexShard.prepareIndex *.txt
 Top sub-paths of a given depth below the marker (top-down view). Shows the first N callees after the marker method.
 
 ```sh
-uv run main.py subtrees -m IndexShard.prepareIndex --depth 2 *.txt
+profile-analyzer subtrees -m IndexShard.prepareIndex --depth 2 *.txt
 ```
 
 #### `bottomup`
@@ -93,7 +93,7 @@ uv run main.py subtrees -m IndexShard.prepareIndex --depth 2 *.txt
 Group stacks by their last N frames from the leaf. This aggregates call chains that arrive at the same hot path from different callers. For example, with `--depth 3`, the stacks `a;x;y;z 50` and `a;b;x;y;z 25` both contribute to `x -> y -> z` with 75 total samples.
 
 ```sh
-uv run main.py bottomup -m IndexShard.prepareIndex --depth 3 *.txt
+profile-analyzer bottomup -m IndexShard.prepareIndex --depth 3 *.txt
 ```
 
 #### `categorize`
@@ -101,7 +101,7 @@ uv run main.py bottomup -m IndexShard.prepareIndex --depth 3 *.txt
 Bucket leaf frames into user-defined categories using a categories file.
 
 ```sh
-uv run main.py categorize -m IndexShard.prepareIndex -c categories.txt *.txt
+profile-analyzer categorize -m IndexShard.prepareIndex -c categories.txt *.txt
 ```
 
 ### Common options
@@ -122,13 +122,13 @@ Multiple `-f` filters are ANDed (all must match). Multiple `-x` excludes are ORe
 
 ```sh
 # HashMap leaf frames, excluding Jackson's DupDetector
-uv run main.py leaves -m IndexShard.prepareIndex -f HashMap -x DupDetector -x HashSet *.txt
+profile-analyzer leaves -m IndexShard.prepareIndex -f HashMap -x DupDetector -x HashSet *.txt
 
 # Bottom-up view only for stacks passing through MappingLookup
-uv run main.py bottomup -m IndexShard.prepareIndex -f MappingLookup -d 4 *.txt
+profile-analyzer bottomup -m IndexShard.prepareIndex -f MappingLookup -d 4 *.txt
 
 # Categorize excluding java.time internals
-uv run main.py categorize -m IndexShard.prepareIndex -x java/time -c categories.txt *.txt
+profile-analyzer categorize -m IndexShard.prepareIndex -x java/time -c categories.txt *.txt
 ```
 
 ## Categories file format
