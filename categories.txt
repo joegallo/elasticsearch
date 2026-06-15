@@ -9,17 +9,23 @@ ByteQuadsCanonicalizer
 # ImmutableCollections$MapN.probe
 ImmutableCollections$MapN.probe
 
-# HashMap operations
+# HashMap/Set operations
 HashMap.put
 HashMap.getNode
 HashMap.resize
 HashMap.putVal
 HashMap.newNode
 HashMap.removeNode
-HashMap$TreeNode.find
+HashMap$TreeNode
 HashMap$HashIterator
 HashMap.afterNodeInsertion
 HashMap.hash
+HashMap.get
+HashMap.containsKey
+HashMap.clear
+HashMap.computeIfAbsent
+HashSet.add
+HashSet.contains
 
 # Document parsing (DocumentParser)
 DocumentParser.
@@ -34,6 +40,8 @@ FieldTypeLookup
 
 # ArrayList operations
 ArrayList.add
+ArrayList.grow
+ArrayList.clear
 
 # String.hashCode
 String.hashCode
@@ -47,3 +55,71 @@ DotExpandingXContentParser
 
 # Date/time parsing
 java/time/format
+java/time/chrono
+java/time/LocalDate
+java/time/ZonedDateTime
+Iso8601Parser
+DateFormatters
+
+# Lucene IndexingChain
+IndexingChain.processDocument
+IndexingChain.getOrAddPerField
+IndexingChain.processField
+IndexingChain.indexDocValue
+IndexingChain.updateDocFieldSchema
+IndexingChain.startStoredFields
+IndexingChain.finishStoredFields
+IndexingChain.initializeFieldInfo
+IndexingChain.oversizeDocFields
+IndexingChain$ReservedField
+
+# Lucene DocValues writers
+SortedNumericDocValuesWriter
+SortedSetDocValuesWriter
+NumericDocValuesWriter
+BinaryDocValuesWriter
+SortedDocValuesWriter
+
+# Lucene DocumentsWriter/IndexWriter
+DocumentsWriterPerThread
+DocumentsWriter.updateDocuments
+IndexWriter.updateDocuments
+TermsHash.
+
+# Lucene packed ints
+lucene/util/packed
+
+# Lucene I/O and codecs
+lucene/store
+lucene/codecs
+
+# Lucene terms/postings
+FreqProx
+TermVectors
+
+# Compression
+zstd
+Deflate
+DeflateCompressor
+
+# Translog
+TranslogWriter
+Translog.
+
+# Concurrency/locking
+LockSupport
+Striped64
+concurrent/locks
+concurrent/atomic
+
+# Indexing listeners
+IndexingOperationListener
+IndexingMemoryController
+
+# Memory copy/clear
+copy_byte_f
+jbyte_disjoint_arraycopy
+arrayof_jlong_disjoint_arraycopy
+arrayof_jint_disjoint_arraycopy
+zero_blocks
+Arrays.copyOf
