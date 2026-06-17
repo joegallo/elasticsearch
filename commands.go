@@ -119,7 +119,11 @@ func newSummaryCmd(opts *sharedOpts) *cobra.Command {
 			}
 			w := cmd.OutOrStdout()
 			for _, path := range args {
-				if err := runSummary(w, path, opts); err != nil {
+				resolved, err := resolveInput(path)
+				if err != nil {
+					return err
+				}
+				if err := runSummary(w, resolved, opts); err != nil {
 					return err
 				}
 			}
@@ -170,7 +174,11 @@ func newLeavesCmd(opts *sharedOpts) *cobra.Command {
 			}
 			w := cmd.OutOrStdout()
 			for _, path := range args {
-				if err := runLeaves(w, path, opts); err != nil {
+				resolved, err := resolveInput(path)
+				if err != nil {
+					return err
+				}
+				if err := runLeaves(w, resolved, opts); err != nil {
 					return err
 				}
 			}
@@ -208,7 +216,11 @@ func newCallersCmd(opts *sharedOpts) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			w := cmd.OutOrStdout()
 			for _, path := range args {
-				if err := runCallers(w, path, opts, target); err != nil {
+				resolved, err := resolveInput(path)
+				if err != nil {
+					return err
+				}
+				if err := runCallers(w, resolved, opts, target); err != nil {
 					return err
 				}
 			}
@@ -276,7 +288,11 @@ func newCalleesCmd(opts *sharedOpts) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			w := cmd.OutOrStdout()
 			for _, path := range args {
-				if err := runCallees(w, path, opts, target); err != nil {
+				resolved, err := resolveInput(path)
+				if err != nil {
+					return err
+				}
+				if err := runCallees(w, resolved, opts, target); err != nil {
 					return err
 				}
 			}
@@ -346,7 +362,11 @@ func newMegamorphicCmd(opts *sharedOpts) *cobra.Command {
 			}
 			w := cmd.OutOrStdout()
 			for _, path := range args {
-				if err := runMegamorphic(w, path, opts); err != nil {
+				resolved, err := resolveInput(path)
+				if err != nil {
+					return err
+				}
+				if err := runMegamorphic(w, resolved, opts); err != nil {
 					return err
 				}
 			}
@@ -390,7 +410,11 @@ func newSubtreesCmd(opts *sharedOpts) *cobra.Command {
 			}
 			w := cmd.OutOrStdout()
 			for _, path := range args {
-				if err := runSubtrees(w, path, opts, depth); err != nil {
+				resolved, err := resolveInput(path)
+				if err != nil {
+					return err
+				}
+				if err := runSubtrees(w, resolved, opts, depth); err != nil {
 					return err
 				}
 			}
@@ -445,7 +469,11 @@ both contribute to the chain "x -> y -> z" with 75 total samples.`,
 			}
 			w := cmd.OutOrStdout()
 			for _, path := range args {
-				if err := runBottomup(w, path, opts, depth); err != nil {
+				resolved, err := resolveInput(path)
+				if err != nil {
+					return err
+				}
+				if err := runBottomup(w, resolved, opts, depth); err != nil {
 					return err
 				}
 			}
@@ -496,7 +524,11 @@ func newCategorizeCmd(opts *sharedOpts) *cobra.Command {
 			}
 			w := cmd.OutOrStdout()
 			for _, path := range args {
-				if err := runCategorize(w, path, opts, cats); err != nil {
+				resolved, err := resolveInput(path)
+				if err != nil {
+					return err
+				}
+				if err := runCategorize(w, resolved, opts, cats); err != nil {
 					return err
 				}
 			}

@@ -1,16 +1,18 @@
 # profile-analyzer
 
-A CLI toolkit for analyzing JFR (Java Flight Recorder) CPU profiling snapshots in folded-stack format.
+A CLI toolkit for analyzing JFR (Java Flight Recorder) CPU profiling snapshots.
 
 ## What it does
 
-When profiling a Java application with JFR, you can export CPU samples as folded stack traces — one stack per line, with a sample count at the end:
+All commands accept either `.jfr` files directly or pre-converted folded-stack `.txt` files. When given a `.jfr` file, the tool converts it automatically using [async-profiler](https://github.com/async-profiler/async-profiler)'s `jfrconv` and caches the result in `/tmp/profile-analyzer/` so subsequent runs are instant.
+
+The underlying data format is folded stack traces — one stack per line, with a sample count at the end:
 
 ```
 frame1;frame2;...;leafFrame 42
 ```
 
-This tool provides a set of commands for slicing and aggregating those stacks to answer questions like:
+The tool provides a set of commands for slicing and aggregating those stacks to answer questions like:
 
 - Where is CPU time going under a specific method?
 - What are the hottest leaf frames (where CPU actually burns)?
@@ -22,7 +24,7 @@ All commands support a `-m`/`--marker` option to filter stacks to only those con
 
 ## Setup
 
-Requires Go 1.21+.
+Requires Go 1.21+. To process `.jfr` files directly, `jfrconv` from [async-profiler](https://github.com/async-profiler/async-profiler) must be on your `$PATH`.
 
 ```sh
 go build -o profile-analyzer .
@@ -34,6 +36,8 @@ go build -o profile-analyzer .
 profile-analyzer <command> [options] <files...>
 ```
 
+Both `.jfr` and `.txt` files are accepted, and can be mixed in the same invocation. When a `.jfr` file is passed, it is converted to folded-stack format via `jfrconv --cpu` and cached under `/tmp/profile-analyzer/` keyed by filename, modification time, and size. Subsequent runs against the same file skip conversion entirely.
+
 ### Commands
 
 #### `summary`
@@ -41,7 +45,7 @@ profile-analyzer <command> [options] <files...>
 High-level overview: total vs marker samples, and the first callees after the marker method.
 
 ```sh
-profile-analyzer summary -m IndexShard.prepareIndex *.txt
+profile-analyzer summary -m IndexShard.prepareIndex *.jfr
 ```
 
 #### `leaves`
@@ -49,7 +53,7 @@ profile-analyzer summary -m IndexShard.prepareIndex *.txt
 Top leaf frames (where CPU is actually spent) under the marker. These are the innermost frames on the stack — the methods that were executing when the sample was taken.
 
 ```sh
-profile-analyzer leaves -m IndexShard.prepareIndex *.txt
+profile-analyzer leaves -m IndexShard.prepareIndex *.jfr
 ```
 
 #### `callers`
@@ -57,7 +61,7 @@ profile-analyzer leaves -m IndexShard.prepareIndex *.txt
 Find who calls a target frame. Useful for answering "why is this method hot — who's calling it?"
 
 ```sh
-profile-analyzer callers -t 'MapN.probe' -m IndexShard.prepareIndex *.txt
+profile-analyzer callers -t 'MapN.probe' -m IndexShard.prepareIndex *.jfr
 ```
 
 The `-m` marker is optional for this command — omit it to search across all stacks.
@@ -67,7 +71,7 @@ The `-m` marker is optional for this command — omit it to search across all st
 Find what a target frame calls. The inverse of `callers`.
 
 ```sh
-profile-analyzer callees -t 'DocumentParser.parseValue' -m IndexShard.prepareIndex *.txt
+profile-analyzer callees -t 'DocumentParser.parseValue' -m IndexShard.prepareIndex *.jfr
 ```
 
 The `-m` marker is optional for this command.
@@ -77,7 +81,7 @@ The `-m` marker is optional for this command.
 Find megamorphic call sites — methods whose virtual calls go through vtable/itable stubs because the JVM sees too many receiver types to devirtualize.
 
 ```sh
-profile-analyzer megamorphic -m IndexShard.prepareIndex *.txt
+profile-analyzer megamorphic -m IndexShard.prepareIndex *.jfr
 ```
 
 #### `subtrees`
@@ -85,7 +89,7 @@ profile-analyzer megamorphic -m IndexShard.prepareIndex *.txt
 Top sub-paths of a given depth below the marker (top-down view). Shows the first N callees after the marker method.
 
 ```sh
-profile-analyzer subtrees -m IndexShard.prepareIndex --depth 2 *.txt
+profile-analyzer subtrees -m IndexShard.prepareIndex --depth 2 *.jfr
 ```
 
 #### `bottomup`
@@ -93,7 +97,7 @@ profile-analyzer subtrees -m IndexShard.prepareIndex --depth 2 *.txt
 Group stacks by their last N frames from the leaf. This aggregates call chains that arrive at the same hot path from different callers. For example, with `--depth 3`, the stacks `a;x;y;z 50` and `a;b;x;y;z 25` both contribute to `x -> y -> z` with 75 total samples.
 
 ```sh
-profile-analyzer bottomup -m IndexShard.prepareIndex --depth 3 *.txt
+profile-analyzer bottomup -m IndexShard.prepareIndex --depth 3 *.jfr
 ```
 
 #### `categorize`
@@ -101,7 +105,7 @@ profile-analyzer bottomup -m IndexShard.prepareIndex --depth 3 *.txt
 Bucket leaf frames into user-defined categories using a categories file.
 
 ```sh
-profile-analyzer categorize -m IndexShard.prepareIndex -c categories.txt *.txt
+profile-analyzer categorize -m IndexShard.prepareIndex -c categories.txt *.jfr
 ```
 
 ### Common options
@@ -122,13 +126,13 @@ Multiple `-f` filters are ANDed (all must match). Multiple `-x` excludes are ORe
 
 ```sh
 # HashMap leaf frames, excluding Jackson's DupDetector
-profile-analyzer leaves -m IndexShard.prepareIndex -f HashMap -x DupDetector -x HashSet *.txt
+profile-analyzer leaves -m IndexShard.prepareIndex -f HashMap -x DupDetector -x HashSet *.jfr
 
 # Bottom-up view only for stacks passing through MappingLookup
-profile-analyzer bottomup -m IndexShard.prepareIndex -f MappingLookup -d 4 *.txt
+profile-analyzer bottomup -m IndexShard.prepareIndex -f MappingLookup -d 4 *.jfr
 
 # Categorize excluding java.time internals
-profile-analyzer categorize -m IndexShard.prepareIndex -x java/time -c categories.txt *.txt
+profile-analyzer categorize -m IndexShard.prepareIndex -x java/time -c categories.txt *.jfr
 ```
 
 ## Categories file format
@@ -149,9 +153,9 @@ HashMap.resize
 
 See `categories.txt` for a full example targeting Elasticsearch indexing paths.
 
-## Input file format
+## Folded-stack format
 
-Folded stack traces, one per line:
+When passing `.txt` files directly, they should be folded stack traces — one per line:
 
 ```
 package/Class.method_[j];package/Other.method_[i];leaf_[j] 42
@@ -170,4 +174,4 @@ The suffix annotations indicate frame type, as defined by the `FRAME_SUFFIX` arr
 
 Note: `_[i]` is **inlined**, not interpreted — `_[0]` is interpreted. The numeric suffixes correspond directly to the type constant values (0 = interpreted, 1 = C1-compiled).
 
-These files can be generated from `.jfr` recordings using [async-profiler](https://github.com/async-profiler/async-profiler)'s converter (see `FlameGraph.printFrameCollapsed`).
+These files can be produced from `.jfr` recordings manually with `jfrconv --cpu -o collapsed`, but passing `.jfr` files directly to any command is simpler.
