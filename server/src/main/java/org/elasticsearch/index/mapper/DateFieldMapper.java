@@ -1305,25 +1305,23 @@ public final class DateFieldMapper extends FieldMapper {
                     + "]"
             );
         };
-        if (docValuesParameters.enabled() == false) {
-            // indexed=true, doc_values=false: emit BKD points, and populate _field_names
-            // (mirrors the addToFieldNames call in indexValue when doc_values=false && indexed).
+        if (fieldType().hasDocValuesSkipper()) {
+            ctx.addColumn(
+                LuceneLongColumn.of(outData, fieldType().name(), SORTED_NUMERIC_DV_INDEXED_FIELD_TYPE, LongColumn.NumericKind.LONG)
+            );
+        } else if (indexed && docValuesParameters.enabled()) {
+            ctx.addColumn(LuceneLongColumn.of(outData, fieldType().name(), LONG_FIELD_TYPE, LongColumn.NumericKind.LONG));
+        } else if (docValuesParameters.enabled()) {
+            ctx.addColumn(LuceneLongColumn.of(outData, fieldType().name(), SORTED_NUMERIC_DV_FIELD_TYPE, LongColumn.NumericKind.LONG));
+        } else {
             ctx.addColumn(LuceneLongColumn.of(outData, fieldType().name(), LONG_POINT_FIELD_TYPE, LongColumn.NumericKind.LONG));
+        }
+        if (docValuesParameters.enabled() == false && indexed) {
             final LongTupleCursor cursor = EscfColumn.from(outData).longCursor();
             for (int doc = cursor.nextDoc(); doc != DocIdSetIterator.NO_MORE_DOCS; doc = cursor.nextDoc()) {
                 ctx.addFieldNamesColumnar(doc, fieldType().name());
             }
-            return;
         }
-        final IndexableFieldType columnFieldType;
-        if (fieldType().hasDocValuesSkipper()) {
-            columnFieldType = SORTED_NUMERIC_DV_INDEXED_FIELD_TYPE;
-        } else if (indexed) {
-            columnFieldType = LONG_FIELD_TYPE;
-        } else {
-            columnFieldType = SORTED_NUMERIC_DV_FIELD_TYPE;
-        }
-        ctx.addColumn(LuceneLongColumn.of(outData, fieldType().name(), columnFieldType, LongColumn.NumericKind.LONG));
     }
 
     private EscfColumnData datesFromStrings(EscfColumn source) {
