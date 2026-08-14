@@ -126,6 +126,8 @@ public final class DateFieldMapper extends FieldMapper {
     private static final IndexableFieldType SORTED_NUMERIC_DV_INDEXED_FIELD_TYPE = SortedNumericDocValuesField.indexedField("_sentinel", 0L)
         .fieldType();
     private static final IndexableFieldType LONG_FIELD_TYPE = new LongField("_sentinel", 0L, Field.Store.NO).fieldType();
+    // Matches the field type produced by new LongPoint(name, timestamp) in indexValue when doc_values=false.
+    private static final IndexableFieldType LONG_POINT_FIELD_TYPE = new LongPoint("_sentinel", 0L).fieldType();
 
     public enum Resolution {
         MILLISECONDS(CONTENT_TYPE, NumericType.DATE, DateMillisDocValuesField::new) {
@@ -1275,11 +1277,10 @@ public final class DateFieldMapper extends FieldMapper {
 
     @Override
     public boolean supportsColumnarParse(IndexSettings indexSettings) {
-        // Columnar support requires strict-columnar index mode and a doc-values date field.
+        // Columnar support requires strict-columnar index mode.
         // doc_values.multi_value and ignore_malformed are not implemented by mapColumnBatch
         // but are deliberately not rejected here instead rejected at parse time.
         return indexSettings.getMode().isStrictColumnar()
-            && docValuesParameters.enabled()
             && store == false
             && hasScript() == false
             && copyTo().copyToFields().isEmpty()
@@ -1289,6 +1290,10 @@ public final class DateFieldMapper extends FieldMapper {
 
     @Override
     public void mapColumnBatch(BatchMappingContext ctx, EscfColumn source) {
+        if (docValuesParameters.enabled() == false && indexed == false) {
+            // Neither indexed nor doc-values: row path emits no fields, so nothing to do.
+            return;
+        }
         final EscfColumnData outData = switch (source.kind()) {
             case EscfColumnKind.STRING -> datesFromStrings(source);
             case EscfColumnKind.LONG -> datesFromLongs(source);
@@ -1300,6 +1305,16 @@ public final class DateFieldMapper extends FieldMapper {
                     + "]"
             );
         };
+        if (docValuesParameters.enabled() == false) {
+            // indexed=true, doc_values=false: emit BKD points, and populate _field_names
+            // (mirrors the addToFieldNames call in indexValue when doc_values=false && indexed).
+            ctx.addColumn(LuceneLongColumn.of(outData, fieldType().name(), LONG_POINT_FIELD_TYPE, LongColumn.NumericKind.LONG));
+            final LongTupleCursor cursor = EscfColumn.from(outData).longCursor();
+            for (int doc = cursor.nextDoc(); doc != DocIdSetIterator.NO_MORE_DOCS; doc = cursor.nextDoc()) {
+                ctx.addFieldNamesColumnar(doc, fieldType().name());
+            }
+            return;
+        }
         final IndexableFieldType columnFieldType;
         if (fieldType().hasDocValuesSkipper()) {
             columnFieldType = SORTED_NUMERIC_DV_INDEXED_FIELD_TYPE;

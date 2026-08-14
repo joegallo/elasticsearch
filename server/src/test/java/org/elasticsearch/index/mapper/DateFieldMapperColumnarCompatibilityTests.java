@@ -159,6 +159,51 @@ public class DateFieldMapperColumnarCompatibilityTests extends AbstractColumnarM
         );
     }
 
+    /**
+     * An absent doc activates {@code null_value} inside {@link DateFieldMapper#datesFromStrings}.
+     * This is distinct from the {@link #testNullValue()} AwaitsFix scenario, which exercises
+     * {@code {\"f\":null}} — a JSON-null that arrives as a UNION column and falls back to the row
+     * path. Here the field is simply absent from the source, which yields a STRING column with a
+     * validity-bit hole; the mapper substitutes {@code null_value}.
+     */
+    public void testNullValueSubstitutedForAbsentDoc() throws IOException {
+        assertColumnarMatchesXContent(
+            mapping(b -> b.startObject(FIELD).field("type", "date").field("null_value", "2024-01-01T00:00:00.000Z").endObject()),
+            columnarSettings(),
+            batch(
+                "null_value for absent docs",
+                1L,
+                doc("d1", 1L, "{\"f\":\"2024-03-15T00:00:00.000Z\"}"),
+                doc("d2", 2L, "{}"),
+                doc("d3", 3L, "{\"f\":\"2024-06-01T00:00:00.000Z\"}")
+            )
+        );
+    }
+
+    /** Negative epoch millis (pre-1970 dates) in a string column. */
+    public void testNegativeTimestamp_string() throws IOException {
+        assertColumnarMatchesXContent(
+            mapping(b -> b.startObject(FIELD).field("type", "date").endObject()),
+            columnarSettings(),
+            batch(
+                "negative timestamp string",
+                1L,
+                doc("d1", 1L, "{\"f\":\"1960-01-01T00:00:00.000Z\"}"),
+                doc("d2", 2L, "{}"),
+                doc("d3", 3L, "{\"f\":\"1969-12-31T23:59:59.999Z\"}")
+            )
+        );
+    }
+
+    /** Negative epoch millis (pre-1970 dates) sent as long values. */
+    public void testNegativeTimestamp_long() throws IOException {
+        assertColumnarMatchesXContent(
+            mapping(b -> b.startObject(FIELD).field("type", "date").endObject()),
+            columnarSettings(),
+            batch("negative timestamp long", 1L, doc("d1", 1L, "{\"f\":-315619200000}"), doc("d2", 2L, "{}"), doc("d3", 3L, "{\"f\":-1}"))
+        );
+    }
+
     public void testIndexedStringValue() throws IOException {
         assertColumnarMatchesXContent(
             mapping(b -> b.startObject(FIELD).field("type", "date").field("index", true).endObject()),
@@ -200,6 +245,124 @@ public class DateFieldMapperColumnarCompatibilityTests extends AbstractColumnarM
                 doc("d2", 2L, "{\"f\":\"2021-06-15T12:00:00.000Z\"}"),
                 doc("d3", 3L, "{\"f\":\"2022-12-31T23:59:59.999Z\"}"),
                 doc("d4", 4L, "{}")
+            )
+        );
+    }
+
+    /** Negative epoch millis (pre-1970 dates) with {@code index=true} (emits {@code LongField}). */
+    public void testIndexedNegativeTimestamp() throws IOException {
+        assertColumnarMatchesXContent(
+            mapping(b -> b.startObject(FIELD).field("type", "date").field("index", true).endObject()),
+            columnarSettings(),
+            batch(
+                "indexed negative timestamp",
+                1L,
+                doc("d1", 1L, "{\"f\":\"1960-01-01T00:00:00.000Z\"}"),
+                doc("d2", 2L, "{}"),
+                doc("d3", 3L, "{\"f\":\"1969-12-31T23:59:59.999Z\"}")
+            )
+        );
+    }
+
+    /**
+     * Explicit {@code index=false} mirrors the default in columnar mode (where
+     * {@code index.mapping.index_disabled_by_default=true}), but is stated explicitly so the test
+     * remains meaningful if the default ever changes. Emits a {@code SortedNumericDocValuesField}.
+     */
+    public void testExplicitlyNotIndexed_stringValue() throws IOException {
+        assertColumnarMatchesXContent(
+            mapping(b -> b.startObject(FIELD).field("type", "date").field("index", false).endObject()),
+            columnarSettings(),
+            batch(
+                "explicitly not-indexed string",
+                1L,
+                doc("d1", 1L, "{\"f\":\"2024-01-15T12:00:00.000Z\"}"),
+                doc("d2", 2L, "{}"),
+                doc("d3", 3L, "{\"f\":\"2024-06-01T00:00:00.000Z\"}")
+            )
+        );
+    }
+
+    public void testExplicitlyNotIndexed_longValue() throws IOException {
+        assertColumnarMatchesXContent(
+            mapping(b -> b.startObject(FIELD).field("type", "date").field("index", false).endObject()),
+            columnarSettings(),
+            batch(
+                "explicitly not-indexed long",
+                1L,
+                doc("d1", 1L, "{\"f\":1705320000000}"),
+                doc("d2", 2L, "{}"),
+                doc("d3", 3L, "{\"f\":1700000000000}")
+            )
+        );
+    }
+
+    // ---- date_nanos type -----------------------------------------------------------------------
+
+    /**
+     * The {@code date_nanos} type uses nanosecond resolution internally and the
+     * {@code strict_date_optional_time_nanos||epoch_millis} default format. These tests mirror the
+     * {@code date} suite to confirm that resolution and format differences are handled correctly by
+     * both the row path and {@link DateFieldMapper#mapColumnBatch}.
+     */
+    public void testDateNanos_stringValue() throws IOException {
+        assertColumnarMatchesXContent(
+            mapping(b -> b.startObject(FIELD).field("type", "date_nanos").endObject()),
+            columnarSettings(),
+            batch(
+                "date_nanos string value",
+                1L,
+                doc("d1", 1L, "{\"f\":\"2024-01-15T12:00:00.123456789Z\"}"),
+                doc("d2", 2L, "{}"),
+                doc("d3", 3L, "{\"f\":\"2024-06-01T00:00:00.000000001Z\"}")
+            )
+        );
+    }
+
+    public void testDateNanos_absentDocs() throws IOException {
+        assertColumnarMatchesXContent(
+            mapping(b -> b.startObject(FIELD).field("type", "date_nanos").endObject()),
+            columnarSettings(),
+            batch(
+                "date_nanos absent docs",
+                1L,
+                doc("d1", 1L, "{\"f\":\"2024-01-01T00:00:00.000000000Z\"}"),
+                doc("d2", 2L, "{}"),
+                doc("d3", 3L, "{\"f\":\"2024-03-15T08:30:00.000000000Z\"}")
+            )
+        );
+    }
+
+    /**
+     * Long values for {@code date_nanos} are interpreted as epoch millis (via the {@code epoch_millis}
+     * alternative in the default format) and stored as nanoseconds internally. Both paths must apply
+     * the same {@code resolution.convert()} multiplication.
+     */
+    public void testDateNanos_longEpochMillis() throws IOException {
+        assertColumnarMatchesXContent(
+            mapping(b -> b.startObject(FIELD).field("type", "date_nanos").endObject()),
+            columnarSettings(),
+            batch(
+                "date_nanos long epoch millis",
+                1L,
+                doc("d1", 1L, "{\"f\":1705320000000}"),
+                doc("d2", 2L, "{}"),
+                doc("d3", 3L, "{\"f\":0}")
+            )
+        );
+    }
+
+    /** {@code date_nanos} with {@code index=true} emits a {@code LongField} (BKD + DV combined). */
+    public void testDateNanos_indexed() throws IOException {
+        assertColumnarMatchesXContent(
+            mapping(b -> b.startObject(FIELD).field("type", "date_nanos").field("index", true).endObject()),
+            columnarSettings(),
+            batch(
+                "date_nanos indexed",
+                1L,
+                doc("d1", 1L, "{\"f\":\"2024-01-15T12:00:00.123456789Z\"}"),
+                doc("d2", 2L, "{}"),
+                doc("d3", 3L, "{\"f\":\"2024-06-01T00:00:00.000000001Z\"}")
             )
         );
     }
