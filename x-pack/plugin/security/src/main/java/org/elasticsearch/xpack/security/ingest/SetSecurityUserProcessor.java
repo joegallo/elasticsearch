@@ -10,6 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.IngestDocument;
@@ -32,6 +33,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import static org.elasticsearch.common.util.CollectionUtils.DeepCopyOption.LAX;
 import static org.elasticsearch.ingest.ConfigurationUtils.newConfigurationException;
 import static org.elasticsearch.ingest.ConfigurationUtils.readOptionalList;
 import static org.elasticsearch.ingest.ConfigurationUtils.readStringProperty;
@@ -159,7 +161,7 @@ public final class SetSecurityUserProcessor extends AbstractProcessor {
                         if (false == apiKeyMetadata.isEmpty()) {
                             // deep-copy because we previously exposed mutable maps here, so there may be
                             // ingest pipelines that mutate the returned structure.
-                            apiKeyField.put("metadata", IngestDocument.deepCopyMap(apiKeyMetadata));
+                            apiKeyField.put("metadata", CollectionUtils.deepCopy(apiKeyMetadata, LAX));
                         }
 
                         if (false == apiKeyField.isEmpty()) {
