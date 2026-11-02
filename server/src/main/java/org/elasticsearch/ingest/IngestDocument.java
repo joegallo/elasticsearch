@@ -1331,33 +1331,62 @@ public final class IngestDocument {
 
         // you shouldn't call this directly, use the FieldPath.of method above instead!
         private FieldPath(String path) {
-            String newPath;
+            final int from;
             if (path.startsWith(INGEST_PREFIX)) {
                 useIngestContext = true;
-                newPath = path.substring(INGEST_PREFIX.length());
+                from = INGEST_PREFIX.length();
             } else {
                 useIngestContext = false;
-                if (path.startsWith(SOURCE_PREFIX)) {
-                    newPath = path.substring(SOURCE_PREFIX.length());
-                } else {
-                    newPath = path;
+                from = path.startsWith(SOURCE_PREFIX) ? SOURCE_PREFIX.length() : 0;
+            }
+
+            // Hand-rolled equivalent of path.substring(from).split("\\.") that makes a single pass and allocates only the result
+            // array and the elements themselves. In particular it preserves String#split's treatment of trailing empty elements:
+            // they are dropped, so "foo." and "foo.." are the same as "foo". Empty elements anywhere else are invalid.
+            int end = path.length();
+            int dots = 0;
+            for (int i = from; i < end; i++) {
+                if (path.charAt(i) == '.') {
+                    dots++;
                 }
             }
-            String[] pathParts = newPath.split("\\.");
-            if (pathParts.length == 0) {
-                // String#split drops trailing empty strings, so a path made up of nothing but separators (e.g. "." or "_source..")
-                // yields no elements at all, which is just as invalid as an empty element in the beginning or middle of a path
-                throw new IllegalArgumentException("path [" + path + "] is not valid");
+            if (dots > 0) {
+                while (end > from && path.charAt(end - 1) == '.') {
+                    end--;
+                    dots--;
+                }
             }
+
+            final String[] elements;
             boolean brackets = false;
-            for (String pathPart : pathParts) {
-                // empty path elements are not valid in any access pattern
-                if (pathPart.isEmpty()) {
-                    throw new IllegalArgumentException("path [" + path + "] is not valid");
+            if (end == from) {
+                // no elements at all, e.g. "_source." or "." (String#split would have given us an empty element or no elements)
+                throw new IllegalArgumentException("path [" + path + "] is not valid");
+            } else if (dots == 0) {
+                // a single element -- reuse the original String if there was no prefix to strip
+                String element = (from == 0 && end == path.length()) ? path : path.substring(from, end);
+                brackets = element.indexOf('[') >= 0 || element.indexOf(']') >= 0;
+                elements = new String[] { element };
+            } else {
+                elements = new String[dots + 1];
+                int count = 0;
+                int start = from;
+                for (int i = from; i <= end; i++) {
+                    char c = i < end ? path.charAt(i) : '.'; // treat the end of the path as a final separator
+                    if (c == '.') {
+                        // empty path elements are not valid in any access pattern
+                        if (i == start) {
+                            throw new IllegalArgumentException("path [" + path + "] is not valid");
+                        }
+                        elements[count++] = path.substring(start, i);
+                        start = i + 1;
+                    } else if (c == '[' || c == ']') {
+                        brackets = true;
+                    }
                 }
-                brackets |= pathPart.contains("[") || pathPart.contains("]");
+                assert count == elements.length;
             }
-            this.pathElements = pathParts;
+            this.pathElements = elements;
             this.containsBrackets = brackets;
         }
 
