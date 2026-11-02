@@ -13,7 +13,9 @@ import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
+import org.elasticsearch.ingest.FieldPathTemplate;
 import org.elasticsearch.ingest.IngestDocument;
+import org.elasticsearch.ingest.IngestDocument.FieldPath;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.ingest.ValueSource;
 import org.elasticsearch.script.Script;
@@ -33,9 +35,9 @@ public final class SetProcessor extends AbstractProcessor {
     public static final String TYPE = "set";
 
     private final boolean overrideEnabled;
-    private final TemplateScript.Factory field;
+    private final FieldPathTemplate field;
     private final ValueSource value;
-    private final String copyFrom;
+    private final FieldPathTemplate copyFrom;
     private final boolean ignoreEmptyValue;
 
     SetProcessor(String tag, String description, TemplateScript.Factory field, ValueSource value, String copyFrom) {
@@ -53,9 +55,9 @@ public final class SetProcessor extends AbstractProcessor {
     ) {
         super(tag, description);
         this.overrideEnabled = overrideEnabled;
-        this.field = field;
+        this.field = FieldPathTemplate.of(field);
         this.value = value;
-        this.copyFrom = copyFrom;
+        this.copyFrom = FieldPathTemplate.constant(copyFrom);
         this.ignoreEmptyValue = ignoreEmptyValue;
     }
 
@@ -63,7 +65,7 @@ public final class SetProcessor extends AbstractProcessor {
         return overrideEnabled;
     }
 
-    public TemplateScript.Factory getField() {
+    public FieldPathTemplate getField() {
         return field;
     }
 
@@ -71,7 +73,7 @@ public final class SetProcessor extends AbstractProcessor {
         return value;
     }
 
-    public String getCopyFrom() {
+    public FieldPathTemplate getCopyFrom() {
         return copyFrom;
     }
 
@@ -81,10 +83,10 @@ public final class SetProcessor extends AbstractProcessor {
 
     @Override
     public IngestDocument execute(IngestDocument document) {
-        String path = document.renderTemplate(field);
+        FieldPath path = field.resolve(document);
         if (overrideEnabled || document.hasField(path) == false || document.getFieldValue(path, Object.class) == null) {
             if (copyFrom != null) {
-                Object fieldValue = document.getFieldValue(copyFrom, Object.class, ignoreEmptyValue);
+                Object fieldValue = document.getFieldValue(copyFrom.resolve(document), Object.class, ignoreEmptyValue);
                 document.setFieldValue(path, CollectionUtils.deepCopy(fieldValue), ignoreEmptyValue);
             } else {
                 document.setFieldValue(path, value, ignoreEmptyValue);
