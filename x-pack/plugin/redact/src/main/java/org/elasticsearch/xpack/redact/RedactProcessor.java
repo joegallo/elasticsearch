@@ -17,7 +17,9 @@ import org.elasticsearch.grok.MatcherWatchdog;
 import org.elasticsearch.grok.PatternBank;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
+import org.elasticsearch.ingest.FieldPathTemplate;
 import org.elasticsearch.ingest.IngestDocument;
+import org.elasticsearch.ingest.IngestDocument.FieldPath;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.license.License;
 import org.elasticsearch.license.LicenseUtils;
@@ -63,7 +65,9 @@ public class RedactProcessor extends AbstractProcessor {
     // indicates if document has been redacted, path: _ingest._redact._is_redacted
     protected static final String METADATA_PATH_REDACT_IS_REDACTED = METADATA_PATH_REDACT + "." + IS_REDACTED_KEY;
 
-    private final String redactField;
+    private static final FieldPath REDACT_IS_REDACTED_PATH = FieldPath.of(METADATA_PATH_REDACT_IS_REDACTED);
+
+    private final FieldPathTemplate redactField;
     private final List<Grok> groks;
     private final boolean ignoreMissing;
 
@@ -90,7 +94,7 @@ public class RedactProcessor extends AbstractProcessor {
         boolean traceRedact
     ) {
         super(tag, description);
-        this.redactField = redactField;
+        this.redactField = FieldPathTemplate.constant(redactField);
         this.redactedStartToken = redactedStartToken;
         this.redactedEndToken = redactedEndToken;
         this.groks = new ArrayList<>(matchPatterns.size());
@@ -129,7 +133,7 @@ public class RedactProcessor extends AbstractProcessor {
         }
 
         // Call with ignoreMissing = true so getFieldValue does not throw
-        final String fieldValue = ingestDocument.getFieldValue(redactField, String.class, true);
+        final String fieldValue = ingestDocument.getFieldValue(redactField.resolve(ingestDocument), String.class, true);
 
         if (fieldValue == null && ignoreMissing) {
             return ingestDocument;
@@ -139,7 +143,7 @@ public class RedactProcessor extends AbstractProcessor {
 
         try {
             String redacted = matchRedact(fieldValue, groks, redactedStartToken, redactedEndToken);
-            ingestDocument.setFieldValue(redactField, redacted);
+            ingestDocument.setFieldValue(redactField.resolve(ingestDocument), redacted);
             updateMetadataIfNecessary(ingestDocument, fieldValue, redacted);
 
             return ingestDocument;
@@ -222,7 +226,7 @@ public class RedactProcessor extends AbstractProcessor {
             return;
         }
 
-        Boolean isRedactedMetadata = ingestDocument.getFieldValue(METADATA_PATH_REDACT_IS_REDACTED, Boolean.class, true);
+        Boolean isRedactedMetadata = ingestDocument.getFieldValue(REDACT_IS_REDACTED_PATH, Boolean.class, true);
         boolean alreadyRedacted = Boolean.TRUE.equals(isRedactedMetadata);
         boolean isRedacted = fieldValue.equals(redacted) == false;
 

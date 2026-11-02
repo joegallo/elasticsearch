@@ -13,6 +13,8 @@ import org.apache.lucene.util.SetOnce;
 import org.elasticsearch.ElasticsearchParseException;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
+import org.elasticsearch.ingest.IngestDocument;
+import org.elasticsearch.ingest.TestIngestDocument;
 import org.elasticsearch.test.ESTestCase;
 
 import java.util.ArrayList;
@@ -41,8 +43,8 @@ public class AttachmentProcessorFactoryTests extends ESTestCase {
 
         AttachmentProcessor processor = factory.create(null, processorTag, null, config, null);
         assertThat(processor.getTag(), equalTo(processorTag));
-        assertThat(processor.getField(), equalTo("_field"));
-        assertThat(processor.getTargetField(), equalTo("attachment"));
+        assertThat(processor.getField().toString(), equalTo("_field"));
+        assertThat(processor.getTargetField().toString(), equalTo("attachment"));
         assertThat(processor.getProperties(), sameInstance(AttachmentProcessor.Factory.DEFAULT_PROPERTIES));
         assertFalse(processor.isIgnoreMissing());
 
@@ -77,8 +79,8 @@ public class AttachmentProcessorFactoryTests extends ESTestCase {
         config.put("field", "_field");
         config.put("target_field", "_field");
         AttachmentProcessor processor = factory.create(null, null, null, config, null);
-        assertThat(processor.getField(), equalTo("_field"));
-        assertThat(processor.getTargetField(), equalTo("_field"));
+        assertThat(processor.getField().toString(), equalTo("_field"));
+        assertThat(processor.getTargetField().toString(), equalTo("_field"));
         assertFalse(processor.isIgnoreMissing());
 
         assertWarnings(
@@ -101,7 +103,7 @@ public class AttachmentProcessorFactoryTests extends ESTestCase {
         config.put("field", "_field");
         config.put("properties", fieldNames);
         AttachmentProcessor processor = factory.create(null, null, null, config, null);
-        assertThat(processor.getField(), equalTo("_field"));
+        assertThat(processor.getField().toString(), equalTo("_field"));
         assertThat(processor.getProperties(), equalTo(properties));
         assertFalse(processor.isIgnoreMissing());
 
@@ -153,8 +155,8 @@ public class AttachmentProcessorFactoryTests extends ESTestCase {
 
         AttachmentProcessor processor = factory.create(null, processorTag, null, config, null);
         assertThat(processor.getTag(), equalTo(processorTag));
-        assertThat(processor.getField(), equalTo("_field"));
-        assertThat(processor.getTargetField(), equalTo("attachment"));
+        assertThat(processor.getField().toString(), equalTo("_field"));
+        assertThat(processor.getTargetField().toString(), equalTo("attachment"));
         assertThat(processor.getProperties(), sameInstance(AttachmentProcessor.Factory.DEFAULT_PROPERTIES));
         assertTrue(processor.isIgnoreMissing());
 
@@ -174,8 +176,8 @@ public class AttachmentProcessorFactoryTests extends ESTestCase {
 
         AttachmentProcessor processor = factory.create(null, processorTag, null, config, null);
         assertThat(processor.getTag(), equalTo(processorTag));
-        assertThat(processor.getField(), equalTo("_field"));
-        assertThat(processor.getTargetField(), equalTo("attachment"));
+        assertThat(processor.getField().toString(), equalTo("_field"));
+        assertThat(processor.getTargetField().toString(), equalTo("attachment"));
         assertThat(processor.getProperties(), sameInstance(AttachmentProcessor.Factory.DEFAULT_PROPERTIES));
         assertTrue(processor.isRemoveBinary());
     }
@@ -197,4 +199,24 @@ public class AttachmentProcessorFactoryTests extends ESTestCase {
         assertThat(processor.getMaxFieldSizeFromNode().getAbsolute(), equalTo(ByteSizeValue.MINUS_ONE));
     }
 
+    /**
+     * Pipelines are stored, so a malformed path in one has to be accepted when the processor is created, with the failure only coming
+     * when a document is run through it. This goes through the factory, as creating a processor from a stored pipeline does.
+     */
+    public void testBuildWithMalformedFields() throws Exception {
+        Map<String, Object> config = new HashMap<>();
+        config.put("field", "a..b");
+        config.put("target_field", "c..d");
+        config.put("indexed_chars_field", "e..f");
+        config.put("resource_name", "g..h");
+        config.put("remove_binary", randomBoolean());
+        AttachmentProcessor processor = factory.create(null, randomAlphaOfLength(10), null, config, null);
+        assertThat(processor.getField().toString(), equalTo("a..b"));
+        assertThat(processor.getTargetField().toString(), equalTo("c..d"));
+
+        // it is the field that is looked at first, so that is the one that is reported
+        IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
+        IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
+        assertThat(e.getMessage(), equalTo("path [a..b] is not valid"));
+    }
 }

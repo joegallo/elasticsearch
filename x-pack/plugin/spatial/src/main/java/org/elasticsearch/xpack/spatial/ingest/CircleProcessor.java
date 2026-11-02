@@ -17,6 +17,7 @@ import org.elasticsearch.geometry.utils.CircleUtils;
 import org.elasticsearch.geometry.utils.StandardValidator;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
+import org.elasticsearch.ingest.FieldPathTemplate;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.xcontent.DeprecationHandler;
@@ -38,8 +39,8 @@ import java.util.Map;
 public final class CircleProcessor extends AbstractProcessor {
     public static final String TYPE = "circle";
 
-    private final String field;
-    private final String targetField;
+    private final FieldPathTemplate field;
+    private final FieldPathTemplate targetField;
     private final boolean ignoreMissing;
     private final double errorDistance;
     private final CircleShapeFieldType circleShapeFieldType;
@@ -54,8 +55,8 @@ public final class CircleProcessor extends AbstractProcessor {
         CircleShapeFieldType circleShapeFieldType
     ) {
         super(tag, description);
-        this.field = field;
-        this.targetField = targetField;
+        this.field = FieldPathTemplate.constant(field);
+        this.targetField = FieldPathTemplate.constant(targetField);
         this.ignoreMissing = ignoreMissing;
         this.errorDistance = errorDistance;
         this.circleShapeFieldType = circleShapeFieldType;
@@ -64,7 +65,7 @@ public final class CircleProcessor extends AbstractProcessor {
     @Override
     @SuppressWarnings("unchecked")
     public IngestDocument execute(IngestDocument ingestDocument) {
-        Object obj = ingestDocument.getFieldValue(field, Object.class, ignoreMissing);
+        Object obj = ingestDocument.getFieldValue(field.resolve(ingestDocument), Object.class, ignoreMissing);
 
         if (obj == null && ignoreMissing) {
             return ingestDocument;
@@ -103,7 +104,7 @@ public final class CircleProcessor extends AbstractProcessor {
                 newValueBuilder.endObject();
                 Map<String, Object> newObj = XContentHelper.convertToMap(BytesReference.bytes(newValueBuilder), true, XContentType.JSON)
                     .v2();
-                ingestDocument.setFieldValue(targetField, newObj.get("val"));
+                ingestDocument.setFieldValue(targetField.resolve(ingestDocument), newObj.get("val"));
             } else {
                 throw new IllegalArgumentException("found [" + geometry.type() + "] instead of circle");
             }
@@ -119,11 +120,11 @@ public final class CircleProcessor extends AbstractProcessor {
         return TYPE;
     }
 
-    String field() {
+    FieldPathTemplate field() {
         return field;
     }
 
-    String targetField() {
+    FieldPathTemplate targetField() {
         return targetField;
     }
 

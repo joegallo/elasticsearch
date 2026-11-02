@@ -37,7 +37,7 @@ public class SetSecurityUserProcessorFactoryTests extends ESTestCase {
         Map<String, Object> config = new HashMap<>();
         config.put("field", "_field");
         SetSecurityUserProcessor processor = factory.create(null, "_tag", null, config, null);
-        assertThat(processor.getField(), equalTo("_field"));
+        assertThat(processor.getField().toString(), equalTo("_field"));
         assertThat(processor.getProperties(), equalTo(EnumSet.allOf(Property.class)));
     }
 
@@ -59,7 +59,7 @@ public class SetSecurityUserProcessorFactoryTests extends ESTestCase {
         config.put("field", "_field");
         config.put("properties", Arrays.asList(Property.USERNAME.name(), Property.ROLES.name()));
         SetSecurityUserProcessor processor = factory.create(null, "_tag", null, config, null);
-        assertThat(processor.getField(), equalTo("_field"));
+        assertThat(processor.getField().toString(), equalTo("_field"));
         assertThat(processor.getProperties(), equalTo(EnumSet.of(Property.USERNAME, Property.ROLES)));
     }
 

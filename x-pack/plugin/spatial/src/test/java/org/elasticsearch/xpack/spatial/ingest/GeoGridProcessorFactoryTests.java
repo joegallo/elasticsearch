@@ -8,10 +8,13 @@ package org.elasticsearch.xpack.spatial.ingest;
 
 import org.elasticsearch.ElasticsearchParseException;
 import org.elasticsearch.common.geo.GeometryParserFormat;
+import org.elasticsearch.ingest.IngestDocument;
+import org.elasticsearch.ingest.TestIngestDocument;
 import org.elasticsearch.test.ESTestCase;
 import org.junit.Before;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -170,5 +173,52 @@ public class GeoGridProcessorFactoryTests extends ESTestCase {
         assertThat(processor.field("children_field"), equalTo(childrenField));
         assertThat(processor.field("non_children_field"), equalTo(nonChildrenField));
         assertThat(processor.field("precision_field"), equalTo(precisionField));
+    }
+
+    /**
+     * Pipelines are stored, so a malformed path in one has to be accepted when the processor is created, with the failure only coming
+     * when a document is run through it. This goes through the factory, as creating a processor from a stored pipeline does.
+     */
+    public void testCreateWithMalformedField() {
+        Map<String, Object> config = new HashMap<>();
+        config.put("field", "a..b");
+        config.put("tile_type", GeoGridProcessor.TileFieldType.GEOHASH.name());
+        GeoGridProcessor processor = factory.create(null, randomAlphaOfLength(10), null, config, null);
+        assertThat(processor.field("field"), equalTo("a..b"));
+
+        IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
+        IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
+        assertThat(e.getMessage(), equalTo("path [a..b] is not valid"));
+    }
+
+    /**
+     * Writing the results is done as part of parsing the tile, so a problem with where they are written to is reported as one with the tile.
+     */
+    public void testCreateWithMalformedTargetFields() {
+        // (a geohash has no non-children, so that field is never written to, and that is why it isn't in this list)
+        for (String malformed : List.of("target_field", "parent_field", "children_field", "precision_field")) {
+            Map<String, Object> config = new HashMap<>();
+            config.put("field", "source");
+            config.put("target_field", "target");
+            config.put("parent_field", "parent");
+            config.put("children_field", "children");
+            config.put("non_children_field", "nonchildren");
+            config.put("precision_field", "precision");
+            config.put("tile_type", GeoGridProcessor.TileFieldType.GEOHASH.name());
+            config.put(malformed, "a..b");
+            GeoGridProcessor processor = factory.create(null, randomAlphaOfLength(10), null, config, null);
+            assertThat(processor.field(malformed), equalTo("a..b"));
+
+            // the source is fine, so it is the one that is malformed that causes the failure
+            IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
+            ingestDocument.setFieldValue("source", "u0");
+            IllegalArgumentException e = expectThrows(
+                IllegalArgumentException.class,
+                "malformed " + malformed,
+                () -> processor.execute(ingestDocument)
+            );
+            assertThat(malformed, e.getMessage(), equalTo("invalid tile definition"));
+            assertThat(malformed, e.getCause().getMessage(), equalTo("path [a..b] is not valid"));
+        }
     }
 }

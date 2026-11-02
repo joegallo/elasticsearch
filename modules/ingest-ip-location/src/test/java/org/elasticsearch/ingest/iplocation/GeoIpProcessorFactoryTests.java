@@ -17,6 +17,7 @@ import org.elasticsearch.cluster.project.TestProjectResolvers;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.ingest.RandomDocumentPicks;
+import org.elasticsearch.ingest.TestIngestDocument;
 import org.elasticsearch.ingest.geoip.DatabaseNodeService;
 import org.elasticsearch.iplocation.api.IpDataLookup;
 import org.elasticsearch.iplocation.api.IpDataLookupInfo;
@@ -117,8 +118,8 @@ public class GeoIpProcessorFactoryTests extends ESTestCase {
 
         GeoIpProcessor processor = (GeoIpProcessor) factory.create(null, processorTag, null, config, projectId);
         assertThat(processor.getTag(), equalTo(processorTag));
-        assertThat(processor.getField(), equalTo("_field"));
-        assertThat(processor.getTargetField(), equalTo("geoip"));
+        assertThat(processor.getField().toString(), equalTo("_field"));
+        assertThat(processor.getTargetField().toString(), equalTo("geoip"));
         assertThat(processor.getDatabaseType(), equalTo("GeoLite2-City"));
         assertFalse(processor.isIgnoreMissing());
     }
@@ -133,8 +134,8 @@ public class GeoIpProcessorFactoryTests extends ESTestCase {
 
         GeoIpProcessor processor = (GeoIpProcessor) factory.create(null, processorTag, null, config, projectId);
         assertThat(processor.getTag(), equalTo(processorTag));
-        assertThat(processor.getField(), equalTo("_field"));
-        assertThat(processor.getTargetField(), equalTo("geoip"));
+        assertThat(processor.getField().toString(), equalTo("_field"));
+        assertThat(processor.getTargetField().toString(), equalTo("geoip"));
         assertThat(processor.getDatabaseType(), equalTo("GeoLite2-City"));
         assertTrue(processor.isIgnoreMissing());
     }
@@ -145,8 +146,8 @@ public class GeoIpProcessorFactoryTests extends ESTestCase {
         config.put("field", "_field");
         config.put("target_field", "_field");
         GeoIpProcessor processor = (GeoIpProcessor) factory.create(null, null, null, config, projectId);
-        assertThat(processor.getField(), equalTo("_field"));
-        assertThat(processor.getTargetField(), equalTo("_field"));
+        assertThat(processor.getField().toString(), equalTo("_field"));
+        assertThat(processor.getTargetField().toString(), equalTo("_field"));
         assertFalse(processor.isIgnoreMissing());
     }
 
@@ -156,7 +157,7 @@ public class GeoIpProcessorFactoryTests extends ESTestCase {
         config.put("field", "_field");
         config.put("database_file", "GeoLite2-Country.mmdb");
         GeoIpProcessor processor = (GeoIpProcessor) factory.create(null, null, null, config, projectId);
-        assertThat(processor.getField(), equalTo("_field"));
+        assertThat(processor.getField().toString(), equalTo("_field"));
         assertThat(processor.getDatabaseType(), equalTo("GeoLite2-Country"));
     }
 
@@ -172,7 +173,7 @@ public class GeoIpProcessorFactoryTests extends ESTestCase {
         config.put("field", "_field");
         config.put("properties", selectedProperties);
         GeoIpProcessor processor = (GeoIpProcessor) factory.create(null, null, null, config, projectId);
-        assertThat(processor.getField(), equalTo("_field"));
+        assertThat(processor.getField().toString(), equalTo("_field"));
         assertThat(processor.getProperties().keySet(), equalTo(Set.copyOf(selectedProperties)));
         assertFalse(processor.isIgnoreMissing());
     }
@@ -359,5 +360,22 @@ public class GeoIpProcessorFactoryTests extends ESTestCase {
         when(lookup.isValid()).thenReturn(true);
         when(lookup.getInfo()).thenReturn(info);
         return lookup;
+    }
+
+    /**
+     * Pipelines are stored, so a malformed path in one has to be accepted when the processor is created, with the failure only coming
+     * when a document is run through it. This goes through the factory, as creating a processor from a stored pipeline does.
+     */
+    public void testBuildWithMalformedField() throws Exception {
+        GeoIpProcessor.Factory factory = new GeoIpProcessor.Factory(GEOIP_TYPE, databaseNodeService);
+        Map<String, Object> config = new HashMap<>();
+        config.put("field", "a..b");
+        config.put("ignore_missing", randomBoolean());
+        GeoIpProcessor processor = (GeoIpProcessor) factory.create(null, randomAlphaOfLength(10), null, config, projectId);
+        assertThat(processor.getField().toString(), equalTo("a..b"));
+
+        IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
+        IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
+        assertThat(e.getMessage(), equalTo("path [a..b] is not valid"));
     }
 }

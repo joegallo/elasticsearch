@@ -12,6 +12,7 @@ import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.ingest.AbstractProcessor;
+import org.elasticsearch.ingest.FieldPathTemplate;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.xpack.core.XPackSettings;
@@ -51,7 +52,7 @@ public final class SetSecurityUserProcessor extends AbstractProcessor {
 
     private final SecurityContext securityContext;
     private final Settings settings;
-    private final String field;
+    private final FieldPathTemplate field;
     private final Set<Property> properties;
 
     public SetSecurityUserProcessor(
@@ -76,7 +77,7 @@ public final class SetSecurityUserProcessor extends AbstractProcessor {
         } else if (this.securityContext == null) {
             throw new IllegalArgumentException("Authentication is allowed on this cluster state, but there is no security context");
         }
-        this.field = field;
+        this.field = FieldPathTemplate.constant(field);
         this.properties = properties;
     }
 
@@ -108,7 +109,10 @@ public final class SetSecurityUserProcessor extends AbstractProcessor {
             }
         }
 
-        final Map<String, Object> userObject = valueOrMapOfSize(document.getFieldValue(field, Object.class, true), properties.size());
+        final Map<String, Object> userObject = valueOrMapOfSize(
+            document.getFieldValue(field.resolve(document), Object.class, true),
+            properties.size()
+        );
 
         for (Property property : properties) {
             switch (property) {
@@ -191,7 +195,7 @@ public final class SetSecurityUserProcessor extends AbstractProcessor {
                     throw new UnsupportedOperationException("unsupported property [" + property + "]");
             }
         }
-        document.setFieldValue(field, userObject);
+        document.setFieldValue(field.resolve(document), userObject);
         return document;
     }
 
@@ -205,7 +209,7 @@ public final class SetSecurityUserProcessor extends AbstractProcessor {
         return TYPE;
     }
 
-    String getField() {
+    FieldPathTemplate getField() {
         return field;
     }
 

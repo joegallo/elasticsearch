@@ -15,6 +15,7 @@ import org.elasticsearch.geometry.utils.Geohash;
 import org.elasticsearch.h3.H3;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
+import org.elasticsearch.ingest.FieldPathTemplate;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.search.aggregations.bucket.geogrid.GeoTileUtils;
@@ -68,6 +69,14 @@ public final class GeoGridProcessor extends AbstractProcessor {
         private final String childrenField;
         private final String nonChildrenField;
         private final String precisionField;
+        // the same fields as above, parsed ahead of time. The optional ones that are not used are null here, as that is not just null
+        // but also empty in the above.
+        private final FieldPathTemplate fieldPath;
+        private final FieldPathTemplate targetFieldPath;
+        private final FieldPathTemplate parentFieldPath;
+        private final FieldPathTemplate childrenFieldPath;
+        private final FieldPathTemplate nonChildrenFieldPath;
+        private final FieldPathTemplate precisionFieldPath;
 
         FieldConfig(
             String field,
@@ -83,6 +92,16 @@ public final class GeoGridProcessor extends AbstractProcessor {
             this.childrenField = childrenField;
             this.nonChildrenField = nonChildrenField;
             this.precisionField = precisionField;
+            this.fieldPath = FieldPathTemplate.constant(field);
+            this.targetFieldPath = FieldPathTemplate.constant(targetField);
+            this.parentFieldPath = optional(parentField);
+            this.childrenFieldPath = optional(childrenField);
+            this.nonChildrenFieldPath = optional(nonChildrenField);
+            this.precisionFieldPath = optional(precisionField);
+        }
+
+        private static FieldPathTemplate optional(String field) {
+            return field != null && field.length() > 0 ? FieldPathTemplate.constant(field) : null;
         }
 
         public String field(String key) {
@@ -100,7 +119,7 @@ public final class GeoGridProcessor extends AbstractProcessor {
 
     @Override
     public IngestDocument execute(IngestDocument ingestDocument) {
-        Object obj = ingestDocument.getFieldValue(config.field, Object.class, ignoreMissing);
+        Object obj = ingestDocument.getFieldValue(config.fieldPath.resolve(ingestDocument), Object.class, ignoreMissing);
 
         if (obj == null && ignoreMissing) {
             return ingestDocument;
@@ -122,29 +141,29 @@ public final class GeoGridProcessor extends AbstractProcessor {
             targetFormat.toXContent(geometry, newValueBuilder, ToXContent.EMPTY_PARAMS);
             newValueBuilder.endObject();
             Map<String, Object> newObj = XContentHelper.convertToMap(BytesReference.bytes(newValueBuilder), true, XContentType.JSON).v2();
-            ingestDocument.setFieldValue(config.targetField, newObj.get("val"));
-            if (config.parentField != null && config.parentField.length() > 0) {
+            ingestDocument.setFieldValue(config.targetFieldPath.resolve(ingestDocument), newObj.get("val"));
+            if (config.parentFieldPath != null) {
                 final String parent = handler.getParent();
                 if (parent != null && parent.length() > 0) {
-                    ingestDocument.setFieldValue(config.parentField, parent);
+                    ingestDocument.setFieldValue(config.parentFieldPath.resolve(ingestDocument), parent);
                 }
             }
-            if (config.childrenField != null && config.childrenField.length() > 0) {
+            if (config.childrenFieldPath != null) {
                 final List<String> children = handler.makeChildren();
                 if (children.size() > 0) {
-                    ingestDocument.setFieldValue(config.childrenField, children);
+                    ingestDocument.setFieldValue(config.childrenFieldPath.resolve(ingestDocument), children);
                 }
             }
-            if (config.nonChildrenField != null && config.nonChildrenField.length() > 0) {
+            if (config.nonChildrenFieldPath != null) {
                 final List<String> nonChildren = handler.makeNonChildren();
                 if (nonChildren.size() > 0) {
-                    ingestDocument.setFieldValue(config.nonChildrenField, nonChildren);
+                    ingestDocument.setFieldValue(config.nonChildrenFieldPath.resolve(ingestDocument), nonChildren);
                 }
             }
-            if (config.precisionField != null && config.precisionField.length() > 0) {
+            if (config.precisionFieldPath != null) {
                 final int precision = handler.getPrecision();
                 if (precision >= 0) {
-                    ingestDocument.setFieldValue(config.precisionField, precision);
+                    ingestDocument.setFieldValue(config.precisionFieldPath.resolve(ingestDocument), precision);
                 }
             }
         } catch (Exception e) {

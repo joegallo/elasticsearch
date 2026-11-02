@@ -11,12 +11,15 @@ package org.elasticsearch.ingest.iplocation;
 
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.IngestDocument;
+import org.elasticsearch.ingest.IngestDocument.FieldPath;
 
 /**
  * Processor that tags documents when the IP location database is not yet available.
  * Replaced by a real {@link GeoIpProcessor} when the database becomes available.
  */
 public class DatabaseUnavailableProcessor extends AbstractProcessor {
+
+    private static final FieldPath TAGS_PATH = FieldPath.of("tags");
 
     private final String type;
     private final String databaseName;
@@ -29,7 +32,7 @@ public class DatabaseUnavailableProcessor extends AbstractProcessor {
 
     @Override
     public IngestDocument execute(IngestDocument ingestDocument) throws Exception {
-        ingestDocument.appendFieldValue("tags", "_" + type + "_database_unavailable_" + databaseName, true);
+        ingestDocument.appendFieldValue(TAGS_PATH, "_" + type + "_database_unavailable_" + databaseName, true);
         return ingestDocument;
     }
 

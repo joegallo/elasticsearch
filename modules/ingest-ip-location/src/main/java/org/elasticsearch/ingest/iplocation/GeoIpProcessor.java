@@ -14,7 +14,9 @@ import org.elasticsearch.common.logging.DeprecationCategory;
 import org.elasticsearch.common.logging.DeprecationLogger;
 import org.elasticsearch.core.Strings;
 import org.elasticsearch.ingest.AbstractProcessor;
+import org.elasticsearch.ingest.FieldPathTemplate;
 import org.elasticsearch.ingest.IngestDocument;
+import org.elasticsearch.ingest.IngestDocument.FieldPath;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.iplocation.api.IpDataLookup;
 import org.elasticsearch.iplocation.api.IpLocationService;
@@ -44,9 +46,13 @@ public final class GeoIpProcessor extends AbstractProcessor {
     public static final String IP_LOCATION_TYPE = "ip_location";
 
     private final String type;
-    private final String field;
+    private static final FieldPath TAGS_PATH = FieldPath.of("tags");
+
+    private final FieldPathTemplate field;
     private final IpDataLookup ipDataLookup;
+    // the target field is needed as a plain string too, because in flexible mode the results are written to <target field>.<key>
     private final String targetField;
+    private final FieldPathTemplate targetFieldPath;
     private final boolean ignoreMissing;
     private final boolean firstOnly;
     private final String databaseFile;
@@ -76,9 +82,10 @@ public final class GeoIpProcessor extends AbstractProcessor {
     ) {
         super(tag, description);
         this.type = type;
-        this.field = field;
+        this.field = FieldPathTemplate.constant(field);
         this.ipDataLookup = ipDataLookup;
         this.targetField = targetField;
+        this.targetFieldPath = FieldPathTemplate.constant(targetField);
         this.ignoreMissing = ignoreMissing;
         this.firstOnly = firstOnly;
         this.databaseFile = databaseFile;
@@ -90,10 +97,10 @@ public final class GeoIpProcessor extends AbstractProcessor {
 
     @Override
     public IngestDocument execute(IngestDocument document) throws IOException {
-        Object ip = document.getFieldValue(field, Object.class, ignoreMissing);
+        Object ip = document.getFieldValue(field.resolve(document), Object.class, ignoreMissing);
 
         if (ipDataLookup.isValid() == false) {
-            document.appendFieldValue("tags", "_" + type + "_expired_database", false);
+            document.appendFieldValue(TAGS_PATH, "_" + type + "_expired_database", false);
             return document;
         } else if (ip == null && ignoreMissing) {
             return document;
@@ -110,7 +117,7 @@ public final class GeoIpProcessor extends AbstractProcessor {
                 return document;
             }
             if (data.isEmpty() == false) {
-                writeGeoIpData(document, targetField, data);
+                writeGeoIpData(document, data);
             }
         } else if (ip instanceof List<?> ipList) {
             boolean match = false;
@@ -131,14 +138,14 @@ public final class GeoIpProcessor extends AbstractProcessor {
                     continue;
                 }
                 if (firstOnly) {
-                    writeGeoIpData(document, targetField, data);
+                    writeGeoIpData(document, data);
                     return document;
                 }
                 match = true;
                 dataList.add(data);
             }
             if (match) {
-                writeGeoIpDataList(document, targetField, dataList);
+                writeGeoIpDataList(document, dataList);
             }
         } else {
             throw new IllegalArgumentException("field [" + field + "] should contain only string or array of strings");
@@ -152,12 +159,12 @@ public final class GeoIpProcessor extends AbstractProcessor {
         return type;
     }
 
-    String getField() {
+    FieldPathTemplate getField() {
         return field;
     }
 
-    String getTargetField() {
-        return targetField;
+    FieldPathTemplate getTargetField() {
+        return targetFieldPath;
     }
 
     String getDatabaseType() {
@@ -174,10 +181,9 @@ public final class GeoIpProcessor extends AbstractProcessor {
      * is written as an array [lon, lat] for better compatibility with geo_point fields in flexible mode.
      *
      * @param document the ingest document
-     * @param targetField the base target field path
      * @param data the GeoIP data to write
      */
-    private void writeGeoIpData(IngestDocument document, String targetField, Map<String, Object> data) {
+    private void writeGeoIpData(IngestDocument document, Map<String, Object> data) {
         if (document.getCurrentAccessPatternSafe() == FLEXIBLE) {
             // In flexible mode, write each property as a separate dotted field
             for (Map.Entry<String, Object> entry : data.entrySet()) {
@@ -187,7 +193,7 @@ public final class GeoIpProcessor extends AbstractProcessor {
             }
         } else {
             // In classic mode, write as a single nested object
-            document.setFieldValue(targetField, data);
+            document.setFieldValue(targetFieldPath.resolve(document), data);
         }
     }
 
@@ -197,10 +203,9 @@ public final class GeoIpProcessor extends AbstractProcessor {
      * In classic mode, writes as a single list of maps.
      *
      * @param document the ingest document
-     * @param targetField the base target field path
      * @param dataList the list of GeoIP data to write
      */
-    private void writeGeoIpDataList(IngestDocument document, String targetField, List<Map<String, Object>> dataList) {
+    private void writeGeoIpDataList(IngestDocument document, List<Map<String, Object>> dataList) {
         if (document.getCurrentAccessPatternSafe() == FLEXIBLE) {
             // In flexible mode, transpose the list of maps into separate lists per property
             // Collect all unique keys across all maps
@@ -225,7 +230,7 @@ public final class GeoIpProcessor extends AbstractProcessor {
             }
         } else {
             // In classic mode, write as a single list of maps
-            document.setFieldValue(targetField, dataList);
+            document.setFieldValue(targetFieldPath.resolve(document), dataList);
         }
     }
 
@@ -374,6 +379,6 @@ public final class GeoIpProcessor extends AbstractProcessor {
     }
 
     private static void tag(IngestDocument ingestDocument, String type, String databaseName) {
-        ingestDocument.appendFieldValue("tags", "_" + type + "_database_unavailable_" + databaseName, true);
+        ingestDocument.appendFieldValue(TAGS_PATH, "_" + type + "_database_unavailable_" + databaseName, true);
     }
 }

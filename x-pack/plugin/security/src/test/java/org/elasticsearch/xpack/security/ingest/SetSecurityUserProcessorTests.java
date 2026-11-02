@@ -472,4 +472,28 @@ public class SetSecurityUserProcessorTests extends ESTestCase {
             }
         }
     }
+
+    /**
+     * Pipelines are stored, so a malformed path in one has to be accepted when the processor is created, with the failure only coming
+     * when a document is run through it. This goes through the factory, as creating a processor from a stored pipeline does.
+     */
+    public void testMalformedFieldFailsAtExecutionTime() throws Exception {
+        final Authentication authentication = randomAuthentication();
+        authentication.writeToContext(threadContext);
+
+        Map<String, Object> config = new HashMap<>();
+        config.put("field", "a..b");
+        SetSecurityUserProcessor processor = new SetSecurityUserProcessor.Factory(() -> securityContext, Settings.EMPTY).create(
+            null,
+            "_tag",
+            null,
+            config,
+            null
+        );
+        assertThat(processor.getField().toString(), equalTo("a..b"));
+
+        IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
+        IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
+        assertThat(e.getMessage(), equalTo("path [a..b] is not valid"));
+    }
 }

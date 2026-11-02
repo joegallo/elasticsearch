@@ -26,6 +26,7 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.RelativeByteSizeValue;
 import org.elasticsearch.core.UpdateForV10;
 import org.elasticsearch.ingest.AbstractProcessor;
+import org.elasticsearch.ingest.FieldPathTemplate;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.monitor.jvm.JvmInfo;
@@ -75,14 +76,14 @@ public final class AttachmentProcessor extends AbstractProcessor {
         Setting.Property.NodeScope
     );
 
-    private final String field;
-    private final String targetField;
+    private final FieldPathTemplate field;
+    private final FieldPathTemplate targetField;
     private final Set<Property> properties;
     private final int indexedChars;
     private final boolean ignoreMissing;
     private final boolean removeBinary;
-    private final String indexedCharsField;
-    private final String resourceName;
+    private final FieldPathTemplate indexedCharsField;
+    private final FieldPathTemplate resourceName;
     // Per-processor cap on raw attachment field size in bytes, or -1 for no per-processor cap (node cap still applies when set).
     private final int maxFieldBytesFromProcessor;
     // Node-level cap from {@link #MAX_FIELD_SIZE_SETTING}, or -1 if not applicable.
@@ -108,13 +109,13 @@ public final class AttachmentProcessor extends AbstractProcessor {
         SetOnce<AttachmentIngestMetrics> attachmentMetrics
     ) {
         super(tag, description);
-        this.field = field;
-        this.targetField = targetField;
+        this.field = FieldPathTemplate.constant(field);
+        this.targetField = FieldPathTemplate.constant(targetField);
         this.properties = properties;
         this.indexedChars = indexedChars;
         this.ignoreMissing = ignoreMissing;
-        this.indexedCharsField = indexedCharsField;
-        this.resourceName = resourceName;
+        this.indexedCharsField = FieldPathTemplate.constant(indexedCharsField);
+        this.resourceName = FieldPathTemplate.constant(resourceName);
         this.removeBinary = removeBinary;
         this.maxFieldBytesFromProcessor = maxFieldBytesFromProcessor;
         this.maxFieldSizeFromNode = maxFieldSizeFromNode;
@@ -190,28 +191,28 @@ public final class AttachmentProcessor extends AbstractProcessor {
     public IngestDocument execute(IngestDocument ingestDocument) {
         Map<String, Object> additionalFields = new HashMap<>();
 
-        Object fieldValue = ingestDocument.getFieldValue(field, Object.class, ignoreMissing);
+        Object fieldValue = ingestDocument.getFieldValue(field.resolve(ingestDocument), Object.class, ignoreMissing);
         String resourceNameInput = null;
         if (resourceName != null) {
-            resourceNameInput = ingestDocument.getFieldValue(resourceName, String.class, true);
+            resourceNameInput = ingestDocument.getFieldValue(resourceName.resolve(ingestDocument), String.class, true);
         }
         if (fieldValue == null && ignoreMissing) {
             return ingestDocument;
         } else if (fieldValue == null) {
             throw new IllegalArgumentException("field [" + field + "] is null, cannot parse.");
         }
-        final int rawBytes = ingestDocument.getFieldValueRawBytesLength(field, fieldValue);
+        final int rawBytes = ingestDocument.getFieldValueRawBytesLength(field.toString(), fieldValue);
         if (attachmentMetrics.get() != null) {
             attachmentMetrics.get().recordRawBytesReceived(rawBytes);
         }
         checkMaxAttachmentFieldSize(rawBytes);
-        byte[] input = ingestDocument.getFieldValueAsBytes(field, fieldValue);
+        byte[] input = ingestDocument.getFieldValueAsBytes(field.toString(), fieldValue);
 
         Integer indexedCharsValue = this.indexedChars;
 
         if (indexedCharsField != null) {
             // If the user provided the number of characters to be extracted as part of the document, we use it
-            indexedCharsValue = ingestDocument.getFieldValue(indexedCharsField, Integer.class, true);
+            indexedCharsValue = ingestDocument.getFieldValue(indexedCharsField.resolve(ingestDocument), Integer.class, true);
             if (indexedCharsValue == null) {
                 // If the field does not exist we fall back to the global limit
                 indexedCharsValue = this.indexedChars;
@@ -287,10 +288,10 @@ public final class AttachmentProcessor extends AbstractProcessor {
         addAdditionalField(additionalFields, Property.RATING, metadata.get(TikaCoreProperties.RATING));
         addAdditionalField(additionalFields, Property.COMMENTS, metadata.get(TikaCoreProperties.COMMENTS));
 
-        ingestDocument.setFieldValue(targetField, additionalFields);
+        ingestDocument.setFieldValue(targetField.resolve(ingestDocument), additionalFields);
 
         if (removeBinary) {
-            ingestDocument.removeField(field);
+            ingestDocument.removeField(field.resolve(ingestDocument));
         }
         if (attachmentMetrics.get() != null) {
             attachmentMetrics.get().recordRawBytesProcessed(rawBytes);
@@ -315,11 +316,11 @@ public final class AttachmentProcessor extends AbstractProcessor {
         return TYPE;
     }
 
-    String getField() {
+    FieldPathTemplate getField() {
         return field;
     }
 
-    String getTargetField() {
+    FieldPathTemplate getTargetField() {
         return targetField;
     }
 

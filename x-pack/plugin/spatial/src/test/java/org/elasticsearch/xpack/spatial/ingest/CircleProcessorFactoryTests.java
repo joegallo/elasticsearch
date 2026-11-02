@@ -7,6 +7,10 @@
 package org.elasticsearch.xpack.spatial.ingest;
 
 import org.elasticsearch.ElasticsearchParseException;
+import org.elasticsearch.geometry.Circle;
+import org.elasticsearch.geometry.utils.WellKnownText;
+import org.elasticsearch.ingest.IngestDocument;
+import org.elasticsearch.ingest.TestIngestDocument;
 import org.elasticsearch.test.ESTestCase;
 import org.junit.Before;
 
@@ -32,8 +36,8 @@ public class CircleProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         CircleProcessor processor = factory.create(null, processorTag, null, config, null);
         assertThat(processor.getTag(), equalTo(processorTag));
-        assertThat(processor.field(), equalTo("field1"));
-        assertThat(processor.targetField(), equalTo("field1"));
+        assertThat(processor.field().toString(), equalTo("field1"));
+        assertThat(processor.targetField().toString(), equalTo("field1"));
         assertThat(processor.errorDistance(), equalTo(0.002));
         assertThat(processor.shapeType(), equalTo(CircleProcessor.CircleShapeFieldType.GEO_SHAPE));
     }
@@ -46,8 +50,8 @@ public class CircleProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         CircleProcessor processor = factory.create(null, processorTag, null, config, null);
         assertThat(processor.getTag(), equalTo(processorTag));
-        assertThat(processor.field(), equalTo("field1"));
-        assertThat(processor.targetField(), equalTo("field1"));
+        assertThat(processor.field().toString(), equalTo("field1"));
+        assertThat(processor.targetField().toString(), equalTo("field1"));
         assertThat(processor.errorDistance(), equalTo(0.002));
         assertThat(processor.shapeType(), equalTo(CircleProcessor.CircleShapeFieldType.SHAPE));
     }
@@ -84,8 +88,8 @@ public class CircleProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         CircleProcessor processor = factory.create(null, processorTag, null, config, null);
         assertThat(processor.getTag(), equalTo(processorTag));
-        assertThat(processor.field(), equalTo("field1"));
-        assertThat(processor.targetField(), equalTo("other"));
+        assertThat(processor.field().toString(), equalTo("field1"));
+        assertThat(processor.targetField().toString(), equalTo("other"));
         assertThat(processor.errorDistance(), equalTo(0.002));
         assertThat(processor.shapeType(), equalTo(CircleProcessor.CircleShapeFieldType.GEO_SHAPE));
     }
@@ -99,5 +103,41 @@ public class CircleProcessorFactoryTests extends ESTestCase {
             () -> factory.create(null, processorTag, null, config, null)
         );
         assertThat(e.getMessage(), equalTo("[error_distance] required property is missing"));
+    }
+
+    /**
+     * Pipelines are stored, so a malformed path in one has to be accepted when the processor is created, with the failure only coming
+     * when a document is run through it. This goes through the factory, as creating a processor from a stored pipeline does.
+     */
+    public void testCreateWithMalformedField() {
+        Map<String, Object> config = new HashMap<>();
+        config.put("field", "a..b");
+        config.put("error_distance", 0.002);
+        config.put("shape_type", "geo_shape");
+        CircleProcessor processor = factory.create(null, randomAlphaOfLength(10), null, config, null);
+        assertThat(processor.field().toString(), equalTo("a..b"));
+
+        IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
+        IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
+        assertThat(e.getMessage(), equalTo("path [a..b] is not valid"));
+    }
+
+    public void testCreateWithMalformedTargetField() {
+        Map<String, Object> config = new HashMap<>();
+        config.put("field", "source");
+        config.put("target_field", "a..b");
+        config.put("error_distance", 0.002);
+        config.put("shape_type", "geo_shape");
+        CircleProcessor processor = factory.create(null, randomAlphaOfLength(10), null, config, null);
+        assertThat(processor.targetField().toString(), equalTo("a..b"));
+
+        // the source is fine, so it is the target that causes the failure
+        IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
+        ingestDocument.setFieldValue("source", WellKnownText.toWKT(new Circle(101.0, 0.0, 2)));
+        // writing the result is done as part of processing the circle, so a problem with where it is written to is reported as one with
+        // the circle
+        IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
+        assertThat(e.getMessage(), equalTo("invalid circle definition"));
+        assertThat(e.getCause().getMessage(), equalTo("path [a..b] is not valid"));
     }
 }
