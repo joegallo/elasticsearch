@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -93,8 +94,8 @@ public class EnrichProcessorFactoryTests extends ESTestCase {
             MatchProcessor result = (MatchProcessor) factory.create(Collections.emptyMap(), "_tag", null, config, projectId);
             assertThat(result, notNullValue());
             assertThat(result.getPolicyName(), equalTo("majestic"));
-            assertThat(result.getField(), equalTo("host"));
-            assertThat(result.getTargetField(), equalTo("entry"));
+            assertThat(result.getField().toString(), equalTo("host"));
+            assertThat(result.getTargetField().toString(), equalTo("entry"));
             assertThat(result.getMatchField(), equalTo("my_key"));
             assertThat(result.isIgnoreMissing(), is(keyIgnoreMissing));
             if (overrideEnabled != null) {
@@ -213,8 +214,39 @@ public class EnrichProcessorFactoryTests extends ESTestCase {
             MatchProcessor result = (MatchProcessor) factory.create(Collections.emptyMap(), "_tag", null, config, projectId);
             assertThat(result, notNullValue());
             assertThat(result.getPolicyName(), equalTo("majestic"));
-            assertThat(result.getField(), equalTo("host"));
-            assertThat(result.getTargetField(), equalTo("entry"));
+            assertThat(result.getField().toString(), equalTo("host"));
+            assertThat(result.getTargetField().toString(), equalTo("entry"));
+        }
+    }
+
+    /**
+     * Pipelines are stored, so a malformed path in one has to be accepted when the processor is created, with the failure only coming
+     * when a document is run through it. This goes through the factory, as creating a processor from a stored pipeline does.
+     */
+    public void testCreateWithMalformedFields() throws Exception {
+        List<String> enrichValues = List.of("globalRank", "tldRank", "tld");
+        EnrichPolicy policy = new EnrichPolicy(EnrichPolicy.MATCH_TYPE, null, List.of("source_index"), "host", enrichValues);
+        try (var threadPool = createThreadPool()) {
+            final var client = new NoOpClient(threadPool);
+            EnrichProcessorFactory factory = new EnrichProcessorFactory(client, scriptService, enrichCache);
+            factory.metadata = createMetadata("majestic", policy);
+
+            Map<String, Object> config = new HashMap<>();
+            config.put("policy_name", "majestic");
+            config.put("field", "a..b");
+            config.put("target_field", "c..d");
+            config.put("ignore_missing", randomBoolean());
+
+            MatchProcessor result = (MatchProcessor) factory.create(Collections.emptyMap(), "_tag", null, config, projectId);
+            assertThat(result.getField().toString(), equalTo("a..b"));
+            assertThat(result.getTargetField().toString(), equalTo("c..d"));
+
+            // it is the field that is looked at first, so that is the one that is reported
+            IngestDocument ingestDocument = new IngestDocument("_index", "_id", 1L, "_routing", VersionType.INTERNAL, new HashMap<>());
+            Exception[] holder = new Exception[1];
+            result.execute(ingestDocument, (document, e) -> holder[0] = e);
+            assertThat(holder[0], instanceOf(IllegalArgumentException.class));
+            assertThat(holder[0].getMessage(), equalTo("path [a..b] is not valid"));
         }
     }
 

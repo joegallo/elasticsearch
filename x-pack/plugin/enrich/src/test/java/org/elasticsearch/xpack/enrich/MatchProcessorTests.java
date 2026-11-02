@@ -14,6 +14,7 @@ import org.elasticsearch.index.VersionType;
 import org.elasticsearch.index.query.ConstantScoreQueryBuilder;
 import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.index.query.TermsQueryBuilder;
+import org.elasticsearch.ingest.ConfigurationUtils;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.TestIngestDocument;
 import org.elasticsearch.ingest.TestTemplateService;
@@ -418,6 +419,109 @@ public class MatchProcessorTests extends ESTestCase {
 
         SearchRequest getCapturedRequest() {
             return capturedRequest.get();
+        }
+    }
+
+    /**
+     * Pipelines are stored, so a malformed path in one has to be accepted when the processor is created, with the failure only coming
+     * when a document is run through it. The constant template is what the processor factory produces for a plain field name, and
+     * the other is a template that is rendered for every document.
+     */
+    private static List<TemplateScript.Factory> malformedPathTemplates() {
+        return List.of(str("a..b"), ConfigurationUtils.compileTemplate("enrich", "_tag", "field", "a..b", TestTemplateService.instance()));
+    }
+
+    public void testMalformedFieldFailsAtExecutionTime() {
+        for (TemplateScript.Factory malformed : malformedPathTemplates()) {
+            MatchProcessor processor = new MatchProcessor(
+                "_tag",
+                null,
+                mockedSearchFunction(Map.of("globalRank", 451)),
+                "_name",
+                malformed,
+                str("entry"),
+                randomBoolean(),
+                false,
+                "domain",
+                1
+            );
+            IngestDocument ingestDocument = new IngestDocument(
+                "_index",
+                "_id",
+                1L,
+                "_routing",
+                VersionType.INTERNAL,
+                new HashMap<>(Map.of("domain", "elastic.co"))
+            );
+            Exception[] holder = new Exception[1];
+            processor.execute(ingestDocument, (result, e) -> holder[0] = e);
+            assertThat(holder[0], instanceOf(IllegalArgumentException.class));
+            assertThat(holder[0].getMessage(), equalTo("path [a..b] is not valid"));
+        }
+    }
+
+    public void testMalformedTargetFieldFailsAtExecutionTime() {
+        for (TemplateScript.Factory malformed : malformedPathTemplates()) {
+            MatchProcessor processor = new MatchProcessor(
+                "_tag",
+                null,
+                mockedSearchFunction(Map.of("globalRank", 451)),
+                "_name",
+                str("domain"),
+                malformed,
+                true,
+                randomBoolean(),
+                "domain",
+                1
+            );
+            IngestDocument ingestDocument = new IngestDocument(
+                "_index",
+                "_id",
+                1L,
+                "_routing",
+                VersionType.INTERNAL,
+                new HashMap<>(Map.of("domain", "elastic.co"))
+            );
+            Exception[] holder = new Exception[1];
+            processor.execute(ingestDocument, (result, e) -> holder[0] = e);
+            assertThat(holder[0], instanceOf(IllegalArgumentException.class));
+            assertThat(holder[0].getMessage(), equalTo("path [a..b] is not valid"));
+        }
+    }
+
+    /**
+     * The target field is only looked at when there is something to put in it, so when nothing matches it is never a problem.
+     */
+    public void testMalformedTargetFieldIsNotAProblemWhenNothingMatches() {
+        for (TemplateScript.Factory malformed : malformedPathTemplates()) {
+            MatchProcessor processor = new MatchProcessor(
+                "_tag",
+                null,
+                mockedSearchFunction(),
+                "_name",
+                str("domain"),
+                malformed,
+                true,
+                false,
+                "domain",
+                1
+            );
+            IngestDocument ingestDocument = new IngestDocument(
+                "_index",
+                "_id",
+                1L,
+                "_routing",
+                VersionType.INTERNAL,
+                new HashMap<>(Map.of("domain", "elastic.co"))
+            );
+            IngestDocument[] holder = new IngestDocument[1];
+            Exception[] error = new Exception[1];
+            processor.execute(ingestDocument, (result, e) -> {
+                holder[0] = result;
+                error[0] = e;
+            });
+            assertThat(error[0], nullValue());
+            assertThat(holder[0], notNullValue());
         }
     }
 
