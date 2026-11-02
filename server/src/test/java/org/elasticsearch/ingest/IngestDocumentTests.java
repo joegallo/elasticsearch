@@ -12,6 +12,7 @@ package org.elasticsearch.ingest;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.XContentHelper;
+import org.elasticsearch.ingest.IngestDocument.FieldPath;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xcontent.XContentType;
 import org.hamcrest.Matchers;
@@ -170,6 +171,137 @@ public class IngestDocumentTests extends ESTestCase {
     private void assertPathInvalid(IngestDocument doc, String path, String errorMessage) {
         IllegalArgumentException expected = expectThrows(IllegalArgumentException.class, () -> doc.hasField(path));
         assertThat(expected.getMessage(), equalTo(errorMessage));
+    }
+
+    public void testFieldPathParsing() {
+        assertThat(FieldPath.of("a.b.c").toString(), equalTo("a.b.c"));
+        assertThat(FieldPath.of("_source.a.").toString(), equalTo("_source.a."));
+        // parsing is cached, but that is not something callers can rely on, so only check that repeated parsing is well behaved
+        assertThat(FieldPath.of("a.b.c").toString(), equalTo(FieldPath.of("a.b.c").toString()));
+
+        assertThat(
+            expectThrows(IllegalArgumentException.class, () -> FieldPath.of(null)).getMessage(),
+            equalTo("path cannot be null nor empty")
+        );
+        assertThat(
+            expectThrows(IllegalArgumentException.class, () -> FieldPath.of("")).getMessage(),
+            equalTo("path cannot be null nor empty")
+        );
+        for (String invalid : List.of("a..b", ".a", ".", "..", "_source..", "_ingest..")) {
+            assertThat(
+                invalid,
+                expectThrows(IllegalArgumentException.class, () -> FieldPath.of(invalid)).getMessage(),
+                equalTo("path [" + invalid + "] is not valid")
+            );
+        }
+    }
+
+    /**
+     * Whether or not a path is valid for the access pattern in use is only checked when the path is used, so a path that is only
+     * valid for some access patterns can still be parsed up front, before it is known which access pattern will be in play.
+     */
+    public void testFieldPathIsValidatedAgainstTheAccessPatternWhenUsed() throws Exception {
+        final FieldPath bracketed = FieldPath.of("a[0]");
+
+        doWithAccessPattern(CLASSIC, (doc) -> assertFalse(doc.hasField(bracketed)));
+
+        doWithAccessPattern(FLEXIBLE, (doc) -> {
+            String expected = "path [a[0]] is not valid";
+            assertThat(expectThrows(IllegalArgumentException.class, () -> doc.hasField(bracketed)).getMessage(), equalTo(expected));
+            assertThat(expectThrows(IllegalArgumentException.class, () -> doc.hasField(bracketed, true)).getMessage(), equalTo(expected));
+            assertThat(
+                expectThrows(IllegalArgumentException.class, () -> doc.getFieldValue(bracketed, Object.class)).getMessage(),
+                equalTo(expected)
+            );
+            assertThat(
+                expectThrows(IllegalArgumentException.class, () -> doc.getFieldValueAsBytes(bracketed)).getMessage(),
+                equalTo(expected)
+            );
+            assertThat(expectThrows(IllegalArgumentException.class, () -> doc.removeField(bracketed)).getMessage(), equalTo(expected));
+            assertThat(
+                expectThrows(IllegalArgumentException.class, () -> doc.setFieldValue(bracketed, "value")).getMessage(),
+                equalTo(expected)
+            );
+            assertThat(
+                expectThrows(IllegalArgumentException.class, () -> doc.appendFieldValue(bracketed, "value")).getMessage(),
+                equalTo(expected)
+            );
+        });
+    }
+
+    /**
+     * The overloads that take a parsed {@link FieldPath} should behave exactly like the ones that take a String.
+     */
+    public void testFieldPathOverloads() throws Exception {
+        doWithRandomAccessPattern((doc) -> {
+            // get
+            assertThat(doc.getFieldValue(FieldPath.of("fizz.buzz"), String.class), equalTo("hello world"));
+            assertThat(doc.getFieldValue(FieldPath.of("fizz.buzz"), String.class, false), equalTo("hello world"));
+            assertThat(doc.getFieldValue(FieldPath.of("fizz.missing"), String.class, true), nullValue());
+            // errors keep reporting the path as it was originally given, and match the String overloads
+            IllegalArgumentException missing = expectThrows(
+                IllegalArgumentException.class,
+                () -> doc.getFieldValue(FieldPath.of("fizz.missing"), String.class)
+            );
+            assertThat(missing.getMessage(), equalTo("field [missing] not present as part of path [fizz.missing]"));
+            assertThat(
+                expectThrows(IllegalArgumentException.class, () -> doc.getFieldValue("fizz.missing", String.class)).getMessage(),
+                equalTo(missing.getMessage())
+            );
+            IllegalArgumentException mismatch = expectThrows(
+                IllegalArgumentException.class,
+                () -> doc.getFieldValue(FieldPath.of("int"), String.class)
+            );
+            assertThat(mismatch.getMessage(), equalTo("field [int] of type [java.lang.Integer] cannot be cast to [java.lang.String]"));
+
+            // has
+            assertTrue(doc.hasField(FieldPath.of("fizz.buzz")));
+            assertTrue(doc.hasField(FieldPath.of("fizz.buzz"), true));
+            assertFalse(doc.hasField(FieldPath.of("fizz.missing")));
+            // prefixes are understood
+            assertTrue(doc.hasField(FieldPath.of("_source.fizz.buzz")));
+            assertTrue(doc.hasField(FieldPath.of("_ingest.timestamp")));
+
+            // set, in all of its flavors
+            doc.setFieldValue(FieldPath.of("new.object"), "value");
+            assertThat(doc.getFieldValue("new.object", String.class), equalTo("value"));
+            doc.setFieldValue(FieldPath.of("new.valuesource"), ValueSource.wrap(7, null));
+            assertThat(doc.getFieldValue("new.valuesource", Integer.class), equalTo(7));
+            doc.setFieldValue(FieldPath.of("new.valuesource2"), ValueSource.wrap(8, null), true);
+            assertThat(doc.getFieldValue("new.valuesource2", Integer.class), equalTo(8));
+            doc.setFieldValue(FieldPath.of("new.ignored"), "", true);
+            assertFalse(doc.hasField("new.ignored"));
+            doc.setFieldValue(FieldPath.of("new.notignored"), "", false);
+            assertThat(doc.getFieldValue("new.notignored", String.class), equalTo(""));
+
+            // append, in all of its flavors
+            doc.appendFieldValue(FieldPath.of("new.list"), "a");
+            doc.appendFieldValue(FieldPath.of("new.list"), "a", true);
+            doc.appendFieldValue(FieldPath.of("new.list"), "a", false);
+            doc.appendFieldValue(FieldPath.of("new.list"), "", true, true);
+            doc.appendFieldValue(FieldPath.of("new.list"), ValueSource.wrap(1, null), true, true);
+            assertThat(doc.getFieldValue("new.list", List.class), equalTo(List.of("a", "a", 1)));
+
+            // bytes
+            doc.setFieldValue(FieldPath.of("new.bytes"), new byte[] { 1, 2, 3 });
+            assertThat(doc.getFieldValueAsBytes(FieldPath.of("new.bytes")), equalTo(new byte[] { 1, 2, 3 }));
+            assertThat(doc.getFieldValueAsBytes(FieldPath.of("new.bytes"), false), equalTo(new byte[] { 1, 2, 3 }));
+            assertThat(doc.getFieldValueAsBytes(FieldPath.of("new.missingbytes"), true), nullValue());
+
+            // remove
+            doc.removeField(FieldPath.of("new.object"));
+            assertFalse(doc.hasField("new.object"));
+            doc.removeField(FieldPath.of("new.object"), true);
+            IllegalArgumentException removeMissing = expectThrows(
+                IllegalArgumentException.class,
+                () -> doc.removeField(FieldPath.of("new.object"))
+            );
+            assertThat(removeMissing.getMessage(), containsString("new.object"));
+            assertThat(
+                expectThrows(IllegalArgumentException.class, () -> doc.removeField("new.object")).getMessage(),
+                equalTo(removeMissing.getMessage())
+            );
+        });
     }
 
     /**
@@ -557,7 +689,7 @@ public class IngestDocumentTests extends ESTestCase {
 
     public void testGetFieldValueNull() throws Exception {
         try {
-            doWithRandomAccessPattern((doc) -> doc.getFieldValue(null, String.class));
+            doWithRandomAccessPattern((doc) -> doc.getFieldValue((String) null, String.class));
             fail("get field value should have failed");
         } catch (IllegalArgumentException e) {
             assertThat(e.getMessage(), equalTo("path cannot be null nor empty"));
@@ -714,7 +846,7 @@ public class IngestDocumentTests extends ESTestCase {
 
     public void testHasFieldNull() throws Exception {
         try {
-            doWithRandomAccessPattern((doc) -> doc.hasField(null));
+            doWithRandomAccessPattern((doc) -> doc.hasField((String) null));
             fail("has field should have failed");
         } catch (IllegalArgumentException e) {
             assertThat(e.getMessage(), equalTo("path cannot be null nor empty"));
@@ -885,7 +1017,7 @@ public class IngestDocumentTests extends ESTestCase {
 
     public void testSetFieldValueNullName() throws Exception {
         try {
-            doWithRandomAccessPattern((doc) -> doc.setFieldValue(null, "bar"));
+            doWithRandomAccessPattern((doc) -> doc.setFieldValue((String) null, "bar"));
             fail("add field should have failed");
         } catch (IllegalArgumentException e) {
             assertThat(e.getMessage(), equalTo("path cannot be null nor empty"));
@@ -1899,7 +2031,7 @@ public class IngestDocumentTests extends ESTestCase {
 
     public void testRemoveNullField() throws Exception {
         try {
-            doWithRandomAccessPattern((doc) -> doc.removeField(null));
+            doWithRandomAccessPattern((doc) -> doc.removeField((String) null));
             fail("remove field should have failed");
         } catch (IllegalArgumentException e) {
             assertThat(e.getMessage(), equalTo("path cannot be null nor empty"));

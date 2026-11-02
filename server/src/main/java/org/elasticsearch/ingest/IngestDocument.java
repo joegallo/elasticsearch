@@ -206,7 +206,22 @@ public final class IngestDocument {
      * or if the field that is found at the provided path is not of the expected type.
      */
     public <T> T getFieldValue(String path, Class<T> clazz, boolean ignoreMissing) {
-        final FieldPath fieldPath = FieldPath.of(path, getCurrentAccessPatternSafe());
+        return getFieldValue(FieldPath.of(path), clazz, ignoreMissing);
+    }
+
+    /**
+     * Same as {@link #getFieldValue(String, Class)} but takes a path that has already been parsed, see {@link FieldPath}.
+     */
+    public <T> T getFieldValue(FieldPath fieldPath, Class<T> clazz) {
+        return getFieldValue(fieldPath, clazz, false);
+    }
+
+    /**
+     * Same as {@link #getFieldValue(String, Class, boolean)} but takes a path that has already been parsed, see {@link FieldPath}.
+     */
+    public <T> T getFieldValue(FieldPath fieldPath, Class<T> clazz, boolean ignoreMissing) {
+        final String path = fieldPath.path;
+        fieldPath.validate(getCurrentAccessPatternSafe());
         Object context = fieldPath.initialContext(this);
         ResolveResult result = resolve(fieldPath.pathElements, fieldPath.pathElements.length, path, context, getCurrentAccessPatternSafe());
         if (result.wasSuccessful) {
@@ -247,6 +262,21 @@ public final class IngestDocument {
     public byte[] getFieldValueAsBytes(String path, boolean ignoreMissing) {
         Object object = getFieldValue(path, Object.class, ignoreMissing);
         return getFieldValueAsBytes(path, object);
+    }
+
+    /**
+     * Same as {@link #getFieldValueAsBytes(String)} but takes a path that has already been parsed, see {@link FieldPath}.
+     */
+    public byte[] getFieldValueAsBytes(FieldPath fieldPath) {
+        return getFieldValueAsBytes(fieldPath, false);
+    }
+
+    /**
+     * Same as {@link #getFieldValueAsBytes(String, boolean)} but takes a path that has already been parsed, see {@link FieldPath}.
+     */
+    public byte[] getFieldValueAsBytes(FieldPath fieldPath, boolean ignoreMissing) {
+        Object object = getFieldValue(fieldPath, Object.class, ignoreMissing);
+        return getFieldValueAsBytes(fieldPath.path, object);
     }
 
     /**
@@ -306,7 +336,22 @@ public final class IngestDocument {
      * @throws IllegalArgumentException if the path is null, empty or invalid.
      */
     public boolean hasField(String path, boolean failOutOfRange) {
-        final FieldPath fieldPath = FieldPath.of(path, getCurrentAccessPatternSafe());
+        return hasField(FieldPath.of(path), failOutOfRange);
+    }
+
+    /**
+     * Same as {@link #hasField(String)} but takes a path that has already been parsed, see {@link FieldPath}.
+     */
+    public boolean hasField(FieldPath fieldPath) {
+        return hasField(fieldPath, false);
+    }
+
+    /**
+     * Same as {@link #hasField(String, boolean)} but takes a path that has already been parsed, see {@link FieldPath}.
+     */
+    public boolean hasField(FieldPath fieldPath, boolean failOutOfRange) {
+        final String path = fieldPath.path;
+        fieldPath.validate(getCurrentAccessPatternSafe());
         Object context = fieldPath.initialContext(this);
         int leafKeyIndex = fieldPath.pathElements.length - 1;
         int lastContainerIndex = fieldPath.pathElements.length - 2;
@@ -460,7 +505,22 @@ public final class IngestDocument {
      * @throws IllegalArgumentException if the path is null, empty, or invalid; or if the field doesn't exist (and ignoreMissing is false).
      */
     public void removeField(String path, boolean ignoreMissing) {
-        final FieldPath fieldPath = FieldPath.of(path, getCurrentAccessPatternSafe());
+        removeField(FieldPath.of(path), ignoreMissing);
+    }
+
+    /**
+     * Same as {@link #removeField(String)} but takes a path that has already been parsed, see {@link FieldPath}.
+     */
+    public void removeField(FieldPath fieldPath) {
+        removeField(fieldPath, false);
+    }
+
+    /**
+     * Same as {@link #removeField(String, boolean)} but takes a path that has already been parsed, see {@link FieldPath}.
+     */
+    public void removeField(FieldPath fieldPath, boolean ignoreMissing) {
+        final String path = fieldPath.path;
+        fieldPath.validate(getCurrentAccessPatternSafe());
         Object context = fieldPath.initialContext(this);
         String leafKey = fieldPath.pathElements[fieldPath.pathElements.length - 1];
         ResolveResult result = resolve(
@@ -674,7 +734,7 @@ public final class IngestDocument {
      * @throws IllegalArgumentException if the path is null, empty or invalid.
      */
     public void appendFieldValue(String path, Object value, boolean allowDuplicates) {
-        setFieldValue(path, value, true, allowDuplicates, false);
+        setFieldValue(FieldPath.of(path), value, true, allowDuplicates, false);
     }
 
     /**
@@ -692,7 +752,7 @@ public final class IngestDocument {
      * @throws IllegalArgumentException if the path is null, empty or invalid.
      */
     public void appendFieldValue(String path, Object value, boolean allowDuplicates, boolean ignoreEmptyValues) {
-        setFieldValue(path, value, true, allowDuplicates, ignoreEmptyValues);
+        setFieldValue(FieldPath.of(path), value, true, allowDuplicates, ignoreEmptyValues);
     }
 
     /**
@@ -714,6 +774,34 @@ public final class IngestDocument {
     }
 
     /**
+     * Same as {@link #appendFieldValue(String, Object)} but takes a path that has already been parsed, see {@link FieldPath}.
+     */
+    public void appendFieldValue(FieldPath fieldPath, Object value) {
+        appendFieldValue(fieldPath, value, true);
+    }
+
+    /**
+     * Same as {@link #appendFieldValue(String, Object, boolean)} but takes a path that has already been parsed, see {@link FieldPath}.
+     */
+    public void appendFieldValue(FieldPath fieldPath, Object value, boolean allowDuplicates) {
+        setFieldValue(fieldPath, value, true, allowDuplicates, false);
+    }
+
+    /**
+     * Same as {@link #appendFieldValue(String, Object, boolean, boolean)} but takes a path that has already been parsed, see {@link FieldPath}.
+     */
+    public void appendFieldValue(FieldPath fieldPath, Object value, boolean allowDuplicates, boolean ignoreEmptyValues) {
+        setFieldValue(fieldPath, value, true, allowDuplicates, ignoreEmptyValues);
+    }
+
+    /**
+     * Same as {@link #appendFieldValue(String, ValueSource, boolean, boolean)} but takes a path that has already been parsed, see {@link FieldPath}.
+     */
+    public void appendFieldValue(FieldPath fieldPath, ValueSource valueSource, boolean allowDuplicates, boolean ignoreEmptyValues) {
+        appendFieldValue(fieldPath, valueSource.copyAndResolve(templateModel), allowDuplicates, ignoreEmptyValues);
+    }
+
+    /**
      * Sets the provided value to the provided path in the document.
      * Any non existing path element will be created.
      * If the last item in the path is a list, the value will replace the existing list as a whole.
@@ -724,7 +812,14 @@ public final class IngestDocument {
      * item identified by the provided path.
      */
     public void setFieldValue(String path, Object value) {
-        setFieldValue(path, value, false, false, false);
+        setFieldValue(FieldPath.of(path), value, false, false, false);
+    }
+
+    /**
+     * Same as {@link #setFieldValue(String, Object)} but takes a path that has already been parsed, see {@link FieldPath}.
+     */
+    public void setFieldValue(FieldPath fieldPath, Object value) {
+        setFieldValue(fieldPath, value, false, false, false);
     }
 
     /**
@@ -738,6 +833,13 @@ public final class IngestDocument {
      */
     public void setFieldValue(String path, ValueSource valueSource) {
         setFieldValue(path, valueSource.copyAndResolve(templateModel));
+    }
+
+    /**
+     * Same as {@link #setFieldValue(String, ValueSource)} but takes a path that has already been parsed, see {@link FieldPath}.
+     */
+    public void setFieldValue(FieldPath fieldPath, ValueSource valueSource) {
+        setFieldValue(fieldPath, valueSource.copyAndResolve(templateModel));
     }
 
     /**
@@ -766,6 +868,21 @@ public final class IngestDocument {
     }
 
     /**
+     * Same as {@link #setFieldValue(String, ValueSource, boolean)} but takes a path that has already been parsed, see {@link FieldPath}.
+     */
+    public void setFieldValue(FieldPath fieldPath, ValueSource valueSource, boolean ignoreEmptyValue) {
+        Object value = valueSource.copyAndResolve(templateModel);
+        if (valueSource instanceof ValueSource.TemplatedValue) {
+            if (ignoreEmptyValue == false || valueNotEmpty(value)) {
+                setFieldValue(fieldPath, value);
+            }
+        } else {
+            // see the comment in the String path version of this method
+            setFieldValue(fieldPath, value);
+        }
+    }
+
+    /**
      * Sets the provided value to the provided path in the document.
      * Any non existing path element will be created. If the last element is a list,
      * the value will replace the existing list.
@@ -781,10 +898,20 @@ public final class IngestDocument {
         }
     }
 
-    private void setFieldValue(String path, Object value, boolean append, boolean allowDuplicates, boolean ignoreEmptyValues) {
+    /**
+     * Same as {@link #setFieldValue(String, Object, boolean)} but takes a path that has already been parsed, see {@link FieldPath}.
+     */
+    public void setFieldValue(FieldPath fieldPath, Object value, boolean ignoreEmptyValue) {
+        if (ignoreEmptyValue == false || valueNotEmpty(value)) {
+            setFieldValue(fieldPath, value);
+        }
+    }
+
+    private void setFieldValue(FieldPath fieldPath, Object value, boolean append, boolean allowDuplicates, boolean ignoreEmptyValues) {
         assert append || (allowDuplicates == false && ignoreEmptyValues == false)
             : "allowDuplicates and ignoreEmptyValues only apply if append is true";
-        final FieldPath fieldPath = FieldPath.of(path, getCurrentAccessPatternSafe());
+        final String path = fieldPath.path;
+        fieldPath.validate(getCurrentAccessPatternSafe());
         Object context = fieldPath.initialContext(this);
         int leafKeyIndex = fieldPath.pathElements.length - 1;
         int lastContainerIndex = fieldPath.pathElements.length - 2;
@@ -1294,7 +1421,20 @@ public final class IngestDocument {
         }
     }
 
-    private static final class FieldPath {
+    /**
+     * A field path (e.g. <code>foo.bar.baz</code>) that has been parsed into its path elements.
+     * <p>
+     * Parsing a path is relatively expensive, so code that knows its paths ahead of time (for example a processor that is
+     * configured with a fixed field name) should parse them once, up front, using {@link #of(String)} and then use the
+     * {@link IngestDocument} methods that accept a {@link FieldPath}. Those methods are otherwise identical to the ones that
+     * accept a {@link String}, which parse their argument (using a cache) every time they are called.
+     * <p>
+     * A {@link FieldPath} is immutable and thread safe, and it is independent of the {@link IngestPipelineFieldAccessPattern}:
+     * whether a path is valid for the access pattern of the pipeline that is currently executing is checked when the path is used.
+     * That means that a {@link FieldPath} can be created without knowing which pipeline will end up using it, and that
+     * a {@link FieldPath} that is not valid for some access pattern will only fail when it is used with that pattern.
+     */
+    public static final class FieldPath {
 
         private static final int MAX_SIZE = 512;
         private static final Map<String, FieldPath> CACHE = ConcurrentCollections.newConcurrentMapWithAggressiveConcurrency();
@@ -1307,9 +1447,16 @@ public final class IngestDocument {
         // the above CACHE and the below 'FieldPath.of' method allow us to almost always avoid this work.
         //
         // note that parsing is independent of the access pattern: the only thing that depends on the access pattern is whether
-        // the parsed path is valid, and that is checked (cheaply) on every call to 'of' rather than being baked into the cache.
+        // the parsed path is valid, and that is checked (cheaply) every time the path is used rather than being baked in here.
 
-        static FieldPath of(String path, IngestPipelineFieldAccessPattern accessPattern) {
+        /**
+         * Parses the given path, using a cache of recently parsed paths to avoid repeating the work for paths that are used often.
+         *
+         * @param path The path within the document in dot-notation
+         * @return the parsed path
+         * @throws IllegalArgumentException if the path is null, empty, or has an empty path element anywhere but the end
+         */
+        public static FieldPath of(String path) {
             if (Strings.isEmpty(path)) {
                 throw new IllegalArgumentException("path cannot be null nor empty");
             }
@@ -1321,16 +1468,17 @@ public final class IngestDocument {
                 }
                 CACHE.put(path, res);
             }
-            res.validate(path, accessPattern);
             return res;
         }
 
+        private final String path;
         private final String[] pathElements;
         private final boolean useIngestContext;
         private final boolean containsBrackets;
 
         // you shouldn't call this directly, use the FieldPath.of method above instead!
         private FieldPath(String path) {
+            this.path = path;
             final int from;
             if (path.startsWith(INGEST_PREFIX)) {
                 useIngestContext = true;
@@ -1395,22 +1543,27 @@ public final class IngestDocument {
          * supports syntax like context aware array access, so it has no further restrictions. The
          * {@link IngestPipelineFieldAccessPattern#FLEXIBLE} pattern reserves square brackets for (future) array access syntax, so
          * path elements containing them are rejected.
-         * @param fullPath The un-split path to use for error messages
          * @param accessPattern The access pattern to validate against
+         * @throws IllegalArgumentException if this path is not valid for the access pattern
          */
-        private void validate(String fullPath, IngestPipelineFieldAccessPattern accessPattern) {
+        private void validate(IngestPipelineFieldAccessPattern accessPattern) {
             switch (accessPattern) {
                 case CLASSIC -> {
                 }
                 case FLEXIBLE -> {
                     if (containsBrackets) {
-                        throw new IllegalArgumentException("path [" + fullPath + "] is not valid");
+                        throw new IllegalArgumentException("path [" + path + "] is not valid");
                     }
                 }
             }
         }
 
-        public Object initialContext(IngestDocument document) {
+        @Override
+        public String toString() {
+            return path;
+        }
+
+        private Object initialContext(IngestDocument document) {
             return useIngestContext ? document.getIngestMetadata() : document.getCtxMap();
         }
     }
