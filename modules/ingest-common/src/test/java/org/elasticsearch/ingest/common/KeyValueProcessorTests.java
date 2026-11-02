@@ -13,6 +13,7 @@ import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.ingest.RandomDocumentPicks;
+import org.elasticsearch.ingest.TestIngestDocument;
 import org.elasticsearch.ingest.TestTemplateService;
 import org.elasticsearch.test.ESTestCase;
 
@@ -190,6 +191,33 @@ public class KeyValueProcessorTests extends ESTestCase {
         processor.execute(ingestDocument);
         assertThat(ingestDocument.getFieldValue("target.arg_first", String.class), equalTo("hello"));
         assertThat(ingestDocument.getFieldValue("target.arg_second", List.class), equalTo(List.of("world", "universe")));
+    }
+
+    /**
+     * Pipelines are stored, so a malformed path in one has to be accepted when the processor is created, with the failure only coming
+     * when a document is run through it. This goes through the factory, as creating a processor from a stored pipeline does.
+     */
+    public void testMalformedFieldFailsAtExecutionTime() throws Exception {
+        KeyValueProcessor processor = createKvProcessor("a..b", "&", "=", null, null, "target", randomBoolean());
+        assertThat(processor.getField().toString(), equalTo("a..b"));
+
+        IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
+        IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
+        assertThat(e.getMessage(), equalTo("path [a..b] is not valid"));
+    }
+
+    /**
+     * An empty field is treated as one that is missing rather than as an invalid path.
+     */
+    public void testEmptyFieldIsTreatedAsMissing() throws Exception {
+        IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
+        ingestDocument.setFieldValue("foo", "first=hello");
+        createKvProcessor("", "&", "=", null, null, "target", true).execute(ingestDocument);
+        assertThat(ingestDocument.getSource(), equalTo(Map.of("foo", "first=hello")));
+
+        Processor notIgnoringMissing = createKvProcessor("", "&", "=", null, null, "target", false);
+        IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> notIgnoringMissing.execute(ingestDocument));
+        assertThat(e.getMessage(), equalTo("field [] doesn't exist"));
     }
 
     private static KeyValueProcessor createKvProcessor(

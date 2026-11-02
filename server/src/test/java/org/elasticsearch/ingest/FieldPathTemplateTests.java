@@ -130,6 +130,40 @@ public class FieldPathTemplateTests extends ESTestCase {
         }
     }
 
+    public void testResolveUnlessEmpty() {
+        // a path that is fine
+        assertThat(FieldPathTemplate.constant("foo.bar").resolveUnlessEmpty(documentNamed("one")).toString(), equalTo("foo.bar"));
+        assertThat(FieldPathTemplate.of(NAME_TEMPLATE).resolveUnlessEmpty(documentNamed("foo.bar")).toString(), equalTo("foo.bar"));
+        // and one that is parsed ahead of time is the same one every time
+        FieldPathTemplate constant = FieldPathTemplate.constant("foo.bar");
+        assertThat(constant.resolveUnlessEmpty(documentNamed("one")), sameInstance(constant.resolve(documentNamed("two"))));
+
+        // empty is the thing that is different
+        assertNull(FieldPathTemplate.constant("").resolveUnlessEmpty(documentNamed("one")));
+        assertNull(FieldPathTemplate.of(NAME_TEMPLATE).resolveUnlessEmpty(documentNamed("")));
+        TemplateScript.Factory constantEmpty = ConfigurationUtils.compileTemplate(
+            "test",
+            "tag",
+            "field",
+            "",
+            TestTemplateService.instance()
+        );
+        assertNull(FieldPathTemplate.of(constantEmpty).resolveUnlessEmpty(documentNamed("one")));
+        // while resolve still throws for it
+        expectThrows(IllegalArgumentException.class, () -> FieldPathTemplate.constant("").resolve(documentNamed("one")));
+
+        // anything else that is malformed still throws
+        for (FieldPathTemplate malformed : new FieldPathTemplate[] {
+            FieldPathTemplate.constant("a..b"),
+            FieldPathTemplate.of(NAME_TEMPLATE) }) {
+            IllegalArgumentException e = expectThrows(
+                IllegalArgumentException.class,
+                () -> malformed.resolveUnlessEmpty(documentNamed("a..b"))
+            );
+            assertThat(e.getMessage(), equalTo("path [a..b] is not valid"));
+        }
+    }
+
     public void testToString() {
         assertThat(FieldPathTemplate.constant("foo.bar").toString(), equalTo("foo.bar"));
         // malformed and empty paths are still shown the way that they were configured

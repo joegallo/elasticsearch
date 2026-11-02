@@ -14,7 +14,9 @@ import org.elasticsearch.core.Predicates;
 import org.elasticsearch.core.SuppressForbidden;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
+import org.elasticsearch.ingest.FieldPathTemplate;
 import org.elasticsearch.ingest.IngestDocument;
+import org.elasticsearch.ingest.IngestDocument.FieldPath;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.script.TemplateScript;
@@ -36,7 +38,7 @@ public final class KeyValueProcessor extends AbstractProcessor {
 
     private static final Pattern STRIP_BRACKETS = Pattern.compile("(^[\\(\\[<\"'])|([\\]\\)>\"']$)");
 
-    private final TemplateScript.Factory field;
+    private final FieldPathTemplate field;
     private final String fieldSplit;
     private final String valueSplit;
     private final Set<String> includeKeys;
@@ -61,7 +63,7 @@ public final class KeyValueProcessor extends AbstractProcessor {
         String prefix
     ) {
         super(tag, description);
-        this.field = field;
+        this.field = FieldPathTemplate.of(field);
         this.targetField = targetField;
         this.fieldSplit = fieldSplit;
         this.valueSplit = valueSplit;
@@ -71,7 +73,7 @@ public final class KeyValueProcessor extends AbstractProcessor {
         this.execution = buildExecution(
             fieldSplit,
             valueSplit,
-            field,
+            this.field,
             includeKeys,
             excludeKeys,
             targetField,
@@ -86,7 +88,7 @@ public final class KeyValueProcessor extends AbstractProcessor {
     private Consumer<IngestDocument> buildExecution(
         String fieldSplit,
         String valueSplit,
-        TemplateScript.Factory field,
+        FieldPathTemplate field,
         Set<String> includeKeys,
         Set<String> excludeKeys,
         TemplateScript.Factory targetField,
@@ -140,12 +142,13 @@ public final class KeyValueProcessor extends AbstractProcessor {
             } else {
                 keyPrefixer = val -> fieldPathPrefix + val;
             }
-            String path = document.renderTemplate(field);
-            if (path.isEmpty() || document.hasField(path, true) == false) {
+            // an empty field is treated as one that is missing (rather than as an invalid path), which is what the null is for
+            FieldPath path = field.resolveUnlessEmpty(document);
+            if (path == null || document.hasField(path, true) == false) {
                 if (ignoreMissing) {
                     return;
                 } else {
-                    throw new IllegalArgumentException("field [" + path + "] doesn't exist");
+                    throw new IllegalArgumentException("field [" + (path == null ? "" : path.toString()) + "] doesn't exist");
                 }
             }
             String value = document.getFieldValue(path, String.class, ignoreMissing);
@@ -201,7 +204,7 @@ public final class KeyValueProcessor extends AbstractProcessor {
         }
     }
 
-    TemplateScript.Factory getField() {
+    FieldPathTemplate getField() {
         return field;
     }
 

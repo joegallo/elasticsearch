@@ -10,6 +10,8 @@
 package org.elasticsearch.ingest.common;
 
 import org.elasticsearch.ElasticsearchParseException;
+import org.elasticsearch.ingest.IngestDocument;
+import org.elasticsearch.ingest.TestIngestDocument;
 import org.elasticsearch.ingest.TestTemplateService;
 import org.elasticsearch.test.ESTestCase;
 import org.junit.Before;
@@ -35,8 +37,8 @@ public class RenameProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         RenameProcessor renameProcessor = factory.create(null, processorTag, null, config, null);
         assertThat(renameProcessor.getTag(), equalTo(processorTag));
-        assertThat(renameProcessor.getField().newInstance(Map.of()).execute(), equalTo("old_field"));
-        assertThat(renameProcessor.getTargetField().newInstance(Map.of()).execute(), equalTo("new_field"));
+        assertThat(renameProcessor.getField().toString(), equalTo("old_field"));
+        assertThat(renameProcessor.getTargetField().toString(), equalTo("new_field"));
         assertThat(renameProcessor.isIgnoreMissing(), equalTo(false));
         assertThat(renameProcessor.isOverrideEnabled(), equalTo(false));
     }
@@ -49,8 +51,8 @@ public class RenameProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         RenameProcessor renameProcessor = factory.create(null, processorTag, null, config, null);
         assertThat(renameProcessor.getTag(), equalTo(processorTag));
-        assertThat(renameProcessor.getField().newInstance(Map.of()).execute(), equalTo("old_field"));
-        assertThat(renameProcessor.getTargetField().newInstance(Map.of()).execute(), equalTo("new_field"));
+        assertThat(renameProcessor.getField().toString(), equalTo("old_field"));
+        assertThat(renameProcessor.getTargetField().toString(), equalTo("new_field"));
         assertThat(renameProcessor.isIgnoreMissing(), equalTo(true));
     }
 
@@ -62,8 +64,8 @@ public class RenameProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         RenameProcessor renameProcessor = factory.create(null, processorTag, null, config, null);
         assertThat(renameProcessor.getTag(), equalTo(processorTag));
-        assertThat(renameProcessor.getField().newInstance(Map.of()).execute(), equalTo("old_field"));
-        assertThat(renameProcessor.getTargetField().newInstance(Map.of()).execute(), equalTo("new_field"));
+        assertThat(renameProcessor.getField().toString(), equalTo("old_field"));
+        assertThat(renameProcessor.getTargetField().toString(), equalTo("new_field"));
         assertThat(renameProcessor.isOverrideEnabled(), equalTo(true));
     }
 
@@ -87,5 +89,37 @@ public class RenameProcessorFactoryTests extends ESTestCase {
         } catch (ElasticsearchParseException e) {
             assertThat(e.getMessage(), equalTo("[target_field] required property is missing"));
         }
+    }
+
+    /**
+     * Pipelines are stored, so a malformed path in one has to be accepted when the processor is created, with the failure only coming
+     * when a document is run through it. This goes through the factory, as creating a processor from a stored pipeline does.
+     */
+    public void testCreateWithMalformedField() throws Exception {
+        Map<String, Object> config = new HashMap<>();
+        config.put("field", "a..b");
+        config.put("target_field", "target");
+        config.put("ignore_missing", randomBoolean());
+        RenameProcessor processor = factory.create(null, randomAlphaOfLength(10), null, config, null);
+        assertThat(processor.getField().toString(), equalTo("a..b"));
+
+        IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
+        IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
+        assertThat(e.getMessage(), equalTo("path [a..b] is not valid"));
+    }
+
+    public void testCreateWithMalformedTargetField() throws Exception {
+        Map<String, Object> config = new HashMap<>();
+        config.put("field", "source");
+        config.put("target_field", "a..b");
+        RenameProcessor processor = factory.create(null, randomAlphaOfLength(10), null, config, null);
+        assertThat(processor.getTargetField().toString(), equalTo("a..b"));
+
+        // the source is fine, so it is the target that causes the failure, and the source doesn't get lost on the way
+        IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
+        ingestDocument.setFieldValue("source", "value");
+        IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
+        assertThat(e.getMessage(), equalTo("path [a..b] is not valid"));
+        assertThat(ingestDocument.getFieldValue("source", String.class), equalTo("value"));
     }
 }

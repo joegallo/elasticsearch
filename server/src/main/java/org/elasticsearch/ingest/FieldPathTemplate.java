@@ -9,6 +9,8 @@
 
 package org.elasticsearch.ingest;
 
+import org.elasticsearch.common.Strings;
+import org.elasticsearch.core.Nullable;
 import org.elasticsearch.ingest.IngestDocument.FieldPath;
 import org.elasticsearch.script.TemplateScript;
 
@@ -110,6 +112,28 @@ public final class FieldPathTemplate {
             // This throws, for the same reason that it did when we first tried to parse it. (The path can only be null here if a
             // constant template rendered as null, see 'of'. Parsing a null path also throws, so that is covered too.)
             return FieldPath.of(unparseable);
+        }
+    }
+
+    /**
+     * Like {@link #resolve(IngestDocument)}, except that this returns <code>null</code> rather than throwing if the path is empty.
+     * <p>
+     * This is for the processors that have always treated an empty field as one that is missing, rather than as an invalid path, which
+     * matters (together with <code>ignore_missing</code>) when a template renders as nothing for a document that doesn't have the
+     * thing that the template refers to. Other malformed paths still throw.
+     *
+     * @return the path to use for the document, or null if it is empty
+     * @throws IllegalArgumentException if the path is malformed (but not if it is empty)
+     */
+    @Nullable
+    public FieldPath resolveUnlessEmpty(IngestDocument document) {
+        if (template != null) {
+            String rendered = document.renderTemplate(template);
+            return Strings.isEmpty(rendered) ? null : FieldPath.of(rendered);
+        } else if (parsed != null) {
+            return parsed; // a path that parsed can't be empty
+        } else {
+            return Strings.isEmpty(unparseable) ? null : FieldPath.of(unparseable);
         }
     }
 

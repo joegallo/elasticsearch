@@ -9,11 +9,13 @@
 
 package org.elasticsearch.ingest.common;
 
+import org.elasticsearch.ingest.ConfigurationUtils;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.ingest.RandomDocumentPicks;
 import org.elasticsearch.ingest.TestIngestDocument;
 import org.elasticsearch.ingest.TestTemplateService;
+import org.elasticsearch.script.TemplateScript;
 import org.elasticsearch.test.ESTestCase;
 
 import java.util.ArrayList;
@@ -206,6 +208,43 @@ public class RenameProcessorTests extends ESTestCase {
         Processor processor1 = createRenameProcessor("message", "event.original", false, true);
         processor1.execute(ingestDocument);
         assertThat(ingestDocument.getFieldValue("event.original", String.class), equalTo("new_message"));
+    }
+
+    /**
+     * An empty field is treated as one that is missing rather than as an invalid path. That matters for a template that renders as
+     * nothing when the document doesn't have something that it refers to, combined with ignore_missing.
+     */
+    public void testEmptyFieldIsTreatedAsMissing() throws Exception {
+        TemplateScript.Factory constantEmpty = ConfigurationUtils.compileTemplate(
+            RenameProcessor.TYPE,
+            "tag",
+            "field",
+            "",
+            TestTemplateService.instance()
+        );
+        // a constant template, which can be parsed ahead of time, and one that really is rendered for every document
+        for (TemplateScript.Factory emptyField : List.of(constantEmpty, new TestTemplateService.MockTemplateScript.Factory(""))) {
+            TemplateScript.Factory target = new TestTemplateService.MockTemplateScript.Factory("target");
+
+            IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
+            ingestDocument.setFieldValue("foo", "bar");
+            new RenameProcessor("tag", null, emptyField, target, true, false).execute(ingestDocument);
+            assertThat(ingestDocument.getSource(), equalTo(Map.of("foo", "bar")));
+
+            RenameProcessor notIgnoringMissing = new RenameProcessor("tag", null, emptyField, target, false, false);
+            IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> notIgnoringMissing.execute(ingestDocument));
+            assertThat(e.getMessage(), equalTo("field [] doesn't exist"));
+        }
+    }
+
+    public void testEmptyTargetFieldIsInvalid() throws Exception {
+        IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
+        ingestDocument.setFieldValue("foo", "bar");
+        Processor processor = createRenameProcessor("foo", "", false, false);
+        IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
+        assertThat(e.getMessage(), equalTo("path cannot be null nor empty"));
+        // and it didn't go as far as removing the source
+        assertThat(ingestDocument.getFieldValue("foo", String.class), equalTo("bar"));
     }
 
     private RenameProcessor createRenameProcessor(String field, String targetField, boolean ignoreMissing, boolean overrideEnabled) {

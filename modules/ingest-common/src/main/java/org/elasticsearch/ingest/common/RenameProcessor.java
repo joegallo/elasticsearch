@@ -12,7 +12,9 @@ package org.elasticsearch.ingest.common;
 import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
+import org.elasticsearch.ingest.FieldPathTemplate;
 import org.elasticsearch.ingest.IngestDocument;
+import org.elasticsearch.ingest.IngestDocument.FieldPath;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.script.TemplateScript;
@@ -25,8 +27,8 @@ import java.util.Map;
 public final class RenameProcessor extends AbstractProcessor {
 
     public static final String TYPE = "rename";
-    private final TemplateScript.Factory field;
-    private final TemplateScript.Factory targetField;
+    private final FieldPathTemplate field;
+    private final FieldPathTemplate targetField;
     private final boolean ignoreMissing;
     private final boolean overrideEnabled;
 
@@ -39,17 +41,17 @@ public final class RenameProcessor extends AbstractProcessor {
         boolean overrideEnabled
     ) {
         super(tag, description);
-        this.field = field;
-        this.targetField = targetField;
+        this.field = FieldPathTemplate.of(field);
+        this.targetField = FieldPathTemplate.of(targetField);
         this.ignoreMissing = ignoreMissing;
         this.overrideEnabled = overrideEnabled;
     }
 
-    TemplateScript.Factory getField() {
+    FieldPathTemplate getField() {
         return field;
     }
 
-    TemplateScript.Factory getTargetField() {
+    FieldPathTemplate getTargetField() {
         return targetField;
     }
 
@@ -63,12 +65,13 @@ public final class RenameProcessor extends AbstractProcessor {
 
     @Override
     public IngestDocument execute(IngestDocument document) {
-        String path = document.renderTemplate(field);
-        if (path.isEmpty() || document.hasField(path, true) == false) {
+        // an empty field is treated as one that is missing (rather than as an invalid path), which is what the null is for
+        FieldPath path = field.resolveUnlessEmpty(document);
+        if (path == null || document.hasField(path, true) == false) {
             if (ignoreMissing) {
                 return document;
             } else {
-                throw new IllegalArgumentException("field [" + path + "] doesn't exist");
+                throw new IllegalArgumentException("field [" + (path == null ? "" : path.toString()) + "] doesn't exist");
             }
         }
 
@@ -76,7 +79,7 @@ public final class RenameProcessor extends AbstractProcessor {
         // If we didn't do this then we would fail if we set the value in the target_field
         // and then on failure processors would not see that value we tried to rename as we already
         // removed it.
-        String target = document.renderTemplate(targetField);
+        FieldPath target = targetField.resolve(document);
         if (document.hasField(target, true) && overrideEnabled == false) {
             throw new IllegalArgumentException("field [" + target + "] already exists");
         }

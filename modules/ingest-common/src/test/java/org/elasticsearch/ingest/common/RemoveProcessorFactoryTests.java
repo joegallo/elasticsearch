@@ -11,6 +11,8 @@ package org.elasticsearch.ingest.common;
 
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchParseException;
+import org.elasticsearch.ingest.IngestDocument;
+import org.elasticsearch.ingest.TestIngestDocument;
 import org.elasticsearch.ingest.TestTemplateService;
 import org.elasticsearch.test.ESTestCase;
 import org.junit.Before;
@@ -36,7 +38,7 @@ public class RemoveProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         RemoveProcessor removeProcessor = factory.create(null, processorTag, null, config, null);
         assertThat(removeProcessor.getTag(), equalTo(processorTag));
-        assertThat(removeProcessor.getFieldsToRemove().get(0).newInstance(Map.of()).execute(), equalTo("field1"));
+        assertThat(removeProcessor.getFieldsToRemove().get(0).toString(), equalTo("field1"));
     }
 
     public void testCreateKeepField() throws Exception {
@@ -55,10 +57,7 @@ public class RemoveProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         RemoveProcessor removeProcessor = factory.create(null, processorTag, null, config, null);
         assertThat(removeProcessor.getTag(), equalTo(processorTag));
-        assertThat(
-            removeProcessor.getFieldsToRemove().stream().map(template -> template.newInstance(Map.of()).execute()).toList(),
-            equalTo(List.of("field1", "field2"))
-        );
+        assertThat(removeProcessor.getFieldsToRemove().stream().map(Object::toString).toList(), equalTo(List.of("field1", "field2")));
     }
 
     public void testCreateMissingField() throws Exception {
@@ -94,5 +93,22 @@ public class RemoveProcessorFactoryTests extends ESTestCase {
         );
         assertThat(exception.getMessage(), equalTo("java.lang.RuntimeException: could not compile script"));
         assertThat(exception.getMetadata("es.processor_tag").get(0), equalTo(processorTag));
+    }
+
+    /**
+     * Pipelines are stored, so a malformed path in one has to be accepted when the processor is created, with the failure only coming
+     * when a document is run through it. This goes through the factory, as creating a processor from a stored pipeline does.
+     */
+    public void testCreateWithMalformedField() throws Exception {
+        Map<String, Object> config = new HashMap<>();
+        config.put("field", "a..b");
+        config.put("ignore_missing", randomBoolean());
+        RemoveProcessor processor = factory.create(null, randomAlphaOfLength(10), null, config, null);
+        assertThat(processor.getFieldsToRemove().get(0).toString(), equalTo("a..b"));
+
+        // being malformed is not the same as being missing, so ignore_missing doesn't make a difference
+        IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
+        IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
+        assertThat(e.getMessage(), equalTo("path [a..b] is not valid"));
     }
 }

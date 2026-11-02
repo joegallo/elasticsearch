@@ -13,6 +13,7 @@ import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
+import org.elasticsearch.ingest.FieldPathTemplate;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.ingest.ValueSource;
@@ -33,9 +34,9 @@ public final class AppendProcessor extends AbstractProcessor {
 
     public static final String TYPE = "append";
 
-    private final TemplateScript.Factory field;
+    private final FieldPathTemplate field;
     private final ValueSource value;
-    private final String copyFrom;
+    private final FieldPathTemplate copyFrom;
     private final boolean allowDuplicates;
     private final boolean ignoreEmptyValues;
 
@@ -49,14 +50,14 @@ public final class AppendProcessor extends AbstractProcessor {
         boolean ignoreEmptyValues
     ) {
         super(tag, description);
-        this.field = field;
+        this.field = FieldPathTemplate.of(field);
         this.value = value;
-        this.copyFrom = copyFrom;
+        this.copyFrom = FieldPathTemplate.constant(copyFrom);
         this.allowDuplicates = allowDuplicates;
         this.ignoreEmptyValues = ignoreEmptyValues;
     }
 
-    public TemplateScript.Factory getField() {
+    public FieldPathTemplate getField() {
         return field;
     }
 
@@ -64,18 +65,18 @@ public final class AppendProcessor extends AbstractProcessor {
         return value;
     }
 
-    public String getCopyFrom() {
+    public FieldPathTemplate getCopyFrom() {
         return copyFrom;
     }
 
     @Override
     public IngestDocument execute(IngestDocument document) throws Exception {
-        String path = document.renderTemplate(field);
+        // note that the field is only resolved when it is needed, and not before the copy_from field has been looked at
         if (copyFrom != null) {
-            Object fieldValue = document.getFieldValue(copyFrom, Object.class, ignoreEmptyValues);
-            document.appendFieldValue(path, CollectionUtils.deepCopy(fieldValue), allowDuplicates, ignoreEmptyValues);
+            Object fieldValue = document.getFieldValue(copyFrom.resolve(document), Object.class, ignoreEmptyValues);
+            document.appendFieldValue(field.resolve(document), CollectionUtils.deepCopy(fieldValue), allowDuplicates, ignoreEmptyValues);
         } else {
-            document.appendFieldValue(path, value, allowDuplicates, ignoreEmptyValues);
+            document.appendFieldValue(field.resolve(document), value, allowDuplicates, ignoreEmptyValues);
         }
         return document;
     }

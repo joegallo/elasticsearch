@@ -12,6 +12,8 @@ package org.elasticsearch.ingest.common;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchParseException;
 import org.elasticsearch.ingest.ConfigurationUtils;
+import org.elasticsearch.ingest.IngestDocument;
+import org.elasticsearch.ingest.TestIngestDocument;
 import org.elasticsearch.ingest.TestTemplateService;
 import org.elasticsearch.test.ESTestCase;
 import org.junit.Before;
@@ -45,7 +47,7 @@ public class AppendProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         AppendProcessor appendProcessor = factory.create(null, processorTag, null, config, null);
         assertThat(appendProcessor.getTag(), equalTo(processorTag));
-        assertThat(appendProcessor.getField().newInstance(Map.of()).execute(), equalTo("field1"));
+        assertThat(appendProcessor.getField().toString(), equalTo("field1"));
         assertThat(appendProcessor.getValue().copyAndResolve(Map.of()), equalTo(value));
     }
 
@@ -131,8 +133,8 @@ public class AppendProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         AppendProcessor appendProcessor = factory.create(null, processorTag, null, config, null);
         assertThat(appendProcessor.getTag(), equalTo(processorTag));
-        assertThat(appendProcessor.getField().newInstance(Map.of()).execute(), equalTo("field1"));
-        assertThat(appendProcessor.getCopyFrom(), equalTo("field2"));
+        assertThat(appendProcessor.getField().toString(), equalTo("field1"));
+        assertThat(appendProcessor.getCopyFrom().toString(), equalTo("field2"));
     }
 
     public void testCreateWithCopyFromAndValue() throws Exception {
@@ -146,5 +148,47 @@ public class AppendProcessorFactoryTests extends ESTestCase {
             () -> factory.create(null, processorTag, null, config, null)
         );
         assertThat(exception.getMessage(), equalTo("[copy_from] cannot set both `copy_from` and `value` in the same processor"));
+    }
+
+    /**
+     * Pipelines are stored, so a malformed path in one has to be accepted when the processor is created, with the failure only coming
+     * when a document is run through it. This goes through the factory, as creating a processor from a stored pipeline does.
+     */
+    public void testCreateWithMalformedField() throws Exception {
+        Map<String, Object> config = new HashMap<>();
+        config.put("field", "a..b");
+        config.put("value", "value1");
+        AppendProcessor processor = factory.create(null, randomAlphaOfLength(10), null, config, null);
+        assertThat(processor.getField().toString(), equalTo("a..b"));
+
+        IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
+        IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
+        assertThat(e.getMessage(), equalTo("path [a..b] is not valid"));
+    }
+
+    public void testCreateWithMalformedCopyFrom() throws Exception {
+        Map<String, Object> config = new HashMap<>();
+        config.put("field", "target");
+        config.put("copy_from", "a..b");
+        AppendProcessor processor = factory.create(null, randomAlphaOfLength(10), null, config, null);
+        assertThat(processor.getCopyFrom().toString(), equalTo("a..b"));
+
+        IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
+        IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
+        assertThat(e.getMessage(), equalTo("path [a..b] is not valid"));
+    }
+
+    /**
+     * If both are malformed then it is the copy_from that is reported, as that is the one that is used first.
+     */
+    public void testMalformedCopyFromIsReportedBeforeMalformedField() throws Exception {
+        Map<String, Object> config = new HashMap<>();
+        config.put("field", "c..d");
+        config.put("copy_from", "a..b");
+        AppendProcessor processor = factory.create(null, randomAlphaOfLength(10), null, config, null);
+
+        IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
+        IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
+        assertThat(e.getMessage(), equalTo("path [a..b] is not valid"));
     }
 }

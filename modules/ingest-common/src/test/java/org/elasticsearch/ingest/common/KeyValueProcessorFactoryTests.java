@@ -42,7 +42,7 @@ public class KeyValueProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         KeyValueProcessor processor = factory.create(null, processorTag, null, config, null);
         assertThat(processor.getTag(), equalTo(processorTag));
-        assertThat(processor.getField().newInstance(Map.of()).execute(), equalTo("field1"));
+        assertThat(processor.getField().toString(), equalTo("field1"));
         assertThat(processor.getFieldSplit(), equalTo("&"));
         assertThat(processor.getValueSplit(), equalTo("="));
         assertThat(processor.getIncludeKeys(), is(nullValue()));
@@ -62,7 +62,7 @@ public class KeyValueProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         KeyValueProcessor processor = factory.create(null, processorTag, null, config, null);
         assertThat(processor.getTag(), equalTo(processorTag));
-        assertThat(processor.getField().newInstance(Map.of()).execute(), equalTo("field1"));
+        assertThat(processor.getField().toString(), equalTo("field1"));
         assertThat(processor.getFieldSplit(), equalTo("&"));
         assertThat(processor.getValueSplit(), equalTo("="));
         assertThat(processor.getIncludeKeys(), equalTo(Sets.newHashSet("a", "b")));
