@@ -9,6 +9,7 @@
 
 package org.elasticsearch.ingest.common;
 
+import org.elasticsearch.ingest.FieldPathTemplate;
 import org.elasticsearch.ingest.IngestDocument;
 
 final class CsvParser {
@@ -28,7 +29,7 @@ final class CsvParser {
     private final char quote;
     private final char separator;
     private final boolean trim;
-    private final String[] headers;
+    private final FieldPathTemplate[] headers;
     private final Object emptyValue;
     private final IngestDocument ingestDocument;
     private final StringBuilder builder = new StringBuilder();
@@ -39,7 +40,7 @@ final class CsvParser {
     private int length;
     private int currentIndex;
 
-    CsvParser(IngestDocument ingestDocument, char quote, char separator, boolean trim, String[] headers, Object emptyValue) {
+    CsvParser(IngestDocument ingestDocument, char quote, char separator, boolean trim, FieldPathTemplate[] headers, Object emptyValue) {
         this.ingestDocument = ingestDocument;
         this.quote = quote;
         this.separator = separator;
@@ -188,9 +189,9 @@ final class CsvParser {
             value = builder.append(line, startIndex, endIndex).toString();
         }
         if (value.length() > 0) {
-            ingestDocument.setFieldValue(headers[currentHeader], value);
+            ingestDocument.setFieldValue(headers[currentHeader].resolve(ingestDocument), value);
         } else if (emptyValue != null) {
-            ingestDocument.setFieldValue(headers[currentHeader], emptyValue);
+            ingestDocument.setFieldValue(headers[currentHeader].resolve(ingestDocument), emptyValue);
         }
         currentHeader++;
         return currentHeader == headers.length;

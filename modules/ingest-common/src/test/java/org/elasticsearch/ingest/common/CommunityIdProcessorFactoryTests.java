@@ -10,10 +10,13 @@
 package org.elasticsearch.ingest.common;
 
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.ingest.IngestDocument;
+import org.elasticsearch.ingest.TestIngestDocument;
 import org.elasticsearch.test.ESTestCase;
 import org.junit.Before;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.elasticsearch.ingest.common.CommunityIdProcessor.Factory.DEFAULT_DEST_IP;
@@ -67,15 +70,15 @@ public class CommunityIdProcessorFactoryTests extends ESTestCase {
         String tag = randomAlphaOfLength(10);
         CommunityIdProcessor processor = factory.create(null, tag, null, config, null);
         assertThat(processor.getTag(), equalTo(tag));
-        assertThat(processor.getSourceIpField(), equalTo(sourceIpField));
-        assertThat(processor.getSourcePortField(), equalTo(sourcePortField));
-        assertThat(processor.getDestinationIpField(), equalTo(destIpField));
-        assertThat(processor.getDestinationPortField(), equalTo(destPortField));
-        assertThat(processor.getIanaNumberField(), equalTo(ianaNumberField));
-        assertThat(processor.getTransportField(), equalTo(transportField));
-        assertThat(processor.getIcmpTypeField(), equalTo(icmpTypeField));
-        assertThat(processor.getIcmpCodeField(), equalTo(icmpCodeField));
-        assertThat(processor.getTargetField(), equalTo(targetField));
+        assertThat(processor.getSourceIpField().toString(), equalTo(sourceIpField));
+        assertThat(processor.getSourcePortField().toString(), equalTo(sourcePortField));
+        assertThat(processor.getDestinationIpField().toString(), equalTo(destIpField));
+        assertThat(processor.getDestinationPortField().toString(), equalTo(destPortField));
+        assertThat(processor.getIanaNumberField().toString(), equalTo(ianaNumberField));
+        assertThat(processor.getTransportField().toString(), equalTo(transportField));
+        assertThat(processor.getIcmpTypeField().toString(), equalTo(icmpTypeField));
+        assertThat(processor.getIcmpCodeField().toString(), equalTo(icmpCodeField));
+        assertThat(processor.getTargetField().toString(), equalTo(targetField));
         assertThat(processor.getSeed(), equalTo(toUint16(seedInt)));
         assertThat(processor.getIgnoreMissing(), equalTo(ignoreMissing));
     }
@@ -108,16 +111,53 @@ public class CommunityIdProcessorFactoryTests extends ESTestCase {
         String tag = randomAlphaOfLength(10);
         CommunityIdProcessor processor = factory.create(null, tag, null, new HashMap<>(), null);
         assertThat(processor.getTag(), equalTo(tag));
-        assertThat(processor.getSourceIpField(), equalTo(DEFAULT_SOURCE_IP));
-        assertThat(processor.getSourcePortField(), equalTo(DEFAULT_SOURCE_PORT));
-        assertThat(processor.getDestinationIpField(), equalTo(DEFAULT_DEST_IP));
-        assertThat(processor.getDestinationPortField(), equalTo(DEFAULT_DEST_PORT));
-        assertThat(processor.getIanaNumberField(), equalTo(DEFAULT_IANA_NUMBER));
-        assertThat(processor.getTransportField(), equalTo(DEFAULT_TRANSPORT));
-        assertThat(processor.getIcmpTypeField(), equalTo(DEFAULT_ICMP_TYPE));
-        assertThat(processor.getIcmpCodeField(), equalTo(DEFAULT_ICMP_CODE));
-        assertThat(processor.getTargetField(), equalTo(DEFAULT_TARGET));
+        assertThat(processor.getSourceIpField().toString(), equalTo(DEFAULT_SOURCE_IP));
+        assertThat(processor.getSourcePortField().toString(), equalTo(DEFAULT_SOURCE_PORT));
+        assertThat(processor.getDestinationIpField().toString(), equalTo(DEFAULT_DEST_IP));
+        assertThat(processor.getDestinationPortField().toString(), equalTo(DEFAULT_DEST_PORT));
+        assertThat(processor.getIanaNumberField().toString(), equalTo(DEFAULT_IANA_NUMBER));
+        assertThat(processor.getTransportField().toString(), equalTo(DEFAULT_TRANSPORT));
+        assertThat(processor.getIcmpTypeField().toString(), equalTo(DEFAULT_ICMP_TYPE));
+        assertThat(processor.getIcmpCodeField().toString(), equalTo(DEFAULT_ICMP_CODE));
+        assertThat(processor.getTargetField().toString(), equalTo(DEFAULT_TARGET));
         assertThat(processor.getSeed(), equalTo(toUint16(0)));
         assertThat(processor.getIgnoreMissing(), equalTo(true));
+    }
+
+    /**
+     * Pipelines are stored, so a malformed path in one has to be accepted when the processor is created, with the failure only coming
+     * when a document is run through it. This goes through the factory, as creating a processor from a stored pipeline does.
+     */
+    public void testCreateWithMalformedFields() throws Exception {
+        for (String malformed : List.of(
+            "source_ip",
+            "source_port",
+            "destination_ip",
+            "destination_port",
+            "iana_number",
+            "transport",
+            "icmp_type",
+            "icmp_code",
+            "target_field"
+        )) {
+            Map<String, Object> config = new HashMap<>();
+            config.put(malformed, "a..b");
+            CommunityIdProcessor processor = factory.create(null, randomAlphaOfLength(10), null, config, null);
+
+            // everything else is fine, so it is the malformed one that causes the failure. That includes the fields that are only looked
+            // at when they are needed, and they are needed here
+            IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
+            ingestDocument.setFieldValue(malformed.equals("source_ip") ? "other.source" : "source.ip", "66.35.250.204");
+            ingestDocument.setFieldValue("source.port", 34855);
+            ingestDocument.setFieldValue("destination.ip", "128.232.110.120");
+            ingestDocument.setFieldValue("destination.port", 80);
+            ingestDocument.setFieldValue("network.transport", "tcp");
+            IllegalArgumentException e = expectThrows(
+                IllegalArgumentException.class,
+                "malformed " + malformed,
+                () -> processor.execute(ingestDocument)
+            );
+            assertThat(malformed, e.getMessage(), equalTo("path [a..b] is not valid"));
+        }
     }
 }

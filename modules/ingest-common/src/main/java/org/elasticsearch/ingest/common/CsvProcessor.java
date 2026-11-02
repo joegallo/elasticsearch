@@ -12,9 +12,11 @@ package org.elasticsearch.ingest.common;
 import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
+import org.elasticsearch.ingest.FieldPathTemplate;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -38,8 +40,10 @@ public final class CsvProcessor extends AbstractProcessor {
     public static final String TYPE = "csv";
 
     // visible for testing
-    final String field;
+    final FieldPathTemplate field;
     final String[] headers;
+    // the same as the headers, but parsed ahead of time
+    private final FieldPathTemplate[] headerPaths;
     final boolean trim;
     final char quote;
     final char separator;
@@ -58,8 +62,9 @@ public final class CsvProcessor extends AbstractProcessor {
         Object emptyValue
     ) {
         super(tag, description);
-        this.field = field;
+        this.field = FieldPathTemplate.constant(field);
         this.headers = headers;
+        this.headerPaths = Arrays.stream(headers).map(FieldPathTemplate::constant).toArray(FieldPathTemplate[]::new);
         this.trim = trim;
         this.quote = quote;
         this.separator = separator;
@@ -73,13 +78,13 @@ public final class CsvProcessor extends AbstractProcessor {
             return ingestDocument;
         }
 
-        String line = ingestDocument.getFieldValue(field, String.class, ignoreMissing);
+        String line = ingestDocument.getFieldValue(field.resolve(ingestDocument), String.class, ignoreMissing);
         if (line == null && ignoreMissing) {
             return ingestDocument;
         } else if (line == null) {
             throw new IllegalArgumentException("field [" + field + "] is null, cannot process it.");
         }
-        new CsvParser(ingestDocument, quote, separator, trim, headers, emptyValue).process(line);
+        new CsvParser(ingestDocument, quote, separator, trim, headerPaths, emptyValue).process(line);
         return ingestDocument;
     }
 

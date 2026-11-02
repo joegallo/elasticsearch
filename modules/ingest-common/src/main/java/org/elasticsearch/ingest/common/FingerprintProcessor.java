@@ -15,6 +15,7 @@ import org.elasticsearch.common.hash.Murmur3Hasher;
 import org.elasticsearch.common.util.ByteUtils;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
+import org.elasticsearch.ingest.FieldPathTemplate;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 
@@ -48,7 +49,9 @@ public final class FingerprintProcessor extends AbstractProcessor {
     static final byte[] FALSE_BYTES = new byte[] { 2 };
 
     private final List<String> fields;
-    private final String targetField;
+    // the same fields, in the same (sorted) order
+    private final List<FieldPathTemplate> fieldPaths;
+    private final FieldPathTemplate targetField;
     private final ThreadLocal<Hasher> threadLocalHasher;
     private final byte[] salt;
     private final boolean ignoreMissing;
@@ -65,7 +68,8 @@ public final class FingerprintProcessor extends AbstractProcessor {
         super(tag, description);
         this.fields = new ArrayList<>(fields);
         this.fields.sort(Comparator.naturalOrder());
-        this.targetField = targetField;
+        this.fieldPaths = this.fields.stream().map(FieldPathTemplate::constant).toList();
+        this.targetField = FieldPathTemplate.constant(targetField);
         this.threadLocalHasher = threadLocalHasher;
         this.salt = salt;
         this.ignoreMissing = ignoreMissing;
@@ -81,7 +85,7 @@ public final class FingerprintProcessor extends AbstractProcessor {
         var values = new Stack<>();
         for (int k = fields.size() - 1; k >= 0; k--) {
             String field = fields.get(k);
-            Object value = ingestDocument.getFieldValue(field, Object.class, true);
+            Object value = ingestDocument.getFieldValue(fieldPaths.get(k).resolve(ingestDocument), Object.class, true);
             if (value == null) {
                 if (ignoreMissing) {
                     continue;
@@ -129,7 +133,7 @@ public final class FingerprintProcessor extends AbstractProcessor {
                 }
             }
 
-            ingestDocument.setFieldValue(targetField, Base64.getEncoder().encodeToString(hasher.digest()));
+            ingestDocument.setFieldValue(targetField.resolve(ingestDocument), Base64.getEncoder().encodeToString(hasher.digest()));
         }
 
         return ingestDocument;
@@ -194,7 +198,7 @@ public final class FingerprintProcessor extends AbstractProcessor {
         return fields;
     }
 
-    public String getTargetField() {
+    public FieldPathTemplate getTargetField() {
         return targetField;
     }
 

@@ -13,6 +13,7 @@ import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.common.network.InetAddresses;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
+import org.elasticsearch.ingest.FieldPathTemplate;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 
@@ -45,15 +46,15 @@ public final class CommunityIdProcessor extends AbstractProcessor {
         }
     });
 
-    private final String sourceIpField;
-    private final String sourcePortField;
-    private final String destinationIpField;
-    private final String destinationPortField;
-    private final String ianaNumberField;
-    private final String transportField;
-    private final String icmpTypeField;
-    private final String icmpCodeField;
-    private final String targetField;
+    private final FieldPathTemplate sourceIpField;
+    private final FieldPathTemplate sourcePortField;
+    private final FieldPathTemplate destinationIpField;
+    private final FieldPathTemplate destinationPortField;
+    private final FieldPathTemplate ianaNumberField;
+    private final FieldPathTemplate transportField;
+    private final FieldPathTemplate icmpTypeField;
+    private final FieldPathTemplate icmpCodeField;
+    private final FieldPathTemplate targetField;
     private final byte[] seed;
     private final boolean ignoreMissing;
 
@@ -73,52 +74,52 @@ public final class CommunityIdProcessor extends AbstractProcessor {
         boolean ignoreMissing
     ) {
         super(tag, description);
-        this.sourceIpField = sourceIpField;
-        this.sourcePortField = sourcePortField;
-        this.destinationIpField = destinationIpField;
-        this.destinationPortField = destinationPortField;
-        this.ianaNumberField = ianaNumberField;
-        this.transportField = transportField;
-        this.icmpTypeField = icmpTypeField;
-        this.icmpCodeField = icmpCodeField;
-        this.targetField = targetField;
+        this.sourceIpField = FieldPathTemplate.constant(sourceIpField);
+        this.sourcePortField = FieldPathTemplate.constant(sourcePortField);
+        this.destinationIpField = FieldPathTemplate.constant(destinationIpField);
+        this.destinationPortField = FieldPathTemplate.constant(destinationPortField);
+        this.ianaNumberField = FieldPathTemplate.constant(ianaNumberField);
+        this.transportField = FieldPathTemplate.constant(transportField);
+        this.icmpTypeField = FieldPathTemplate.constant(icmpTypeField);
+        this.icmpCodeField = FieldPathTemplate.constant(icmpCodeField);
+        this.targetField = FieldPathTemplate.constant(targetField);
         this.seed = seed;
         this.ignoreMissing = ignoreMissing;
     }
 
-    public String getSourceIpField() {
+    public FieldPathTemplate getSourceIpField() {
         return sourceIpField;
     }
 
-    public String getSourcePortField() {
+    public FieldPathTemplate getSourcePortField() {
         return sourcePortField;
     }
 
-    public String getDestinationIpField() {
+    public FieldPathTemplate getDestinationIpField() {
         return destinationIpField;
     }
 
-    public String getDestinationPortField() {
+    public FieldPathTemplate getDestinationPortField() {
         return destinationPortField;
     }
 
-    public String getIanaNumberField() {
+    public FieldPathTemplate getIanaNumberField() {
         return ianaNumberField;
     }
 
-    public String getTransportField() {
+    public FieldPathTemplate getTransportField() {
         return transportField;
     }
 
-    public String getIcmpTypeField() {
+    public FieldPathTemplate getIcmpTypeField() {
         return icmpTypeField;
     }
 
-    public String getIcmpCodeField() {
+    public FieldPathTemplate getIcmpCodeField() {
         return icmpCodeField;
     }
 
-    public String getTargetField() {
+    public FieldPathTemplate getTargetField() {
         return targetField;
     }
 
@@ -132,14 +133,18 @@ public final class CommunityIdProcessor extends AbstractProcessor {
 
     @Override
     public IngestDocument execute(IngestDocument document) throws Exception {
-        String sourceIp = document.getFieldValue(sourceIpField, String.class, ignoreMissing);
-        String destinationIp = document.getFieldValue(destinationIpField, String.class, ignoreMissing);
-        Object ianaNumber = document.getFieldValue(ianaNumberField, Object.class, true);
-        Supplier<Object> transport = () -> document.getFieldValue(transportField, Object.class, ignoreMissing);
-        Supplier<Object> sourcePort = () -> document.getFieldValue(sourcePortField, Object.class, ignoreMissing);
-        Supplier<Object> destinationPort = () -> document.getFieldValue(destinationPortField, Object.class, ignoreMissing);
-        Object icmpType = document.getFieldValue(icmpTypeField, Object.class, true);
-        Object icmpCode = document.getFieldValue(icmpCodeField, Object.class, true);
+        String sourceIp = document.getFieldValue(sourceIpField.resolve(document), String.class, ignoreMissing);
+        String destinationIp = document.getFieldValue(destinationIpField.resolve(document), String.class, ignoreMissing);
+        Object ianaNumber = document.getFieldValue(ianaNumberField.resolve(document), Object.class, true);
+        Supplier<Object> transport = () -> document.getFieldValue(transportField.resolve(document), Object.class, ignoreMissing);
+        Supplier<Object> sourcePort = () -> document.getFieldValue(sourcePortField.resolve(document), Object.class, ignoreMissing);
+        Supplier<Object> destinationPort = () -> document.getFieldValue(
+            destinationPortField.resolve(document),
+            Object.class,
+            ignoreMissing
+        );
+        Object icmpType = document.getFieldValue(icmpTypeField.resolve(document), Object.class, true);
+        Object icmpCode = document.getFieldValue(icmpCodeField.resolve(document), Object.class, true);
         Flow flow = buildFlow(sourceIp, destinationIp, ianaNumber, transport, sourcePort, destinationPort, icmpType, icmpCode);
         if (flow == null) {
             if (ignoreMissing) {
@@ -149,7 +154,7 @@ public final class CommunityIdProcessor extends AbstractProcessor {
             }
         }
 
-        document.setFieldValue(targetField, flow.toCommunityId(seed));
+        document.setFieldValue(targetField.resolve(document), flow.toCommunityId(seed));
         return document;
     }
 
