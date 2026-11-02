@@ -237,6 +237,14 @@ public class IngestDocumentTests extends ESTestCase {
             assertPathInvalid(doc, "_source...", "path [_source...] is not valid");
             assertPathInvalid(doc, "_ingest..", "path [_ingest..] is not valid");
             assertPathInvalid(doc, "_ingest...", "path [_ingest...] is not valid");
+            // The same rules apply after the _source and _ingest prefixes have been stripped
+            assertPathValid(doc, "_source.a");
+            assertPathValid(doc, "_source.a.b.");
+            assertPathValid(doc, "_ingest.missing");
+            assertPathValid(doc, "_ingest.a.b..");
+            assertPathInvalid(doc, "_source..a", "path [_source..a] is not valid");
+            assertPathInvalid(doc, "_source.a..b", "path [_source.a..b] is not valid");
+            assertPathInvalid(doc, "_ingest..", "path [_ingest..] is not valid");
         });
 
         doWithAccessPattern(CLASSIC, (doc) -> {
