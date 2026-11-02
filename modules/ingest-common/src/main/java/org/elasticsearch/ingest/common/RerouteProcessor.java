@@ -14,7 +14,9 @@ import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
+import org.elasticsearch.ingest.FieldPathTemplate;
 import org.elasticsearch.ingest.IngestDocument;
+import org.elasticsearch.ingest.IngestDocument.FieldPath;
 import org.elasticsearch.ingest.Processor;
 
 import java.util.List;
@@ -40,6 +42,23 @@ public final class RerouteProcessor extends AbstractProcessor {
     private static final String DATA_STREAM_DATASET = DATA_STREAM_PREFIX + "dataset";
     private static final String DATA_STREAM_NAMESPACE = DATA_STREAM_PREFIX + "namespace";
     private static final String EVENT_DATASET = "event.dataset";
+
+    private static final FieldPath INDEX_PATH = FieldPath.of(IngestDocument.Metadata.INDEX.getFieldName());
+    private static final ConstantPath DATA_STREAM_TYPE_PATH = ConstantPath.of(DATA_STREAM_TYPE);
+    private static final ConstantPath DATA_STREAM_DATASET_PATH = ConstantPath.of(DATA_STREAM_DATASET);
+    private static final ConstantPath DATA_STREAM_NAMESPACE_PATH = ConstantPath.of(DATA_STREAM_NAMESPACE);
+    private static final ConstantPath EVENT_DATASET_PATH = ConstantPath.of(EVENT_DATASET);
+
+    /**
+     * A path that is the same for every document, along with its parsed form. The unparsed form is needed in order to also be
+     * able to look for the path as a single, dotted, key.
+     */
+    private record ConstantPath(String path, FieldPath fieldPath) {
+        static ConstantPath of(String path) {
+            return new ConstantPath(path, FieldPath.of(path));
+        }
+    }
+
     private final List<DataStreamValueSource> type;
     private final List<DataStreamValueSource> dataset;
     private final List<DataStreamValueSource> namespace;
@@ -78,7 +97,7 @@ public final class RerouteProcessor extends AbstractProcessor {
             ingestDocument.reroute(destination);
             return ingestDocument;
         }
-        final String indexName = ingestDocument.getFieldValue(IngestDocument.Metadata.INDEX.getFieldName(), String.class);
+        final String indexName = ingestDocument.getFieldValue(INDEX_PATH, String.class);
         final String currentType;
         final String currentDataset;
         final String currentNamespace;
@@ -101,24 +120,24 @@ public final class RerouteProcessor extends AbstractProcessor {
         String namespace = determineDataStreamField(ingestDocument, this.namespace, currentNamespace);
         String newTarget = type + "-" + dataset + "-" + namespace;
         ingestDocument.reroute(newTarget);
-        setFieldValue(ingestDocument, DATA_STREAM_TYPE, type);
-        setFieldValue(ingestDocument, DATA_STREAM_DATASET, dataset);
-        setFieldValue(ingestDocument, DATA_STREAM_NAMESPACE, namespace);
-        if (ingestDocument.getSource().containsKey(EVENT_DATASET) || ingestDocument.hasField(EVENT_DATASET)) {
+        setFieldValue(ingestDocument, DATA_STREAM_TYPE_PATH, type);
+        setFieldValue(ingestDocument, DATA_STREAM_DATASET_PATH, dataset);
+        setFieldValue(ingestDocument, DATA_STREAM_NAMESPACE_PATH, namespace);
+        if (ingestDocument.getSource().containsKey(EVENT_DATASET) || ingestDocument.hasField(EVENT_DATASET_PATH.fieldPath())) {
             // ECS specifies that "event.dataset should have the same value as data_stream.dataset"
             // not eagerly set event.dataset but only if the doc contains it already to ensure it's consistent with data_stream.dataset
-            setFieldValue(ingestDocument, EVENT_DATASET, dataset);
+            setFieldValue(ingestDocument, EVENT_DATASET_PATH, dataset);
         }
         return ingestDocument;
     }
 
     /* sets a field value in either dotted or nested notation, preserving the notation used in the document */
-    private static void setFieldValue(IngestDocument doc, String path, String value) {
+    private static void setFieldValue(IngestDocument doc, ConstantPath path, String value) {
         Map<String, Object> source = doc.getSource();
-        if (source.containsKey(path)) {
-            source.put(path, value);
+        if (source.containsKey(path.path())) {
+            source.put(path.path(), value);
         } else {
-            doc.setFieldValue(path, value);
+            doc.setFieldValue(path.fieldPath(), value);
         }
     }
 
@@ -226,6 +245,7 @@ public final class RerouteProcessor extends AbstractProcessor {
 
         private final String value;
         private final String fieldReference;
+        private final FieldPathTemplate fieldReferencePath;
         private final Function<String, String> sanitizer;
 
         public static DataStreamValueSource type(String type) {
@@ -259,8 +279,10 @@ public final class RerouteProcessor extends AbstractProcessor {
                     throw new IllegalArgumentException("'" + value + "' is not a valid field reference");
                 }
                 this.fieldReference = fieldReference;
+                this.fieldReferencePath = FieldPathTemplate.constant(fieldReference);
             } else {
                 this.fieldReference = null;
+                this.fieldReferencePath = null;
                 if (Objects.equals(sanitizer.apply(value), value) == false) {
                     throw new IllegalArgumentException("'" + value + "' contains disallowed characters");
                 }
@@ -276,7 +298,7 @@ public final class RerouteProcessor extends AbstractProcessor {
         @Nullable
         public String resolve(IngestDocument ingestDocument) {
             if (fieldReference != null) {
-                String value = ingestDocument.getFieldValue(fieldReference, String.class, true);
+                String value = ingestDocument.getFieldValue(fieldReferencePath.resolve(ingestDocument), String.class, true);
                 if (value == null) {
                     value = getStringFieldValueInDottedNotation(ingestDocument);
                 }

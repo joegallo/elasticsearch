@@ -11,7 +11,9 @@ package org.elasticsearch.ingest.common;
 
 import org.elasticsearch.ElasticsearchParseException;
 import org.elasticsearch.dissect.DissectException;
+import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.RandomDocumentPicks;
+import org.elasticsearch.ingest.TestIngestDocument;
 import org.elasticsearch.test.ESTestCase;
 
 import java.util.HashMap;
@@ -38,7 +40,7 @@ public class DissectProcessorFactoryTests extends ESTestCase {
 
         DissectProcessor processor = factory.create(null, processorTag, null, config, null);
         assertThat(processor.getTag(), equalTo(processorTag));
-        assertThat(processor.field, equalTo(fieldName));
+        assertThat(processor.field.toString(), equalTo(fieldName));
         assertThat(processor.pattern, equalTo(pattern));
         assertThat(processor.appendSeparator, equalTo(appendSeparator));
         assertThat(processor.dissectParser, is(notNullValue()));
@@ -77,5 +79,22 @@ public class DissectProcessorFactoryTests extends ESTestCase {
         config.put("pattern", "no keys defined");
         config.put("field", randomAlphaOfLength(10));
         expectThrows(DissectException.class, () -> factory.create(null, "_tag", null, config, null));
+    }
+
+    /**
+     * Pipelines are stored, so a malformed path in one has to be accepted when the processor is created, with the failure only coming
+     * when a document is run through it. This goes through the factory, as creating a processor from a stored pipeline does.
+     */
+    public void testCreateWithMalformedField() throws Exception {
+        Map<String, Object> config = new HashMap<>();
+        config.put("field", "a..b");
+        config.put("pattern", "%{a},%{b}");
+        config.put("ignore_missing", randomBoolean());
+        DissectProcessor processor = new DissectProcessor.Factory().create(null, randomAlphaOfLength(10), null, config, null);
+        assertThat(processor.field.toString(), equalTo("a..b"));
+
+        IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
+        IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
+        assertThat(e.getMessage(), equalTo("path [a..b] is not valid"));
     }
 }

@@ -12,6 +12,7 @@ package org.elasticsearch.ingest.common;
 import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.IngestDocument;
+import org.elasticsearch.ingest.IngestDocument.FieldPath;
 import org.elasticsearch.ingest.Processor;
 
 import java.util.HashMap;
@@ -43,6 +44,13 @@ public final class RecoverFailureDocumentProcessor extends AbstractProcessor {
 
     public static final String TYPE = "recover_failure_document";
 
+    private static final FieldPath DOCUMENT_PATH = FieldPath.of(DOCUMENT_FIELD);
+    private static final FieldPath SOURCE_PATH = FieldPath.of(SOURCE_FIELD_PATH);
+    private static final FieldPath ERROR_PATH = FieldPath.of(ERROR_FIELD);
+    private static final FieldPath INDEX_PATH = FieldPath.of(IngestDocument.Metadata.INDEX.getFieldName());
+    private static final FieldPath ROUTING_PATH = FieldPath.of(IngestDocument.Metadata.ROUTING.getFieldName());
+    private static final FieldPath ID_PATH = FieldPath.of(IngestDocument.Metadata.ID.getFieldName());
+
     RecoverFailureDocumentProcessor(String tag, String description) {
         super(tag, description);
     }
@@ -50,15 +58,15 @@ public final class RecoverFailureDocumentProcessor extends AbstractProcessor {
     @Override
     @SuppressWarnings("unchecked")
     public IngestDocument execute(IngestDocument document) throws Exception {
-        if (document.hasField(DOCUMENT_FIELD) == false) {
+        if (document.hasField(DOCUMENT_PATH) == false) {
             throw new IllegalArgumentException(MISSING_DOCUMENT_ERROR_MSG);
         }
 
-        if (document.hasField(SOURCE_FIELD_PATH) == false) {
+        if (document.hasField(SOURCE_PATH) == false) {
             throw new IllegalArgumentException(MISSING_SOURCE_ERROR_MSG);
         }
 
-        if (document.hasField(ERROR_FIELD) == false) {
+        if (document.hasField(ERROR_PATH) == false) {
             throw new IllegalArgumentException(MISSING_ERROR_ERROR_MSG);
         }
 
@@ -66,22 +74,22 @@ public final class RecoverFailureDocumentProcessor extends AbstractProcessor {
         storePreRecoveryData(document);
 
         // Get the nested 'document' field, which holds the original document and metadata.
-        Map<String, Object> failedDocument = (Map<String, Object>) document.getFieldValue(DOCUMENT_FIELD, Map.class);
+        Map<String, Object> failedDocument = (Map<String, Object>) document.getFieldValue(DOCUMENT_PATH, Map.class);
 
         // Copy the original index, routing, and id back to the document's metadata.
         String originalIndex = (String) failedDocument.get(INDEX_FIELD);
         if (originalIndex != null) {
-            document.setFieldValue(IngestDocument.Metadata.INDEX.getFieldName(), originalIndex);
+            document.setFieldValue(INDEX_PATH, originalIndex);
         }
 
         String originalRouting = (String) failedDocument.get(ROUTING_FIELD);
         if (originalRouting != null) {
-            document.setFieldValue(IngestDocument.Metadata.ROUTING.getFieldName(), originalRouting);
+            document.setFieldValue(ROUTING_PATH, originalRouting);
         }
 
         String originalId = (String) failedDocument.get(ID_FIELD);
         if (originalId != null) {
-            document.setFieldValue(IngestDocument.Metadata.ID.getFieldName(), originalId);
+            document.setFieldValue(ID_PATH, originalId);
         }
 
         // Get the original document's source.

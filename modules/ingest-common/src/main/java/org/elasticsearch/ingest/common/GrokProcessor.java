@@ -18,7 +18,9 @@ import org.elasticsearch.grok.MatcherWatchdog;
 import org.elasticsearch.grok.PatternBank;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
+import org.elasticsearch.ingest.FieldPathTemplate;
 import org.elasticsearch.ingest.IngestDocument;
+import org.elasticsearch.ingest.IngestDocument.FieldPath;
 import org.elasticsearch.ingest.Processor;
 
 import java.util.HashMap;
@@ -34,9 +36,10 @@ public final class GrokProcessor extends AbstractProcessor {
     public static final String DEFAULT_ECS_COMPATIBILITY_MODE = ECS_COMPATIBILITY_DISABLED;
 
     private static final String PATTERN_MATCH_KEY = "_ingest._grok_match_index";
+    private static final FieldPath PATTERN_MATCH_PATH = FieldPath.of(PATTERN_MATCH_KEY);
     private static final Logger logger = LogManager.getLogger(GrokProcessor.class);
 
-    private final String matchField;
+    private final FieldPathTemplate matchField;
     private final List<String> matchPatterns;
     private final Grok grok;
     private final boolean traceMatch;
@@ -56,7 +59,7 @@ public final class GrokProcessor extends AbstractProcessor {
     ) {
         super(tag, description);
         String combinedPattern = Grok.combinePatterns(matchPatterns, traceMatch ? PATTERN_MATCH_KEY : null);
-        this.matchField = matchField;
+        this.matchField = FieldPathTemplate.constant(matchField);
         this.matchPatterns = matchPatterns;
         this.grok = new Grok(patternBank, combinedPattern, matcherWatchdog, logger::debug);
         this.traceMatch = traceMatch;
@@ -69,7 +72,7 @@ public final class GrokProcessor extends AbstractProcessor {
 
     @Override
     public IngestDocument execute(IngestDocument ingestDocument) throws Exception {
-        String fieldValue = ingestDocument.getFieldValue(matchField, String.class, ignoreMissing);
+        String fieldValue = ingestDocument.getFieldValue(matchField.resolve(ingestDocument), String.class, ignoreMissing);
 
         if (fieldValue == null && ignoreMissing) {
             return ingestDocument;
@@ -89,10 +92,10 @@ public final class GrokProcessor extends AbstractProcessor {
         if (traceMatch) {
             if (matchPatterns.size() > 1) {
                 @SuppressWarnings("unchecked")
-                HashMap<String, String> matchMap = (HashMap<String, String>) ingestDocument.getFieldValue(PATTERN_MATCH_KEY, Object.class);
-                matchMap.keySet().stream().findFirst().ifPresent((index) -> { ingestDocument.setFieldValue(PATTERN_MATCH_KEY, index); });
+                HashMap<String, String> matchMap = (HashMap<String, String>) ingestDocument.getFieldValue(PATTERN_MATCH_PATH, Object.class);
+                matchMap.keySet().stream().findFirst().ifPresent((index) -> { ingestDocument.setFieldValue(PATTERN_MATCH_PATH, index); });
             } else {
-                ingestDocument.setFieldValue(PATTERN_MATCH_KEY, "0");
+                ingestDocument.setFieldValue(PATTERN_MATCH_PATH, "0");
             }
         }
         return ingestDocument;
@@ -111,7 +114,7 @@ public final class GrokProcessor extends AbstractProcessor {
         return ignoreMissing;
     }
 
-    String getMatchField() {
+    FieldPathTemplate getMatchField() {
         return matchField;
     }
 

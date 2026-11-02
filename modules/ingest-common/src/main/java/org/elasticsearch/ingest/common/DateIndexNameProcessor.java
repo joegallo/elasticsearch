@@ -14,7 +14,9 @@ import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.common.time.DateFormatter;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
+import org.elasticsearch.ingest.FieldPathTemplate;
 import org.elasticsearch.ingest.IngestDocument;
+import org.elasticsearch.ingest.IngestDocument.FieldPath;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.script.TemplateScript;
@@ -34,7 +36,9 @@ public final class DateIndexNameProcessor extends AbstractProcessor {
 
     public static final String TYPE = "date_index_name";
 
-    private final String field;
+    private static final FieldPath INDEX_PATH = FieldPath.of(IngestDocument.Metadata.INDEX.getFieldName());
+
+    private final FieldPathTemplate field;
     private final TemplateScript.Factory indexNamePrefixTemplate;
     private final TemplateScript.Factory dateRoundingTemplate;
     private final TemplateScript.Factory indexNameFormatTemplate;
@@ -52,7 +56,7 @@ public final class DateIndexNameProcessor extends AbstractProcessor {
         TemplateScript.Factory indexNameFormatTemplate
     ) {
         super(tag, description);
-        this.field = field;
+        this.field = FieldPathTemplate.constant(field);
         this.timezone = timezone;
         this.dateFormats = dateFormats;
         this.indexNamePrefixTemplate = indexNamePrefixTemplate;
@@ -63,7 +67,7 @@ public final class DateIndexNameProcessor extends AbstractProcessor {
     @Override
     public IngestDocument execute(IngestDocument ingestDocument) throws Exception {
         // Date can be specified as a string or long:
-        Object obj = ingestDocument.getFieldValue(field, Object.class);
+        Object obj = ingestDocument.getFieldValue(field.resolve(ingestDocument), Object.class);
         String date = null;
         if (obj != null) {
             // Not use Objects.toString(...) here, because null gets changed to "null" which may confuse some date parsers
@@ -105,7 +109,7 @@ public final class DateIndexNameProcessor extends AbstractProcessor {
             .append('}')
             .append('>');
         String dynamicIndexName = builder.toString();
-        ingestDocument.setFieldValue(IngestDocument.Metadata.INDEX.getFieldName(), dynamicIndexName);
+        ingestDocument.setFieldValue(INDEX_PATH, dynamicIndexName);
         return ingestDocument;
     }
 
@@ -114,7 +118,7 @@ public final class DateIndexNameProcessor extends AbstractProcessor {
         return TYPE;
     }
 
-    String getField() {
+    FieldPathTemplate getField() {
         return field;
     }
 

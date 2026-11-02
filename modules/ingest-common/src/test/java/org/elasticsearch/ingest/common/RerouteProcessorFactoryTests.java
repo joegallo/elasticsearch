@@ -10,6 +10,8 @@
 package org.elasticsearch.ingest.common;
 
 import org.elasticsearch.ElasticsearchParseException;
+import org.elasticsearch.ingest.IngestDocument;
+import org.elasticsearch.ingest.RandomDocumentPicks;
 import org.elasticsearch.ingest.common.RerouteProcessor.DataStreamValueSource;
 import org.elasticsearch.test.ESTestCase;
 
@@ -75,5 +77,19 @@ public class RerouteProcessorFactoryTests extends ESTestCase {
 
     private static RerouteProcessor create(Map<String, Object> config) throws Exception {
         return new RerouteProcessor.Factory().create(null, null, null, new HashMap<>(config), null);
+    }
+
+    /**
+     * Pipelines are stored, so a malformed path in one has to be accepted when the processor is created, with the failure only coming
+     * when a document is run through it. This goes through the factory, as creating a processor from a stored pipeline does.
+     */
+    public void testCreateWithMalformedFieldReference() throws Exception {
+        // the field reference is only parsed when a document is run through the processor
+        RerouteProcessor processor = create("{{a..b}}", null);
+
+        IngestDocument ingestDocument = RandomDocumentPicks.randomIngestDocument(random());
+        ingestDocument.setFieldValue("_index", "logs-generic-default");
+        IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
+        assertThat(e.getMessage(), equalTo("path [a..b] is not valid"));
     }
 }

@@ -13,6 +13,7 @@ import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.common.network.NetworkDirectionUtils;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
+import org.elasticsearch.ingest.FieldPathTemplate;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.script.ScriptService;
@@ -29,11 +30,11 @@ public class NetworkDirectionProcessor extends AbstractProcessor {
 
     public static final String TYPE = "network_direction";
 
-    private final String sourceIpField;
-    private final String destinationIpField;
-    private final String targetField;
+    private final FieldPathTemplate sourceIpField;
+    private final FieldPathTemplate destinationIpField;
+    private final FieldPathTemplate targetField;
     private final List<TemplateScript.Factory> internalNetworks;
-    private final String internalNetworksField;
+    private final FieldPathTemplate internalNetworksField;
     private final boolean ignoreMissing;
 
     NetworkDirectionProcessor(
@@ -47,23 +48,23 @@ public class NetworkDirectionProcessor extends AbstractProcessor {
         boolean ignoreMissing
     ) {
         super(tag, description);
-        this.sourceIpField = sourceIpField;
-        this.destinationIpField = destinationIpField;
-        this.targetField = targetField;
+        this.sourceIpField = FieldPathTemplate.constant(sourceIpField);
+        this.destinationIpField = FieldPathTemplate.constant(destinationIpField);
+        this.targetField = FieldPathTemplate.constant(targetField);
         this.internalNetworks = internalNetworks;
-        this.internalNetworksField = internalNetworksField;
+        this.internalNetworksField = FieldPathTemplate.constant(internalNetworksField);
         this.ignoreMissing = ignoreMissing;
     }
 
-    public String getSourceIpField() {
+    public FieldPathTemplate getSourceIpField() {
         return sourceIpField;
     }
 
-    public String getDestinationIpField() {
+    public FieldPathTemplate getDestinationIpField() {
         return destinationIpField;
     }
 
-    public String getTargetField() {
+    public FieldPathTemplate getTargetField() {
         return targetField;
     }
 
@@ -71,7 +72,7 @@ public class NetworkDirectionProcessor extends AbstractProcessor {
         return internalNetworks;
     }
 
-    public String getInternalNetworksField() {
+    public FieldPathTemplate getInternalNetworksField() {
         return internalNetworksField;
     }
 
@@ -90,7 +91,7 @@ public class NetworkDirectionProcessor extends AbstractProcessor {
             }
         }
 
-        ingestDocument.setFieldValue(targetField, direction);
+        ingestDocument.setFieldValue(targetField.resolve(ingestDocument), direction);
         return ingestDocument;
     }
 
@@ -99,7 +100,7 @@ public class NetworkDirectionProcessor extends AbstractProcessor {
 
         if (internalNetworksField != null) {
             @SuppressWarnings("unchecked")
-            List<String> stringList = d.getFieldValue(internalNetworksField, networks.getClass(), ignoreMissing);
+            List<String> stringList = d.getFieldValue(internalNetworksField.resolve(d), networks.getClass(), ignoreMissing);
             if (stringList == null) {
                 return null;
             }
@@ -108,12 +109,12 @@ public class NetworkDirectionProcessor extends AbstractProcessor {
             networks = internalNetworks.stream().map(network -> d.renderTemplate(network)).toList();
         }
 
-        String sourceIpAddrString = d.getFieldValue(sourceIpField, String.class, ignoreMissing);
+        String sourceIpAddrString = d.getFieldValue(sourceIpField.resolve(d), String.class, ignoreMissing);
         if (sourceIpAddrString == null) {
             return null;
         }
 
-        String destIpAddrString = d.getFieldValue(destinationIpField, String.class, ignoreMissing);
+        String destIpAddrString = d.getFieldValue(destinationIpField.resolve(d), String.class, ignoreMissing);
         if (destIpAddrString == null) {
             return null;
         }

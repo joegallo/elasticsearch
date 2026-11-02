@@ -10,6 +10,8 @@
 package org.elasticsearch.ingest.common;
 
 import org.elasticsearch.ElasticsearchParseException;
+import org.elasticsearch.ingest.IngestDocument;
+import org.elasticsearch.ingest.TestIngestDocument;
 import org.elasticsearch.ingest.TestTemplateService;
 import org.elasticsearch.test.ESTestCase;
 import org.junit.Before;
@@ -52,9 +54,9 @@ public class NetworkDirectionProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         NetworkDirectionProcessor networkProcessor = factory.create(null, processorTag, null, config, null);
         assertThat(networkProcessor.getTag(), equalTo(processorTag));
-        assertThat(networkProcessor.getSourceIpField(), equalTo(sourceIpField));
-        assertThat(networkProcessor.getDestinationIpField(), equalTo(destIpField));
-        assertThat(networkProcessor.getTargetField(), equalTo(targetField));
+        assertThat(networkProcessor.getSourceIpField().toString(), equalTo(sourceIpField));
+        assertThat(networkProcessor.getDestinationIpField().toString(), equalTo(destIpField));
+        assertThat(networkProcessor.getTargetField().toString(), equalTo(targetField));
         assertThat(networkProcessor.getInternalNetworks().size(), greaterThan(0));
         assertThat(networkProcessor.getInternalNetworks().get(0).newInstance(Map.of()).execute(), equalTo("10.0.0.0/8"));
         assertThat(networkProcessor.getIgnoreMissing(), equalTo(ignoreMissing));
@@ -77,10 +79,10 @@ public class NetworkDirectionProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         NetworkDirectionProcessor networkProcessor = factory.create(null, processorTag, null, config, null);
         assertThat(networkProcessor.getTag(), equalTo(processorTag));
-        assertThat(networkProcessor.getSourceIpField(), equalTo(sourceIpField));
-        assertThat(networkProcessor.getDestinationIpField(), equalTo(destIpField));
-        assertThat(networkProcessor.getTargetField(), equalTo(targetField));
-        assertThat(networkProcessor.getInternalNetworksField(), equalTo(internalNetworksField));
+        assertThat(networkProcessor.getSourceIpField().toString(), equalTo(sourceIpField));
+        assertThat(networkProcessor.getDestinationIpField().toString(), equalTo(destIpField));
+        assertThat(networkProcessor.getTargetField().toString(), equalTo(targetField));
+        assertThat(networkProcessor.getInternalNetworksField().toString(), equalTo(internalNetworksField));
         assertThat(networkProcessor.getIgnoreMissing(), equalTo(ignoreMissing));
     }
 
@@ -104,9 +106,41 @@ public class NetworkDirectionProcessorFactoryTests extends ESTestCase {
 
         NetworkDirectionProcessor networkProcessor = factory.create(null, processorTag, null, config, null);
         assertThat(networkProcessor.getTag(), equalTo(processorTag));
-        assertThat(networkProcessor.getSourceIpField(), equalTo(DEFAULT_SOURCE_IP));
-        assertThat(networkProcessor.getDestinationIpField(), equalTo(DEFAULT_DEST_IP));
-        assertThat(networkProcessor.getTargetField(), equalTo(DEFAULT_TARGET));
+        assertThat(networkProcessor.getSourceIpField().toString(), equalTo(DEFAULT_SOURCE_IP));
+        assertThat(networkProcessor.getDestinationIpField().toString(), equalTo(DEFAULT_DEST_IP));
+        assertThat(networkProcessor.getTargetField().toString(), equalTo(DEFAULT_TARGET));
         assertThat(networkProcessor.getIgnoreMissing(), equalTo(true));
+    }
+
+    /**
+     * Pipelines are stored, so a malformed path in one has to be accepted when the processor is created, with the failure only coming
+     * when a document is run through it. This goes through the factory, as creating a processor from a stored pipeline does.
+     */
+    public void testCreateWithMalformedFields() throws Exception {
+        for (String malformed : List.of("source_ip", "destination_ip", "target_field", "internal_networks_field")) {
+            Map<String, Object> config = new HashMap<>();
+            config.put("source_ip", "source.ip");
+            config.put("destination_ip", "destination.ip");
+            config.put("target_field", "network.direction");
+            if (malformed.equals("internal_networks_field")) {
+                config.put("internal_networks_field", "internal");
+            } else {
+                config.put("internal_networks", List.of("10.0.0.0/8"));
+            }
+            config.put(malformed, "a..b");
+            NetworkDirectionProcessor processor = factory.create(null, randomAlphaOfLength(10), null, config, null);
+
+            // everything else is fine, so it is the malformed one that causes the failure
+            IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
+            ingestDocument.setFieldValue("source.ip", "10.0.0.1");
+            ingestDocument.setFieldValue("destination.ip", "8.8.8.8");
+            ingestDocument.setFieldValue("internal", List.of("10.0.0.0/8"));
+            IllegalArgumentException e = expectThrows(
+                IllegalArgumentException.class,
+                "malformed " + malformed,
+                () -> processor.execute(ingestDocument)
+            );
+            assertThat(malformed, e.getMessage(), equalTo("path [a..b] is not valid"));
+        }
     }
 }
