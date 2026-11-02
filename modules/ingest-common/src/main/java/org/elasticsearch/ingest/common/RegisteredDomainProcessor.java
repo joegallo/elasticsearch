@@ -12,6 +12,7 @@ package org.elasticsearch.ingest.common;
 import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
+import org.elasticsearch.ingest.FieldPathTemplate;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.web.RegisteredDomain;
@@ -22,18 +23,31 @@ public class RegisteredDomainProcessor extends AbstractProcessor {
 
     public static final String TYPE = "registered_domain";
 
-    private final String field;
+    private final FieldPathTemplate field;
+    // note that this is a prefix for the fields that the results are written to (and can be empty), rather than a field itself
     private final String targetField;
     private final boolean ignoreMissing;
+    // the fields that the results are written to, which are the same for every document
+    private final DomainInfoFields domainInfoFields;
 
     RegisteredDomainProcessor(String tag, String description, String field, String targetField, boolean ignoreMissing) {
         super(tag, description);
-        this.field = field;
+        this.field = FieldPathTemplate.constant(field);
         this.targetField = targetField;
         this.ignoreMissing = ignoreMissing;
+        String fieldPrefix = targetField;
+        if (fieldPrefix.isEmpty() == false) {
+            fieldPrefix += ".";
+        }
+        this.domainInfoFields = new DomainInfoFields(
+            FieldPathTemplate.constant(fieldPrefix + RegisteredDomain.DOMAIN),
+            FieldPathTemplate.constant(fieldPrefix + RegisteredDomain.REGISTERED_DOMAIN),
+            FieldPathTemplate.constant(fieldPrefix + RegisteredDomain.eTLD),
+            FieldPathTemplate.constant(fieldPrefix + RegisteredDomain.SUBDOMAIN)
+        );
     }
 
-    public String getField() {
+    public FieldPathTemplate getField() {
         return field;
     }
 
@@ -47,14 +61,10 @@ public class RegisteredDomainProcessor extends AbstractProcessor {
 
     @Override
     public IngestDocument execute(IngestDocument document) throws Exception {
-        final String fqdn = document.getFieldValue(field, String.class, ignoreMissing);
-        String fieldPrefix = targetField;
-        if (fieldPrefix.isEmpty() == false) {
-            fieldPrefix += ".";
-        }
+        final String fqdn = document.getFieldValue(field.resolve(document), String.class, ignoreMissing);
         boolean infoFound = RegisteredDomain.parseRegisteredDomainInfo(
             fqdn,
-            new IngestDocumentRegisteredDomainInfoCollector(document, fieldPrefix)
+            new IngestDocumentRegisteredDomainInfoCollector(document, domainInfoFields)
         );
         if (infoFound == false && ignoreMissing == false) {
             throw new IllegalArgumentException("unable to set domain information for document");
@@ -87,33 +97,43 @@ public class RegisteredDomainProcessor extends AbstractProcessor {
         }
     }
 
+    /**
+     * The fields that the different parts of the domain information are written to.
+     */
+    private record DomainInfoFields(
+        FieldPathTemplate domain,
+        FieldPathTemplate registeredDomain,
+        FieldPathTemplate topLevelDomain,
+        FieldPathTemplate subdomain
+    ) {}
+
     private static class IngestDocumentRegisteredDomainInfoCollector implements RegisteredDomain.RegisteredDomainInfoCollector {
         private final IngestDocument document;
-        private final String fieldPrefix;
+        private final DomainInfoFields fields;
 
-        IngestDocumentRegisteredDomainInfoCollector(IngestDocument document, String fieldPrefix) {
+        IngestDocumentRegisteredDomainInfoCollector(IngestDocument document, DomainInfoFields fields) {
             this.document = document;
-            this.fieldPrefix = fieldPrefix;
+            this.fields = fields;
         }
 
         @Override
         public void domain(String domain) {
-            document.setFieldValue(fieldPrefix + RegisteredDomain.DOMAIN, domain);
+            document.setFieldValue(fields.domain().resolve(document), domain);
         }
 
         @Override
         public void registeredDomain(String registeredDomain) {
-            document.setFieldValue(fieldPrefix + RegisteredDomain.REGISTERED_DOMAIN, registeredDomain);
+            document.setFieldValue(fields.registeredDomain().resolve(document), registeredDomain);
         }
 
         @Override
         public void topLevelDomain(String topLevelDomain) {
-            document.setFieldValue(fieldPrefix + RegisteredDomain.eTLD, topLevelDomain);
+            document.setFieldValue(fields.topLevelDomain().resolve(document), topLevelDomain);
         }
 
         @Override
         public void subdomain(String subdomain) {
-            document.setFieldValue(fieldPrefix + RegisteredDomain.SUBDOMAIN, subdomain);
+            document.setFieldValue(fields.subdomain().resolve(document), subdomain);
         }
     }
 }
