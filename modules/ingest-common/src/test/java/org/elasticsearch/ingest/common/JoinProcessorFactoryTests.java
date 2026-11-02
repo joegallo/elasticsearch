@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasToString;
 
 public class JoinProcessorFactoryTests extends ESTestCase {
 
@@ -30,9 +31,9 @@ public class JoinProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         JoinProcessor joinProcessor = factory.create(null, processorTag, null, config, null);
         assertThat(joinProcessor.getTag(), equalTo(processorTag));
-        assertThat(joinProcessor.getField().toString(), equalTo("field1"));
+        assertThat(joinProcessor.getField(), hasToString("field1"));
         assertThat(joinProcessor.getSeparator(), equalTo("-"));
-        assertThat(joinProcessor.getTargetField().toString(), equalTo("field1"));
+        assertThat(joinProcessor.getTargetField(), hasToString("field1"));
     }
 
     public void testCreateNoFieldPresent() throws Exception {
@@ -68,9 +69,9 @@ public class JoinProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         JoinProcessor joinProcessor = factory.create(null, processorTag, null, config, null);
         assertThat(joinProcessor.getTag(), equalTo(processorTag));
-        assertThat(joinProcessor.getField().toString(), equalTo("field1"));
+        assertThat(joinProcessor.getField(), hasToString("field1"));
         assertThat(joinProcessor.getSeparator(), equalTo("-"));
-        assertThat(joinProcessor.getTargetField().toString(), equalTo("target"));
+        assertThat(joinProcessor.getTargetField(), hasToString("target"));
     }
 
     /**
@@ -82,7 +83,7 @@ public class JoinProcessorFactoryTests extends ESTestCase {
         config.put("field", "a..b");
         config.put("separator", "-");
         JoinProcessor processor = new JoinProcessor.Factory().create(null, randomAlphaOfLength(10), null, config, null);
-        assertThat(processor.getField().toString(), equalTo("a..b"));
+        assertThat(processor.getField(), hasToString("a..b"));
 
         IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
@@ -95,7 +96,7 @@ public class JoinProcessorFactoryTests extends ESTestCase {
         config.put("target_field", "a..b");
         config.put("separator", "-");
         JoinProcessor processor = new JoinProcessor.Factory().create(null, randomAlphaOfLength(10), null, config, null);
-        assertThat(processor.getTargetField().toString(), equalTo("a..b"));
+        assertThat(processor.getTargetField(), hasToString("a..b"));
 
         // the source is fine, so it is the target that causes the failure
         IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();

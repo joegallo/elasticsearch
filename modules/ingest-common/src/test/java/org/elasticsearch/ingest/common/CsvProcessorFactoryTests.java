@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasToString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
@@ -35,7 +36,7 @@ public class CsvProcessorFactoryTests extends ESTestCase {
         properties.put("ignore_missing", true);
         CsvProcessor csv = factory.create(null, "csv", null, properties, null);
         assertThat(csv, notNullValue());
-        assertThat(csv.field.toString(), equalTo("field"));
+        assertThat(csv.field, hasToString("field"));
         assertThat(csv.headers, equalTo(new String[] { "target" }));
         assertThat(csv.quote, equalTo('|'));
         assertThat(csv.separator, equalTo('/'));
@@ -55,7 +56,7 @@ public class CsvProcessorFactoryTests extends ESTestCase {
         config.put("target_fields", List.of("target"));
         config.put("ignore_missing", randomBoolean());
         CsvProcessor processor = new CsvProcessor.Factory().create(null, "csv", null, config, null);
-        assertThat(processor.field.toString(), equalTo("a..b"));
+        assertThat(processor.field, hasToString("a..b"));
 
         IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));

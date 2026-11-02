@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasToString;
 import static org.hamcrest.Matchers.is;
 
 public abstract class AbstractStringProcessorFactoryTestCase extends ESTestCase {
@@ -41,9 +42,9 @@ public abstract class AbstractStringProcessorFactoryTestCase extends ESTestCase 
 
         AbstractStringProcessor<?> processor = factory.create(null, processorTag, null, modifyConfig(config), null);
         assertThat(processor.getTag(), equalTo(processorTag));
-        assertThat(processor.getField().toString(), equalTo(fieldName));
+        assertThat(processor.getField(), hasToString(fieldName));
         assertThat(processor.isIgnoreMissing(), is(false));
-        assertThat(processor.getTargetField().toString(), equalTo(fieldName));
+        assertThat(processor.getTargetField(), hasToString(fieldName));
         assertProcessor(processor);
     }
 
@@ -58,9 +59,9 @@ public abstract class AbstractStringProcessorFactoryTestCase extends ESTestCase 
 
         AbstractStringProcessor<?> processor = factory.create(null, processorTag, null, modifyConfig(config), null);
         assertThat(processor.getTag(), equalTo(processorTag));
-        assertThat(processor.getField().toString(), equalTo(fieldName));
+        assertThat(processor.getField(), hasToString(fieldName));
         assertThat(processor.isIgnoreMissing(), is(true));
-        assertThat(processor.getTargetField().toString(), equalTo(fieldName));
+        assertThat(processor.getTargetField(), hasToString(fieldName));
         assertProcessor(processor);
     }
 
@@ -76,9 +77,9 @@ public abstract class AbstractStringProcessorFactoryTestCase extends ESTestCase 
 
         AbstractStringProcessor<?> processor = factory.create(null, processorTag, null, modifyConfig(config), null);
         assertThat(processor.getTag(), equalTo(processorTag));
-        assertThat(processor.getField().toString(), equalTo(fieldName));
+        assertThat(processor.getField(), hasToString(fieldName));
         assertThat(processor.isIgnoreMissing(), is(false));
-        assertThat(processor.getTargetField().toString(), equalTo(targetFieldName));
+        assertThat(processor.getTargetField(), hasToString(targetFieldName));
         assertProcessor(processor);
     }
 
@@ -104,7 +105,7 @@ public abstract class AbstractStringProcessorFactoryTestCase extends ESTestCase 
         config.put("ignore_missing", randomBoolean());
 
         AbstractStringProcessor<?> processor = factory.create(null, randomAlphaOfLength(10), null, modifyConfig(config), null);
-        assertThat(processor.getField().toString(), equalTo("a..b"));
+        assertThat(processor.getField(), hasToString("a..b"));
 
         IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
@@ -118,7 +119,7 @@ public abstract class AbstractStringProcessorFactoryTestCase extends ESTestCase 
         config.put("target_field", "a..b");
 
         AbstractStringProcessor<?> processor = factory.create(null, randomAlphaOfLength(10), null, modifyConfig(config), null);
-        assertThat(processor.getField().toString(), equalTo("field1"));
-        assertThat(processor.getTargetField().toString(), equalTo("a..b"));
+        assertThat(processor.getField(), hasToString("field1"));
+        assertThat(processor.getTargetField(), hasToString("a..b"));
     }
 }

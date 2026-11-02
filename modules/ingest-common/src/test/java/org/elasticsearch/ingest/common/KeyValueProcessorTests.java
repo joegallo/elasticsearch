@@ -26,6 +26,7 @@ import java.util.Set;
 
 import static org.elasticsearch.ingest.IngestDocumentMatcher.assertIngestDocument;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasToString;
 
 public class KeyValueProcessorTests extends ESTestCase {
 
@@ -199,7 +200,7 @@ public class KeyValueProcessorTests extends ESTestCase {
      */
     public void testMalformedFieldFailsAtExecutionTime() throws Exception {
         KeyValueProcessor processor = createKvProcessor("a..b", "&", "=", null, null, "target", randomBoolean());
-        assertThat(processor.getField().toString(), equalTo("a..b"));
+        assertThat(processor.getField(), hasToString("a..b"));
 
         IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));

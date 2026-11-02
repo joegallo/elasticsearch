@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasToString;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -94,8 +95,8 @@ public class EnrichProcessorFactoryTests extends ESTestCase {
             MatchProcessor result = (MatchProcessor) factory.create(Collections.emptyMap(), "_tag", null, config, projectId);
             assertThat(result, notNullValue());
             assertThat(result.getPolicyName(), equalTo("majestic"));
-            assertThat(result.getField().toString(), equalTo("host"));
-            assertThat(result.getTargetField().toString(), equalTo("entry"));
+            assertThat(result.getField(), hasToString("host"));
+            assertThat(result.getTargetField(), hasToString("entry"));
             assertThat(result.getMatchField(), equalTo("my_key"));
             assertThat(result.isIgnoreMissing(), is(keyIgnoreMissing));
             if (overrideEnabled != null) {
@@ -214,8 +215,8 @@ public class EnrichProcessorFactoryTests extends ESTestCase {
             MatchProcessor result = (MatchProcessor) factory.create(Collections.emptyMap(), "_tag", null, config, projectId);
             assertThat(result, notNullValue());
             assertThat(result.getPolicyName(), equalTo("majestic"));
-            assertThat(result.getField().toString(), equalTo("host"));
-            assertThat(result.getTargetField().toString(), equalTo("entry"));
+            assertThat(result.getField(), hasToString("host"));
+            assertThat(result.getTargetField(), hasToString("entry"));
         }
     }
 
@@ -238,8 +239,8 @@ public class EnrichProcessorFactoryTests extends ESTestCase {
             config.put("ignore_missing", randomBoolean());
 
             MatchProcessor result = (MatchProcessor) factory.create(Collections.emptyMap(), "_tag", null, config, projectId);
-            assertThat(result.getField().toString(), equalTo("a..b"));
-            assertThat(result.getTargetField().toString(), equalTo("c..d"));
+            assertThat(result.getField(), hasToString("a..b"));
+            assertThat(result.getTargetField(), hasToString("c..d"));
 
             // it is the field that is looked at first, so that is the one that is reported
             IngestDocument ingestDocument = new IngestDocument("_index", "_id", 1L, "_routing", VersionType.INTERNAL, new HashMap<>());

@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasToString;
 
 public class RenameProcessorFactoryTests extends ESTestCase {
 
@@ -37,8 +38,8 @@ public class RenameProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         RenameProcessor renameProcessor = factory.create(null, processorTag, null, config, null);
         assertThat(renameProcessor.getTag(), equalTo(processorTag));
-        assertThat(renameProcessor.getField().toString(), equalTo("old_field"));
-        assertThat(renameProcessor.getTargetField().toString(), equalTo("new_field"));
+        assertThat(renameProcessor.getField(), hasToString("old_field"));
+        assertThat(renameProcessor.getTargetField(), hasToString("new_field"));
         assertThat(renameProcessor.isIgnoreMissing(), equalTo(false));
         assertThat(renameProcessor.isOverrideEnabled(), equalTo(false));
     }
@@ -51,8 +52,8 @@ public class RenameProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         RenameProcessor renameProcessor = factory.create(null, processorTag, null, config, null);
         assertThat(renameProcessor.getTag(), equalTo(processorTag));
-        assertThat(renameProcessor.getField().toString(), equalTo("old_field"));
-        assertThat(renameProcessor.getTargetField().toString(), equalTo("new_field"));
+        assertThat(renameProcessor.getField(), hasToString("old_field"));
+        assertThat(renameProcessor.getTargetField(), hasToString("new_field"));
         assertThat(renameProcessor.isIgnoreMissing(), equalTo(true));
     }
 
@@ -64,8 +65,8 @@ public class RenameProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         RenameProcessor renameProcessor = factory.create(null, processorTag, null, config, null);
         assertThat(renameProcessor.getTag(), equalTo(processorTag));
-        assertThat(renameProcessor.getField().toString(), equalTo("old_field"));
-        assertThat(renameProcessor.getTargetField().toString(), equalTo("new_field"));
+        assertThat(renameProcessor.getField(), hasToString("old_field"));
+        assertThat(renameProcessor.getTargetField(), hasToString("new_field"));
         assertThat(renameProcessor.isOverrideEnabled(), equalTo(true));
     }
 
@@ -101,7 +102,7 @@ public class RenameProcessorFactoryTests extends ESTestCase {
         config.put("target_field", "target");
         config.put("ignore_missing", randomBoolean());
         RenameProcessor processor = factory.create(null, randomAlphaOfLength(10), null, config, null);
-        assertThat(processor.getField().toString(), equalTo("a..b"));
+        assertThat(processor.getField(), hasToString("a..b"));
 
         IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
@@ -113,7 +114,7 @@ public class RenameProcessorFactoryTests extends ESTestCase {
         config.put("field", "source");
         config.put("target_field", "a..b");
         RenameProcessor processor = factory.create(null, randomAlphaOfLength(10), null, config, null);
-        assertThat(processor.getTargetField().toString(), equalTo("a..b"));
+        assertThat(processor.getTargetField(), hasToString("a..b"));
 
         // the source is fine, so it is the target that causes the failure, and the source doesn't get lost on the way
         IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();

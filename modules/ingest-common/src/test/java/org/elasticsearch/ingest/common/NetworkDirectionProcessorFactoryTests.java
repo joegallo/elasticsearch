@@ -26,6 +26,7 @@ import static org.elasticsearch.ingest.common.NetworkDirectionProcessor.Factory.
 import static org.elasticsearch.ingest.common.NetworkDirectionProcessor.Factory.DEFAULT_TARGET;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasToString;
 
 public class NetworkDirectionProcessorFactoryTests extends ESTestCase {
 
@@ -54,9 +55,9 @@ public class NetworkDirectionProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         NetworkDirectionProcessor networkProcessor = factory.create(null, processorTag, null, config, null);
         assertThat(networkProcessor.getTag(), equalTo(processorTag));
-        assertThat(networkProcessor.getSourceIpField().toString(), equalTo(sourceIpField));
-        assertThat(networkProcessor.getDestinationIpField().toString(), equalTo(destIpField));
-        assertThat(networkProcessor.getTargetField().toString(), equalTo(targetField));
+        assertThat(networkProcessor.getSourceIpField(), hasToString(sourceIpField));
+        assertThat(networkProcessor.getDestinationIpField(), hasToString(destIpField));
+        assertThat(networkProcessor.getTargetField(), hasToString(targetField));
         assertThat(networkProcessor.getInternalNetworks().size(), greaterThan(0));
         assertThat(networkProcessor.getInternalNetworks().get(0).newInstance(Map.of()).execute(), equalTo("10.0.0.0/8"));
         assertThat(networkProcessor.getIgnoreMissing(), equalTo(ignoreMissing));
@@ -79,10 +80,10 @@ public class NetworkDirectionProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         NetworkDirectionProcessor networkProcessor = factory.create(null, processorTag, null, config, null);
         assertThat(networkProcessor.getTag(), equalTo(processorTag));
-        assertThat(networkProcessor.getSourceIpField().toString(), equalTo(sourceIpField));
-        assertThat(networkProcessor.getDestinationIpField().toString(), equalTo(destIpField));
-        assertThat(networkProcessor.getTargetField().toString(), equalTo(targetField));
-        assertThat(networkProcessor.getInternalNetworksField().toString(), equalTo(internalNetworksField));
+        assertThat(networkProcessor.getSourceIpField(), hasToString(sourceIpField));
+        assertThat(networkProcessor.getDestinationIpField(), hasToString(destIpField));
+        assertThat(networkProcessor.getTargetField(), hasToString(targetField));
+        assertThat(networkProcessor.getInternalNetworksField(), hasToString(internalNetworksField));
         assertThat(networkProcessor.getIgnoreMissing(), equalTo(ignoreMissing));
     }
 
@@ -106,9 +107,9 @@ public class NetworkDirectionProcessorFactoryTests extends ESTestCase {
 
         NetworkDirectionProcessor networkProcessor = factory.create(null, processorTag, null, config, null);
         assertThat(networkProcessor.getTag(), equalTo(processorTag));
-        assertThat(networkProcessor.getSourceIpField().toString(), equalTo(DEFAULT_SOURCE_IP));
-        assertThat(networkProcessor.getDestinationIpField().toString(), equalTo(DEFAULT_DEST_IP));
-        assertThat(networkProcessor.getTargetField().toString(), equalTo(DEFAULT_TARGET));
+        assertThat(networkProcessor.getSourceIpField(), hasToString(DEFAULT_SOURCE_IP));
+        assertThat(networkProcessor.getDestinationIpField(), hasToString(DEFAULT_DEST_IP));
+        assertThat(networkProcessor.getTargetField(), hasToString(DEFAULT_TARGET));
         assertThat(networkProcessor.getIgnoreMissing(), equalTo(true));
     }
 

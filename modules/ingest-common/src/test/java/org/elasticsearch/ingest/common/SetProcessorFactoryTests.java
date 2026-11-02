@@ -24,6 +24,7 @@ import java.util.Map;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasToString;
 
 public class SetProcessorFactoryTests extends ESTestCase {
 
@@ -41,7 +42,7 @@ public class SetProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         SetProcessor setProcessor = factory.create(null, processorTag, null, config, null);
         assertThat(setProcessor.getTag(), equalTo(processorTag));
-        assertThat(setProcessor.getField().toString(), equalTo("field1"));
+        assertThat(setProcessor.getField(), hasToString("field1"));
         assertThat(setProcessor.getValue().copyAndResolve(Map.of()), equalTo("value1"));
         assertThat(setProcessor.isOverrideEnabled(), equalTo(true));
         assertThat(setProcessor.isIgnoreEmptyValue(), equalTo(false));
@@ -56,7 +57,7 @@ public class SetProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         SetProcessor setProcessor = factory.create(null, processorTag, null, config, null);
         assertThat(setProcessor.getTag(), equalTo(processorTag));
-        assertThat(setProcessor.getField().toString(), equalTo("field1"));
+        assertThat(setProcessor.getField(), hasToString("field1"));
         assertThat(setProcessor.getValue().copyAndResolve(Map.of()), equalTo("value1"));
         assertThat(setProcessor.isOverrideEnabled(), equalTo(overrideEnabled));
     }
@@ -70,7 +71,7 @@ public class SetProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         SetProcessor setProcessor = factory.create(null, processorTag, null, config, null);
         assertThat(setProcessor.getTag(), equalTo(processorTag));
-        assertThat(setProcessor.getField().toString(), equalTo("field1"));
+        assertThat(setProcessor.getField(), hasToString("field1"));
         assertThat(setProcessor.getValue().copyAndResolve(Map.of()), equalTo("value1"));
         assertThat(setProcessor.isIgnoreEmptyValue(), equalTo(ignoreEmptyValueEnabled));
     }
@@ -130,8 +131,8 @@ public class SetProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         SetProcessor setProcessor = factory.create(null, processorTag, null, config, null);
         assertThat(setProcessor.getTag(), equalTo(processorTag));
-        assertThat(setProcessor.getField().toString(), equalTo("field1"));
-        assertThat(setProcessor.getCopyFrom().toString(), equalTo("field2"));
+        assertThat(setProcessor.getField(), hasToString("field1"));
+        assertThat(setProcessor.getCopyFrom(), hasToString("field2"));
     }
 
     public void testCreateWithCopyFromAndValue() throws Exception {
@@ -183,7 +184,7 @@ public class SetProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         SetProcessor setProcessor = factory.create(null, processorTag, null, config, null);
         assertThat(setProcessor.getTag(), equalTo(processorTag));
-        assertThat(setProcessor.getField().toString(), equalTo(""));
+        assertThat(setProcessor.getField(), hasToString(""));
         assertThat(setProcessor.getValue().copyAndResolve(Map.of()), equalTo("value1"));
     }
 
@@ -196,7 +197,7 @@ public class SetProcessorFactoryTests extends ESTestCase {
         config.put("field", "a..b");
         config.put("value", "value1");
         SetProcessor setProcessor = factory.create(null, randomAlphaOfLength(10), null, config, null);
-        assertThat(setProcessor.getField().toString(), equalTo("a..b"));
+        assertThat(setProcessor.getField(), hasToString("a..b"));
 
         IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> setProcessor.execute(ingestDocument));
@@ -208,7 +209,7 @@ public class SetProcessorFactoryTests extends ESTestCase {
         config.put("field", "field1");
         config.put("copy_from", "a..b");
         SetProcessor setProcessor = factory.create(null, randomAlphaOfLength(10), null, config, null);
-        assertThat(setProcessor.getCopyFrom().toString(), equalTo("a..b"));
+        assertThat(setProcessor.getCopyFrom(), hasToString("a..b"));
 
         IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> setProcessor.execute(ingestDocument));

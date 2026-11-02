@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasToString;
 
 public class UriPartsProcessorFactoryTests extends ESTestCase {
 
@@ -49,8 +50,8 @@ public class UriPartsProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         UriPartsProcessor uriPartsProcessor = factory.create(null, processorTag, null, config, null);
         assertThat(uriPartsProcessor.getTag(), equalTo(processorTag));
-        assertThat(uriPartsProcessor.getField().toString(), equalTo(field));
-        assertThat(uriPartsProcessor.getTargetField().toString(), equalTo(targetField));
+        assertThat(uriPartsProcessor.getField(), hasToString(field));
+        assertThat(uriPartsProcessor.getTargetField(), hasToString(targetField));
         assertThat(uriPartsProcessor.getRemoveIfSuccessful(), equalTo(removeIfSuccessful));
         assertThat(uriPartsProcessor.getKeepOriginal(), equalTo(keepOriginal));
         assertThat(uriPartsProcessor.getIgnoreMissing(), equalTo(ignoreMissing));
@@ -86,7 +87,7 @@ public class UriPartsProcessorFactoryTests extends ESTestCase {
         Map<String, Object> config = new HashMap<>();
         config.put("field", "a..b");
         UriPartsProcessor processor = factory.create(null, randomAlphaOfLength(10), null, config, null);
-        assertThat(processor.getField().toString(), equalTo("a..b"));
+        assertThat(processor.getField(), hasToString("a..b"));
 
         IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
@@ -98,7 +99,7 @@ public class UriPartsProcessorFactoryTests extends ESTestCase {
         config.put("field", "source");
         config.put("target_field", "a..b");
         UriPartsProcessor processor = factory.create(null, randomAlphaOfLength(10), null, config, null);
-        assertThat(processor.getTargetField().toString(), equalTo("a..b"));
+        assertThat(processor.getTargetField(), hasToString("a..b"));
 
         // the source is fine, so it is the target that causes the failure
         IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();

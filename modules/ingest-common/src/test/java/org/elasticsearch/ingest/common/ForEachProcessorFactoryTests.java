@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasToString;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.mockito.Mockito.mock;
@@ -42,7 +43,7 @@ public class ForEachProcessorFactoryTests extends ESTestCase {
         config.put("processor", Map.of("_name", Collections.emptyMap()));
         ForEachProcessor forEachProcessor = forEachFactory.create(registry, null, null, config, null);
         assertThat(forEachProcessor, notNullValue());
-        assertThat(forEachProcessor.getField().toString(), equalTo("_field"));
+        assertThat(forEachProcessor.getField(), hasToString("_field"));
         assertThat(forEachProcessor.getInnerProcessor(), sameInstance(processor));
         assertFalse(forEachProcessor.isIgnoreMissing());
     }
@@ -59,7 +60,7 @@ public class ForEachProcessorFactoryTests extends ESTestCase {
         config.put("ignore_missing", true);
         ForEachProcessor forEachProcessor = forEachFactory.create(registry, null, null, config, null);
         assertThat(forEachProcessor, notNullValue());
-        assertThat(forEachProcessor.getField().toString(), equalTo("_field"));
+        assertThat(forEachProcessor.getField(), hasToString("_field"));
         assertThat(forEachProcessor.getInnerProcessor(), sameInstance(processor));
         assertTrue(forEachProcessor.isIgnoreMissing());
     }
@@ -135,7 +136,7 @@ public class ForEachProcessorFactoryTests extends ESTestCase {
             config,
             null
         );
-        assertThat(processor.getField().toString(), equalTo("a..b"));
+        assertThat(processor.getField(), hasToString("a..b"));
 
         IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));

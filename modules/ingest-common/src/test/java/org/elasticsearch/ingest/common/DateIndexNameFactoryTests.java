@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasToString;
 
 public class DateIndexNameFactoryTests extends ESTestCase {
 
@@ -32,7 +33,7 @@ public class DateIndexNameFactoryTests extends ESTestCase {
 
         DateIndexNameProcessor processor = factory.create(null, null, null, config, null);
         assertThat(processor.getDateFormats().size(), equalTo(1));
-        assertThat(processor.getField().toString(), equalTo("_field"));
+        assertThat(processor.getField(), hasToString("_field"));
         assertThat(processor.getIndexNamePrefixTemplate().newInstance(Map.of()).execute(), equalTo(""));
         assertThat(processor.getDateRoundingTemplate().newInstance(Map.of()).execute(), equalTo("y"));
         assertThat(processor.getIndexNameFormatTemplate().newInstance(Map.of()).execute(), equalTo("yyyy-MM-dd"));
@@ -108,7 +109,7 @@ public class DateIndexNameFactoryTests extends ESTestCase {
             config,
             null
         );
-        assertThat(processor.getField().toString(), equalTo("a..b"));
+        assertThat(processor.getField(), hasToString("a..b"));
 
         IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));

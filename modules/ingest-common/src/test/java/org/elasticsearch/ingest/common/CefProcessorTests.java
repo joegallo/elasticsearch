@@ -28,6 +28,7 @@ import static java.util.Map.entry;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasToString;
 
 public class CefProcessorTests extends ESTestCase {
 
@@ -1027,7 +1028,7 @@ public class CefProcessorTests extends ESTestCase {
             config,
             null
         );
-        assertThat(processor.field.toString(), equalTo("a..b"));
+        assertThat(processor.field, hasToString("a..b"));
 
         IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));

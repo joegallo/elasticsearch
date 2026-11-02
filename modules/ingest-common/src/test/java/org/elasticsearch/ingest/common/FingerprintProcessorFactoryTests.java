@@ -24,6 +24,7 @@ import java.util.Map;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasToString;
 
 public class FingerprintProcessorFactoryTests extends ESTestCase {
 
@@ -53,7 +54,7 @@ public class FingerprintProcessorFactoryTests extends ESTestCase {
         FingerprintProcessor fingerprintProcessor = factory.create(null, processorTag, null, config, null);
         assertThat(fingerprintProcessor.getTag(), equalTo(processorTag));
         assertThat(fingerprintProcessor.getFields(), equalTo(sortedFieldList));
-        assertThat(fingerprintProcessor.getTargetField().toString(), equalTo(targetField));
+        assertThat(fingerprintProcessor.getTargetField(), hasToString(targetField));
         assertThat(fingerprintProcessor.getSalt(), equalTo(salt.getBytes(StandardCharsets.UTF_8)));
         assertThat(fingerprintProcessor.getThreadLocalHasher().get().getAlgorithm(), equalTo(method));
         assertThat(fingerprintProcessor.isIgnoreMissing(), equalTo(ignoreMissing));
@@ -120,7 +121,7 @@ public class FingerprintProcessorFactoryTests extends ESTestCase {
         FingerprintProcessor fingerprintProcessor = factory.create(null, processorTag, null, config, null);
         assertThat(fingerprintProcessor.getTag(), equalTo(processorTag));
         assertThat(fingerprintProcessor.getFields(), equalTo(sortedFieldList));
-        assertThat(fingerprintProcessor.getTargetField().toString(), equalTo(FingerprintProcessor.Factory.DEFAULT_TARGET));
+        assertThat(fingerprintProcessor.getTargetField(), hasToString(FingerprintProcessor.Factory.DEFAULT_TARGET));
         assertThat(fingerprintProcessor.getSalt(), equalTo(new byte[0]));
         assertThat(fingerprintProcessor.getThreadLocalHasher().get().getAlgorithm(), equalTo(FingerprintProcessor.Factory.DEFAULT_METHOD));
         assertThat(fingerprintProcessor.isIgnoreMissing(), equalTo(false));
@@ -149,7 +150,7 @@ public class FingerprintProcessorFactoryTests extends ESTestCase {
         config.put("fields", List.of("source"));
         config.put("target_field", "a..b");
         FingerprintProcessor processor = factory.create(null, randomAlphaOfLength(10), null, config, null);
-        assertThat(processor.getTargetField().toString(), equalTo("a..b"));
+        assertThat(processor.getTargetField(), hasToString("a..b"));
 
         // the source is fine, so it is the target that causes the failure
         IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();

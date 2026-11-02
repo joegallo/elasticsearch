@@ -28,6 +28,7 @@ import java.util.Set;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasToString;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.core.Is.is;
 
@@ -43,8 +44,8 @@ public class AttachmentProcessorFactoryTests extends ESTestCase {
 
         AttachmentProcessor processor = factory.create(null, processorTag, null, config, null);
         assertThat(processor.getTag(), equalTo(processorTag));
-        assertThat(processor.getField().toString(), equalTo("_field"));
-        assertThat(processor.getTargetField().toString(), equalTo("attachment"));
+        assertThat(processor.getField(), hasToString("_field"));
+        assertThat(processor.getTargetField(), hasToString("attachment"));
         assertThat(processor.getProperties(), sameInstance(AttachmentProcessor.Factory.DEFAULT_PROPERTIES));
         assertFalse(processor.isIgnoreMissing());
 
@@ -79,8 +80,8 @@ public class AttachmentProcessorFactoryTests extends ESTestCase {
         config.put("field", "_field");
         config.put("target_field", "_field");
         AttachmentProcessor processor = factory.create(null, null, null, config, null);
-        assertThat(processor.getField().toString(), equalTo("_field"));
-        assertThat(processor.getTargetField().toString(), equalTo("_field"));
+        assertThat(processor.getField(), hasToString("_field"));
+        assertThat(processor.getTargetField(), hasToString("_field"));
         assertFalse(processor.isIgnoreMissing());
 
         assertWarnings(
@@ -103,7 +104,7 @@ public class AttachmentProcessorFactoryTests extends ESTestCase {
         config.put("field", "_field");
         config.put("properties", fieldNames);
         AttachmentProcessor processor = factory.create(null, null, null, config, null);
-        assertThat(processor.getField().toString(), equalTo("_field"));
+        assertThat(processor.getField(), hasToString("_field"));
         assertThat(processor.getProperties(), equalTo(properties));
         assertFalse(processor.isIgnoreMissing());
 
@@ -155,8 +156,8 @@ public class AttachmentProcessorFactoryTests extends ESTestCase {
 
         AttachmentProcessor processor = factory.create(null, processorTag, null, config, null);
         assertThat(processor.getTag(), equalTo(processorTag));
-        assertThat(processor.getField().toString(), equalTo("_field"));
-        assertThat(processor.getTargetField().toString(), equalTo("attachment"));
+        assertThat(processor.getField(), hasToString("_field"));
+        assertThat(processor.getTargetField(), hasToString("attachment"));
         assertThat(processor.getProperties(), sameInstance(AttachmentProcessor.Factory.DEFAULT_PROPERTIES));
         assertTrue(processor.isIgnoreMissing());
 
@@ -176,8 +177,8 @@ public class AttachmentProcessorFactoryTests extends ESTestCase {
 
         AttachmentProcessor processor = factory.create(null, processorTag, null, config, null);
         assertThat(processor.getTag(), equalTo(processorTag));
-        assertThat(processor.getField().toString(), equalTo("_field"));
-        assertThat(processor.getTargetField().toString(), equalTo("attachment"));
+        assertThat(processor.getField(), hasToString("_field"));
+        assertThat(processor.getTargetField(), hasToString("attachment"));
         assertThat(processor.getProperties(), sameInstance(AttachmentProcessor.Factory.DEFAULT_PROPERTIES));
         assertTrue(processor.isRemoveBinary());
     }
@@ -211,8 +212,8 @@ public class AttachmentProcessorFactoryTests extends ESTestCase {
         config.put("resource_name", "g..h");
         config.put("remove_binary", randomBoolean());
         AttachmentProcessor processor = factory.create(null, randomAlphaOfLength(10), null, config, null);
-        assertThat(processor.getField().toString(), equalTo("a..b"));
-        assertThat(processor.getTargetField().toString(), equalTo("c..d"));
+        assertThat(processor.getField(), hasToString("a..b"));
+        assertThat(processor.getTargetField(), hasToString("c..d"));
 
         // it is the field that is looked at first, so that is the one that is reported
         IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();

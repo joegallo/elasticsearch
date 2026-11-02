@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasToString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
@@ -40,7 +41,7 @@ public class DissectProcessorFactoryTests extends ESTestCase {
 
         DissectProcessor processor = factory.create(null, processorTag, null, config, null);
         assertThat(processor.getTag(), equalTo(processorTag));
-        assertThat(processor.field.toString(), equalTo(fieldName));
+        assertThat(processor.field, hasToString(fieldName));
         assertThat(processor.pattern, equalTo(pattern));
         assertThat(processor.appendSeparator, equalTo(appendSeparator));
         assertThat(processor.dissectParser, is(notNullValue()));
@@ -91,7 +92,7 @@ public class DissectProcessorFactoryTests extends ESTestCase {
         config.put("pattern", "%{a},%{b}");
         config.put("ignore_missing", randomBoolean());
         DissectProcessor processor = new DissectProcessor.Factory().create(null, randomAlphaOfLength(10), null, config, null);
-        assertThat(processor.field.toString(), equalTo("a..b"));
+        assertThat(processor.field, hasToString("a..b"));
 
         IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));

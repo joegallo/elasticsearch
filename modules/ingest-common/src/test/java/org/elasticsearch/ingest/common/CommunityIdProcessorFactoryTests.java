@@ -31,6 +31,7 @@ import static org.elasticsearch.ingest.common.CommunityIdProcessor.Factory.DEFAU
 import static org.elasticsearch.ingest.common.CommunityIdProcessor.toUint16;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasToString;
 
 public class CommunityIdProcessorFactoryTests extends ESTestCase {
 
@@ -70,15 +71,15 @@ public class CommunityIdProcessorFactoryTests extends ESTestCase {
         String tag = randomAlphaOfLength(10);
         CommunityIdProcessor processor = factory.create(null, tag, null, config, null);
         assertThat(processor.getTag(), equalTo(tag));
-        assertThat(processor.getSourceIpField().toString(), equalTo(sourceIpField));
-        assertThat(processor.getSourcePortField().toString(), equalTo(sourcePortField));
-        assertThat(processor.getDestinationIpField().toString(), equalTo(destIpField));
-        assertThat(processor.getDestinationPortField().toString(), equalTo(destPortField));
-        assertThat(processor.getIanaNumberField().toString(), equalTo(ianaNumberField));
-        assertThat(processor.getTransportField().toString(), equalTo(transportField));
-        assertThat(processor.getIcmpTypeField().toString(), equalTo(icmpTypeField));
-        assertThat(processor.getIcmpCodeField().toString(), equalTo(icmpCodeField));
-        assertThat(processor.getTargetField().toString(), equalTo(targetField));
+        assertThat(processor.getSourceIpField(), hasToString(sourceIpField));
+        assertThat(processor.getSourcePortField(), hasToString(sourcePortField));
+        assertThat(processor.getDestinationIpField(), hasToString(destIpField));
+        assertThat(processor.getDestinationPortField(), hasToString(destPortField));
+        assertThat(processor.getIanaNumberField(), hasToString(ianaNumberField));
+        assertThat(processor.getTransportField(), hasToString(transportField));
+        assertThat(processor.getIcmpTypeField(), hasToString(icmpTypeField));
+        assertThat(processor.getIcmpCodeField(), hasToString(icmpCodeField));
+        assertThat(processor.getTargetField(), hasToString(targetField));
         assertThat(processor.getSeed(), equalTo(toUint16(seedInt)));
         assertThat(processor.getIgnoreMissing(), equalTo(ignoreMissing));
     }
@@ -111,15 +112,15 @@ public class CommunityIdProcessorFactoryTests extends ESTestCase {
         String tag = randomAlphaOfLength(10);
         CommunityIdProcessor processor = factory.create(null, tag, null, new HashMap<>(), null);
         assertThat(processor.getTag(), equalTo(tag));
-        assertThat(processor.getSourceIpField().toString(), equalTo(DEFAULT_SOURCE_IP));
-        assertThat(processor.getSourcePortField().toString(), equalTo(DEFAULT_SOURCE_PORT));
-        assertThat(processor.getDestinationIpField().toString(), equalTo(DEFAULT_DEST_IP));
-        assertThat(processor.getDestinationPortField().toString(), equalTo(DEFAULT_DEST_PORT));
-        assertThat(processor.getIanaNumberField().toString(), equalTo(DEFAULT_IANA_NUMBER));
-        assertThat(processor.getTransportField().toString(), equalTo(DEFAULT_TRANSPORT));
-        assertThat(processor.getIcmpTypeField().toString(), equalTo(DEFAULT_ICMP_TYPE));
-        assertThat(processor.getIcmpCodeField().toString(), equalTo(DEFAULT_ICMP_CODE));
-        assertThat(processor.getTargetField().toString(), equalTo(DEFAULT_TARGET));
+        assertThat(processor.getSourceIpField(), hasToString(DEFAULT_SOURCE_IP));
+        assertThat(processor.getSourcePortField(), hasToString(DEFAULT_SOURCE_PORT));
+        assertThat(processor.getDestinationIpField(), hasToString(DEFAULT_DEST_IP));
+        assertThat(processor.getDestinationPortField(), hasToString(DEFAULT_DEST_PORT));
+        assertThat(processor.getIanaNumberField(), hasToString(DEFAULT_IANA_NUMBER));
+        assertThat(processor.getTransportField(), hasToString(DEFAULT_TRANSPORT));
+        assertThat(processor.getIcmpTypeField(), hasToString(DEFAULT_ICMP_TYPE));
+        assertThat(processor.getIcmpCodeField(), hasToString(DEFAULT_ICMP_CODE));
+        assertThat(processor.getTargetField(), hasToString(DEFAULT_TARGET));
         assertThat(processor.getSeed(), equalTo(toUint16(0)));
         assertThat(processor.getIgnoreMissing(), equalTo(true));
     }

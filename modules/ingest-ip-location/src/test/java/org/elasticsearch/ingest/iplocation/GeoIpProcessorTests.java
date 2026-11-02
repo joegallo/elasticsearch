@@ -46,6 +46,7 @@ import static org.elasticsearch.ingest.iplocation.GeoIpProcessor.IP_LOCATION_TYP
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasToString;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -993,7 +994,7 @@ public class GeoIpProcessorTests extends ESTestCase {
             false,
             "filename"
         );
-        assertThat(processor.getTargetField().toString(), equalTo("a..b"));
+        assertThat(processor.getTargetField(), hasToString("a..b"));
 
         // the source is fine, so it is the target that causes the failure
         Map<String, Object> document = new HashMap<>();

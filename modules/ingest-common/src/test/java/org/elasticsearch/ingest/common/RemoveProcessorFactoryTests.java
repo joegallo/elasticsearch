@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasToString;
 
 public class RemoveProcessorFactoryTests extends ESTestCase {
 
@@ -38,7 +39,7 @@ public class RemoveProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         RemoveProcessor removeProcessor = factory.create(null, processorTag, null, config, null);
         assertThat(removeProcessor.getTag(), equalTo(processorTag));
-        assertThat(removeProcessor.getFieldsToRemove().get(0).toString(), equalTo("field1"));
+        assertThat(removeProcessor.getFieldsToRemove().get(0), hasToString("field1"));
     }
 
     public void testCreateKeepField() throws Exception {
@@ -104,7 +105,7 @@ public class RemoveProcessorFactoryTests extends ESTestCase {
         config.put("field", "a..b");
         config.put("ignore_missing", randomBoolean());
         RemoveProcessor processor = factory.create(null, randomAlphaOfLength(10), null, config, null);
-        assertThat(processor.getFieldsToRemove().get(0).toString(), equalTo("a..b"));
+        assertThat(processor.getFieldsToRemove().get(0), hasToString("a..b"));
 
         // being malformed is not the same as being missing, so ignore_missing doesn't make a difference
         IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();

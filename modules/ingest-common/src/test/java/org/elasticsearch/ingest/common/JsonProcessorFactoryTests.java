@@ -20,6 +20,7 @@ import java.util.Map;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasToString;
 
 public class JsonProcessorFactoryTests extends ESTestCase {
 
@@ -34,8 +35,8 @@ public class JsonProcessorFactoryTests extends ESTestCase {
         config.put("target_field", randomTargetField);
         JsonProcessor jsonProcessor = FACTORY.create(null, processorTag, null, config, null);
         assertThat(jsonProcessor.getTag(), equalTo(processorTag));
-        assertThat(jsonProcessor.getField().toString(), equalTo(randomField));
-        assertThat(jsonProcessor.getTargetField().toString(), equalTo(randomTargetField));
+        assertThat(jsonProcessor.getField(), hasToString(randomField));
+        assertThat(jsonProcessor.getTargetField(), hasToString(randomTargetField));
     }
 
     public void testCreateWithAddToRoot() throws Exception {
@@ -46,8 +47,8 @@ public class JsonProcessorFactoryTests extends ESTestCase {
         config.put("add_to_root", true);
         JsonProcessor jsonProcessor = FACTORY.create(null, processorTag, null, config, null);
         assertThat(jsonProcessor.getTag(), equalTo(processorTag));
-        assertThat(jsonProcessor.getField().toString(), equalTo(randomField));
-        assertThat(jsonProcessor.getTargetField().toString(), equalTo(randomField));
+        assertThat(jsonProcessor.getField(), hasToString(randomField));
+        assertThat(jsonProcessor.getTargetField(), hasToString(randomField));
         assertTrue(jsonProcessor.isAddToRoot());
     }
 
@@ -58,8 +59,8 @@ public class JsonProcessorFactoryTests extends ESTestCase {
         config.put("field", randomField);
         JsonProcessor jsonProcessor = FACTORY.create(null, processorTag, null, config, null);
         assertThat(jsonProcessor.getTag(), equalTo(processorTag));
-        assertThat(jsonProcessor.getField().toString(), equalTo(randomField));
-        assertThat(jsonProcessor.getTargetField().toString(), equalTo(randomField));
+        assertThat(jsonProcessor.getField(), hasToString(randomField));
+        assertThat(jsonProcessor.getTargetField(), hasToString(randomField));
     }
 
     public void testCreateWithMissingField() throws Exception {
@@ -163,7 +164,7 @@ public class JsonProcessorFactoryTests extends ESTestCase {
         Map<String, Object> config = new HashMap<>();
         config.put("field", "a..b");
         JsonProcessor processor = FACTORY.create(null, randomAlphaOfLength(10), null, config, null);
-        assertThat(processor.getField().toString(), equalTo("a..b"));
+        assertThat(processor.getField(), hasToString("a..b"));
 
         IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
@@ -175,7 +176,7 @@ public class JsonProcessorFactoryTests extends ESTestCase {
         config.put("field", "source");
         config.put("target_field", "a..b");
         JsonProcessor processor = FACTORY.create(null, randomAlphaOfLength(10), null, config, null);
-        assertThat(processor.getTargetField().toString(), equalTo("a..b"));
+        assertThat(processor.getTargetField(), hasToString("a..b"));
 
         // the source is fine, so it is the target that causes the failure
         IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();

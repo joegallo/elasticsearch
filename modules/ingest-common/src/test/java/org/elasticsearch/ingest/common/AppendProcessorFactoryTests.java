@@ -24,6 +24,7 @@ import java.util.Map;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasToString;
 
 public class AppendProcessorFactoryTests extends ESTestCase {
 
@@ -47,7 +48,7 @@ public class AppendProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         AppendProcessor appendProcessor = factory.create(null, processorTag, null, config, null);
         assertThat(appendProcessor.getTag(), equalTo(processorTag));
-        assertThat(appendProcessor.getField().toString(), equalTo("field1"));
+        assertThat(appendProcessor.getField(), hasToString("field1"));
         assertThat(appendProcessor.getValue().copyAndResolve(Map.of()), equalTo(value));
     }
 
@@ -133,8 +134,8 @@ public class AppendProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         AppendProcessor appendProcessor = factory.create(null, processorTag, null, config, null);
         assertThat(appendProcessor.getTag(), equalTo(processorTag));
-        assertThat(appendProcessor.getField().toString(), equalTo("field1"));
-        assertThat(appendProcessor.getCopyFrom().toString(), equalTo("field2"));
+        assertThat(appendProcessor.getField(), hasToString("field1"));
+        assertThat(appendProcessor.getCopyFrom(), hasToString("field2"));
     }
 
     public void testCreateWithCopyFromAndValue() throws Exception {
@@ -159,7 +160,7 @@ public class AppendProcessorFactoryTests extends ESTestCase {
         config.put("field", "a..b");
         config.put("value", "value1");
         AppendProcessor processor = factory.create(null, randomAlphaOfLength(10), null, config, null);
-        assertThat(processor.getField().toString(), equalTo("a..b"));
+        assertThat(processor.getField(), hasToString("a..b"));
 
         IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
@@ -171,7 +172,7 @@ public class AppendProcessorFactoryTests extends ESTestCase {
         config.put("field", "target");
         config.put("copy_from", "a..b");
         AppendProcessor processor = factory.create(null, randomAlphaOfLength(10), null, config, null);
-        assertThat(processor.getCopyFrom().toString(), equalTo("a..b"));
+        assertThat(processor.getCopyFrom(), hasToString("a..b"));
 
         IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
