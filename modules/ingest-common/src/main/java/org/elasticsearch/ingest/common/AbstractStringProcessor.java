@@ -12,6 +12,7 @@ package org.elasticsearch.ingest.common;
 import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
+import org.elasticsearch.ingest.FieldPathTemplate;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 
@@ -26,18 +27,18 @@ import java.util.Map;
  * @param <T> The resultant type for the target field
  */
 abstract class AbstractStringProcessor<T> extends AbstractProcessor {
-    private final String field;
+    private final FieldPathTemplate field;
     private final boolean ignoreMissing;
-    private final String targetField;
+    private final FieldPathTemplate targetField;
 
     AbstractStringProcessor(String tag, String description, boolean ignoreMissing, String targetField, String field) {
         super(tag, description);
-        this.field = field;
+        this.field = FieldPathTemplate.constant(field);
         this.ignoreMissing = ignoreMissing;
-        this.targetField = targetField;
+        this.targetField = FieldPathTemplate.constant(targetField);
     }
 
-    public String getField() {
+    public FieldPathTemplate getField() {
         return field;
     }
 
@@ -45,13 +46,13 @@ abstract class AbstractStringProcessor<T> extends AbstractProcessor {
         return ignoreMissing;
     }
 
-    String getTargetField() {
+    FieldPathTemplate getTargetField() {
         return targetField;
     }
 
     @Override
     public final IngestDocument execute(IngestDocument document) {
-        Object val = document.getFieldValue(field, Object.class, ignoreMissing);
+        Object val = document.getFieldValue(field.resolve(document), Object.class, ignoreMissing);
         Object newValue;
 
         if (val == null && ignoreMissing) {
@@ -91,7 +92,7 @@ abstract class AbstractStringProcessor<T> extends AbstractProcessor {
 
         }
 
-        document.setFieldValue(targetField, newValue);
+        document.setFieldValue(targetField.resolve(document), newValue);
         return document;
     }
 
