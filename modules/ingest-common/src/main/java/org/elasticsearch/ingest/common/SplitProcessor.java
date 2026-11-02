@@ -12,6 +12,7 @@ package org.elasticsearch.ingest.common;
 import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
+import org.elasticsearch.ingest.FieldPathTemplate;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 
@@ -29,11 +30,11 @@ public final class SplitProcessor extends AbstractProcessor {
 
     public static final String TYPE = "split";
 
-    private final String field;
+    private final FieldPathTemplate field;
     private final String separator;
     private final boolean ignoreMissing;
     private final boolean preserveTrailing;
-    private final String targetField;
+    private final FieldPathTemplate targetField;
 
     SplitProcessor(
         String tag,
@@ -45,14 +46,14 @@ public final class SplitProcessor extends AbstractProcessor {
         String targetField
     ) {
         super(tag, description);
-        this.field = field;
+        this.field = FieldPathTemplate.constant(field);
         this.separator = separator;
         this.ignoreMissing = ignoreMissing;
         this.preserveTrailing = preserveTrailing;
-        this.targetField = targetField;
+        this.targetField = FieldPathTemplate.constant(targetField);
     }
 
-    String getField() {
+    FieldPathTemplate getField() {
         return field;
     }
 
@@ -68,13 +69,13 @@ public final class SplitProcessor extends AbstractProcessor {
         return preserveTrailing;
     }
 
-    String getTargetField() {
+    FieldPathTemplate getTargetField() {
         return targetField;
     }
 
     @Override
     public IngestDocument execute(IngestDocument document) {
-        String oldVal = document.getFieldValue(field, String.class, ignoreMissing);
+        String oldVal = document.getFieldValue(field.resolve(document), String.class, ignoreMissing);
 
         if (oldVal == null && ignoreMissing) {
             return document;
@@ -85,7 +86,7 @@ public final class SplitProcessor extends AbstractProcessor {
         String[] strings = oldVal.split(separator, preserveTrailing ? -1 : 0);
         List<String> splitList = new ArrayList<>(strings.length);
         Collections.addAll(splitList, strings);
-        document.setFieldValue(targetField, splitList);
+        document.setFieldValue(targetField.resolve(document), splitList);
         return document;
     }
 

@@ -13,6 +13,7 @@ import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.common.util.Maps;
 import org.elasticsearch.core.UpdateForV10;
 import org.elasticsearch.ingest.AbstractProcessor;
+import org.elasticsearch.ingest.FieldPathTemplate;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.useragent.api.Details;
@@ -36,8 +37,8 @@ public class UserAgentProcessor extends AbstractProcessor {
 
     public static final String TYPE = "user_agent";
 
-    private final String field;
-    private final String targetField;
+    private final FieldPathTemplate field;
+    private final FieldPathTemplate targetField;
     private final Set<Property> properties;
     private final UserAgentParser parser;
     private final boolean extractDeviceType;
@@ -54,8 +55,8 @@ public class UserAgentProcessor extends AbstractProcessor {
         boolean ignoreMissing
     ) {
         super(tag, description);
-        this.field = field;
-        this.targetField = targetField;
+        this.field = FieldPathTemplate.constant(field);
+        this.targetField = FieldPathTemplate.constant(targetField);
         this.parser = parser;
         this.properties = properties;
         this.extractDeviceType = extractDeviceType;
@@ -72,7 +73,7 @@ public class UserAgentProcessor extends AbstractProcessor {
 
     @Override
     public IngestDocument execute(IngestDocument ingestDocument) {
-        String userAgent = ingestDocument.getFieldValue(field, String.class, ignoreMissing);
+        String userAgent = ingestDocument.getFieldValue(field.resolve(ingestDocument), String.class, ignoreMissing);
 
         if (userAgent == null && ignoreMissing) {
             return ingestDocument;
@@ -134,7 +135,7 @@ public class UserAgentProcessor extends AbstractProcessor {
             }
         }
 
-        ingestDocument.setFieldValue(targetField, uaDetails);
+        ingestDocument.setFieldValue(targetField.resolve(ingestDocument), uaDetails);
         return ingestDocument;
     }
 
@@ -143,11 +144,11 @@ public class UserAgentProcessor extends AbstractProcessor {
         return TYPE;
     }
 
-    String getField() {
+    FieldPathTemplate getField() {
         return field;
     }
 
-    String getTargetField() {
+    FieldPathTemplate getTargetField() {
         return targetField;
     }
 

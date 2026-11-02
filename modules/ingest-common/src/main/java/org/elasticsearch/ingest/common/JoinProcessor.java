@@ -12,6 +12,7 @@ package org.elasticsearch.ingest.common;
 import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
+import org.elasticsearch.ingest.FieldPathTemplate;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 
@@ -27,18 +28,18 @@ public final class JoinProcessor extends AbstractProcessor {
 
     public static final String TYPE = "join";
 
-    private final String field;
+    private final FieldPathTemplate field;
     private final String separator;
-    private final String targetField;
+    private final FieldPathTemplate targetField;
 
     JoinProcessor(String tag, String description, String field, String separator, String targetField) {
         super(tag, description);
-        this.field = field;
+        this.field = FieldPathTemplate.constant(field);
         this.separator = separator;
-        this.targetField = targetField;
+        this.targetField = FieldPathTemplate.constant(targetField);
     }
 
-    String getField() {
+    FieldPathTemplate getField() {
         return field;
     }
 
@@ -46,18 +47,18 @@ public final class JoinProcessor extends AbstractProcessor {
         return separator;
     }
 
-    String getTargetField() {
+    FieldPathTemplate getTargetField() {
         return targetField;
     }
 
     @Override
     public IngestDocument execute(IngestDocument document) {
-        List<?> list = document.getFieldValue(field, List.class);
+        List<?> list = document.getFieldValue(field.resolve(document), List.class);
         if (list == null) {
             throw new IllegalArgumentException("field [" + field + "] is null, cannot join.");
         }
         String joined = list.stream().map(Object::toString).collect(Collectors.joining(separator));
-        document.setFieldValue(targetField, joined);
+        document.setFieldValue(targetField.resolve(document), joined);
         return document;
     }
 

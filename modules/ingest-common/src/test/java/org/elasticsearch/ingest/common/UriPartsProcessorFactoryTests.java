@@ -10,6 +10,8 @@
 package org.elasticsearch.ingest.common;
 
 import org.elasticsearch.ElasticsearchParseException;
+import org.elasticsearch.ingest.IngestDocument;
+import org.elasticsearch.ingest.TestIngestDocument;
 import org.elasticsearch.test.ESTestCase;
 import org.junit.Before;
 
@@ -47,8 +49,8 @@ public class UriPartsProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         UriPartsProcessor uriPartsProcessor = factory.create(null, processorTag, null, config, null);
         assertThat(uriPartsProcessor.getTag(), equalTo(processorTag));
-        assertThat(uriPartsProcessor.getField(), equalTo(field));
-        assertThat(uriPartsProcessor.getTargetField(), equalTo(targetField));
+        assertThat(uriPartsProcessor.getField().toString(), equalTo(field));
+        assertThat(uriPartsProcessor.getTargetField().toString(), equalTo(targetField));
         assertThat(uriPartsProcessor.getRemoveIfSuccessful(), equalTo(removeIfSuccessful));
         assertThat(uriPartsProcessor.getKeepOriginal(), equalTo(keepOriginal));
         assertThat(uriPartsProcessor.getIgnoreMissing(), equalTo(ignoreMissing));
@@ -74,5 +76,34 @@ public class UriPartsProcessorFactoryTests extends ESTestCase {
         } catch (ElasticsearchParseException e) {
             assertThat(e.getMessage(), equalTo("[field] required property is missing"));
         }
+    }
+
+    /**
+     * Pipelines are stored, so a malformed path in one has to be accepted when the processor is created, with the failure only coming
+     * when a document is run through it. This goes through the factory, as creating a processor from a stored pipeline does.
+     */
+    public void testCreateWithMalformedField() throws Exception {
+        Map<String, Object> config = new HashMap<>();
+        config.put("field", "a..b");
+        UriPartsProcessor processor = factory.create(null, randomAlphaOfLength(10), null, config, null);
+        assertThat(processor.getField().toString(), equalTo("a..b"));
+
+        IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
+        IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
+        assertThat(e.getMessage(), equalTo("path [a..b] is not valid"));
+    }
+
+    public void testCreateWithMalformedTargetField() throws Exception {
+        Map<String, Object> config = new HashMap<>();
+        config.put("field", "source");
+        config.put("target_field", "a..b");
+        UriPartsProcessor processor = factory.create(null, randomAlphaOfLength(10), null, config, null);
+        assertThat(processor.getTargetField().toString(), equalTo("a..b"));
+
+        // the source is fine, so it is the target that causes the failure
+        IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
+        ingestDocument.setFieldValue("source", "http://example.com/");
+        IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
+        assertThat(e.getMessage(), equalTo("path [a..b] is not valid"));
     }
 }

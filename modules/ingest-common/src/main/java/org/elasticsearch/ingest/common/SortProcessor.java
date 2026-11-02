@@ -12,6 +12,7 @@ package org.elasticsearch.ingest.common;
 import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
+import org.elasticsearch.ingest.FieldPathTemplate;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 
@@ -60,18 +61,18 @@ public final class SortProcessor extends AbstractProcessor {
         }
     }
 
-    private final String field;
+    private final FieldPathTemplate field;
     private final SortOrder order;
-    private final String targetField;
+    private final FieldPathTemplate targetField;
 
     SortProcessor(String tag, String description, String field, SortOrder order, String targetField) {
         super(tag, description);
-        this.field = field;
+        this.field = FieldPathTemplate.constant(field);
         this.order = order;
-        this.targetField = targetField;
+        this.targetField = FieldPathTemplate.constant(targetField);
     }
 
-    String getField() {
+    FieldPathTemplate getField() {
         return field;
     }
 
@@ -79,14 +80,14 @@ public final class SortProcessor extends AbstractProcessor {
         return order;
     }
 
-    String getTargetField() {
+    FieldPathTemplate getTargetField() {
         return targetField;
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public IngestDocument execute(IngestDocument document) {
-        List<? extends Comparable<Object>> list = document.getFieldValue(field, List.class);
+        List<? extends Comparable<Object>> list = document.getFieldValue(field.resolve(document), List.class);
 
         if (list == null) {
             throw new IllegalArgumentException("field [" + field + "] is null, cannot sort.");
@@ -100,7 +101,7 @@ public final class SortProcessor extends AbstractProcessor {
             Collections.sort(copy, Collections.reverseOrder());
         }
 
-        document.setFieldValue(targetField, copy);
+        document.setFieldValue(targetField.resolve(document), copy);
         return document;
     }
 

@@ -13,6 +13,7 @@ import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.core.Strings;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
+import org.elasticsearch.ingest.FieldPathTemplate;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.xcontent.XContentParser;
@@ -34,8 +35,8 @@ public final class JsonProcessor extends AbstractProcessor {
     public static final String TYPE = "json";
     private static final String STRICT_JSON_PARSING_PARAMETER = "strict_json_parsing";
 
-    private final String field;
-    private final String targetField;
+    private final FieldPathTemplate field;
+    private final FieldPathTemplate targetField;
     private final boolean addToRoot;
     private final ConflictStrategy addToRootConflictStrategy;
     private final boolean allowDuplicateKeys;
@@ -64,19 +65,19 @@ public final class JsonProcessor extends AbstractProcessor {
         boolean strictJsonParsing
     ) {
         super(tag, description);
-        this.field = field;
-        this.targetField = targetField;
+        this.field = FieldPathTemplate.constant(field);
+        this.targetField = FieldPathTemplate.constant(targetField);
         this.addToRoot = addToRoot;
         this.addToRootConflictStrategy = addToRootConflictStrategy;
         this.allowDuplicateKeys = allowDuplicateKeys;
         this.strictJsonParsing = strictJsonParsing;
     }
 
-    public String getField() {
+    public FieldPathTemplate getField() {
         return field;
     }
 
-    public String getTargetField() {
+    public FieldPathTemplate getTargetField() {
         return targetField;
     }
 
@@ -188,11 +189,11 @@ public final class JsonProcessor extends AbstractProcessor {
 
     @Override
     public IngestDocument execute(IngestDocument document) throws Exception {
-        Object value = apply(document.getFieldValue(field, Object.class), allowDuplicateKeys, strictJsonParsing);
+        Object value = apply(document.getFieldValue(field.resolve(document), Object.class), allowDuplicateKeys, strictJsonParsing);
         if (addToRoot) {
             mergeParsedJson(document.getCtxMap(), value, addToRootConflictStrategy);
         } else {
-            document.setFieldValue(targetField, value);
+            document.setFieldValue(targetField.resolve(document), value);
         }
         return document;
     }

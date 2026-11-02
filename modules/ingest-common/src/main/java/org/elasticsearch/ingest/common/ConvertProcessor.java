@@ -13,6 +13,7 @@ import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.common.network.InetAddresses;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
+import org.elasticsearch.ingest.FieldPathTemplate;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 
@@ -153,24 +154,24 @@ public final class ConvertProcessor extends AbstractProcessor {
 
     public static final String TYPE = "convert";
 
-    private final String field;
-    private final String targetField;
+    private final FieldPathTemplate field;
+    private final FieldPathTemplate targetField;
     private final Type convertType;
     private final boolean ignoreMissing;
 
     ConvertProcessor(String tag, String description, String field, String targetField, Type convertType, boolean ignoreMissing) {
         super(tag, description);
-        this.field = field;
-        this.targetField = targetField;
+        this.field = FieldPathTemplate.constant(field);
+        this.targetField = FieldPathTemplate.constant(targetField);
         this.convertType = convertType;
         this.ignoreMissing = ignoreMissing;
     }
 
-    String getField() {
+    FieldPathTemplate getField() {
         return field;
     }
 
-    String getTargetField() {
+    FieldPathTemplate getTargetField() {
         return targetField;
     }
 
@@ -184,7 +185,7 @@ public final class ConvertProcessor extends AbstractProcessor {
 
     @Override
     public IngestDocument execute(IngestDocument document) {
-        Object oldValue = document.getFieldValue(field, Object.class, ignoreMissing);
+        Object oldValue = document.getFieldValue(field.resolve(document), Object.class, ignoreMissing);
         Object newValue;
 
         if (oldValue == null && ignoreMissing) {
@@ -202,7 +203,7 @@ public final class ConvertProcessor extends AbstractProcessor {
         } else {
             newValue = convertType.convert(oldValue);
         }
-        document.setFieldValue(targetField, newValue);
+        document.setFieldValue(targetField.resolve(document), newValue);
         return document;
     }
 

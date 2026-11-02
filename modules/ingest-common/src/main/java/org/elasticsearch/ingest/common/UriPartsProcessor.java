@@ -12,6 +12,7 @@ package org.elasticsearch.ingest.common;
 import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
+import org.elasticsearch.ingest.FieldPathTemplate;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.web.UriParts;
@@ -22,8 +23,9 @@ public class UriPartsProcessor extends AbstractProcessor {
 
     public static final String TYPE = "uri_parts";
 
-    private final String field;
-    private final String targetField;
+    private final FieldPathTemplate field;
+    private final FieldPathTemplate targetField;
+    private final boolean targetIsSourceField;
     private final boolean removeIfSuccessful;
     private final boolean keepOriginal;
     private final boolean ignoreMissing;
@@ -38,18 +40,19 @@ public class UriPartsProcessor extends AbstractProcessor {
         boolean ignoreMissing
     ) {
         super(tag, description);
-        this.field = field;
-        this.targetField = targetField;
+        this.field = FieldPathTemplate.constant(field);
+        this.targetField = FieldPathTemplate.constant(targetField);
+        this.targetIsSourceField = targetField.equals(field);
         this.removeIfSuccessful = removeIfSuccessful;
         this.keepOriginal = keepOriginal;
         this.ignoreMissing = ignoreMissing;
     }
 
-    public String getField() {
+    public FieldPathTemplate getField() {
         return field;
     }
 
-    public String getTargetField() {
+    public FieldPathTemplate getTargetField() {
         return targetField;
     }
 
@@ -67,7 +70,7 @@ public class UriPartsProcessor extends AbstractProcessor {
 
     @Override
     public IngestDocument execute(IngestDocument ingestDocument) throws Exception {
-        String value = ingestDocument.getFieldValue(field, String.class, ignoreMissing);
+        String value = ingestDocument.getFieldValue(field.resolve(ingestDocument), String.class, ignoreMissing);
 
         if (ignoreMissing && null == value) {
             return ingestDocument;
@@ -77,10 +80,10 @@ public class UriPartsProcessor extends AbstractProcessor {
             uriParts.put("original", value);
         }
 
-        if (removeIfSuccessful && targetField.equals(field) == false) {
-            ingestDocument.removeField(field);
+        if (removeIfSuccessful && targetIsSourceField == false) {
+            ingestDocument.removeField(field.resolve(ingestDocument));
         }
-        ingestDocument.setFieldValue(targetField, uriParts);
+        ingestDocument.setFieldValue(targetField.resolve(ingestDocument), uriParts);
         return ingestDocument;
     }
 

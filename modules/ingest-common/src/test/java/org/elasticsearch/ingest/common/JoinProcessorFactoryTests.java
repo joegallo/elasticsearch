@@ -10,9 +10,12 @@
 package org.elasticsearch.ingest.common;
 
 import org.elasticsearch.ElasticsearchParseException;
+import org.elasticsearch.ingest.IngestDocument;
+import org.elasticsearch.ingest.TestIngestDocument;
 import org.elasticsearch.test.ESTestCase;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -27,9 +30,9 @@ public class JoinProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         JoinProcessor joinProcessor = factory.create(null, processorTag, null, config, null);
         assertThat(joinProcessor.getTag(), equalTo(processorTag));
-        assertThat(joinProcessor.getField(), equalTo("field1"));
+        assertThat(joinProcessor.getField().toString(), equalTo("field1"));
         assertThat(joinProcessor.getSeparator(), equalTo("-"));
-        assertThat(joinProcessor.getTargetField(), equalTo("field1"));
+        assertThat(joinProcessor.getTargetField().toString(), equalTo("field1"));
     }
 
     public void testCreateNoFieldPresent() throws Exception {
@@ -65,8 +68,39 @@ public class JoinProcessorFactoryTests extends ESTestCase {
         String processorTag = randomAlphaOfLength(10);
         JoinProcessor joinProcessor = factory.create(null, processorTag, null, config, null);
         assertThat(joinProcessor.getTag(), equalTo(processorTag));
-        assertThat(joinProcessor.getField(), equalTo("field1"));
+        assertThat(joinProcessor.getField().toString(), equalTo("field1"));
         assertThat(joinProcessor.getSeparator(), equalTo("-"));
-        assertThat(joinProcessor.getTargetField(), equalTo("target"));
+        assertThat(joinProcessor.getTargetField().toString(), equalTo("target"));
+    }
+
+    /**
+     * Pipelines are stored, so a malformed path in one has to be accepted when the processor is created, with the failure only coming
+     * when a document is run through it. This goes through the factory, as creating a processor from a stored pipeline does.
+     */
+    public void testCreateWithMalformedField() throws Exception {
+        Map<String, Object> config = new HashMap<>();
+        config.put("field", "a..b");
+        config.put("separator", "-");
+        JoinProcessor processor = new JoinProcessor.Factory().create(null, randomAlphaOfLength(10), null, config, null);
+        assertThat(processor.getField().toString(), equalTo("a..b"));
+
+        IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
+        IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
+        assertThat(e.getMessage(), equalTo("path [a..b] is not valid"));
+    }
+
+    public void testCreateWithMalformedTargetField() throws Exception {
+        Map<String, Object> config = new HashMap<>();
+        config.put("field", "source");
+        config.put("target_field", "a..b");
+        config.put("separator", "-");
+        JoinProcessor processor = new JoinProcessor.Factory().create(null, randomAlphaOfLength(10), null, config, null);
+        assertThat(processor.getTargetField().toString(), equalTo("a..b"));
+
+        // the source is fine, so it is the target that causes the failure
+        IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
+        ingestDocument.setFieldValue("source", List.of("a", "b"));
+        IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
+        assertThat(e.getMessage(), equalTo("path [a..b] is not valid"));
     }
 }
