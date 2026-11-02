@@ -48,11 +48,11 @@ public class NetworkDirectionProcessor extends AbstractProcessor {
         boolean ignoreMissing
     ) {
         super(tag, description);
-        this.sourceIpField = FieldPathTemplate.constant(sourceIpField);
-        this.destinationIpField = FieldPathTemplate.constant(destinationIpField);
-        this.targetField = FieldPathTemplate.constant(targetField);
+        this.sourceIpField = FieldPathTemplate.of(sourceIpField);
+        this.destinationIpField = FieldPathTemplate.of(destinationIpField);
+        this.targetField = FieldPathTemplate.of(targetField);
         this.internalNetworks = internalNetworks;
-        this.internalNetworksField = FieldPathTemplate.constant(internalNetworksField);
+        this.internalNetworksField = FieldPathTemplate.ofNullable(internalNetworksField);
         this.ignoreMissing = ignoreMissing;
     }
 

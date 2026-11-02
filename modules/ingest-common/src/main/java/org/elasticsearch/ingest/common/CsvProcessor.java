@@ -62,9 +62,9 @@ public final class CsvProcessor extends AbstractProcessor {
         Object emptyValue
     ) {
         super(tag, description);
-        this.field = FieldPathTemplate.constant(field);
+        this.field = FieldPathTemplate.of(field);
         this.headers = headers;
-        this.headerPaths = Arrays.stream(headers).map(FieldPathTemplate::constant).toArray(FieldPathTemplate[]::new);
+        this.headerPaths = Arrays.stream(headers).map(FieldPathTemplate::of).toArray(FieldPathTemplate[]::new);
         this.trim = trim;
         this.quote = quote;
         this.separator = separator;

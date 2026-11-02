@@ -161,8 +161,8 @@ public final class ConvertProcessor extends AbstractProcessor {
 
     ConvertProcessor(String tag, String description, String field, String targetField, Type convertType, boolean ignoreMissing) {
         super(tag, description);
-        this.field = FieldPathTemplate.constant(field);
-        this.targetField = FieldPathTemplate.constant(targetField);
+        this.field = FieldPathTemplate.of(field);
+        this.targetField = FieldPathTemplate.of(targetField);
         this.convertType = convertType;
         this.ignoreMissing = ignoreMissing;
     }

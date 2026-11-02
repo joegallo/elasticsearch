@@ -77,7 +77,7 @@ public final class SetSecurityUserProcessor extends AbstractProcessor {
         } else if (this.securityContext == null) {
             throw new IllegalArgumentException("Authentication is allowed on this cluster state, but there is no security context");
         }
-        this.field = FieldPathTemplate.constant(field);
+        this.field = FieldPathTemplate.of(field);
         this.properties = properties;
     }
 

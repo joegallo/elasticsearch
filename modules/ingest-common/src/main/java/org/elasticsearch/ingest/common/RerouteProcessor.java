@@ -279,7 +279,7 @@ public final class RerouteProcessor extends AbstractProcessor {
                     throw new IllegalArgumentException("'" + value + "' is not a valid field reference");
                 }
                 this.fieldReference = fieldReference;
-                this.fieldReferencePath = FieldPathTemplate.constant(fieldReference);
+                this.fieldReferencePath = FieldPathTemplate.of(fieldReference);
             } else {
                 this.fieldReference = null;
                 this.fieldReferencePath = null;

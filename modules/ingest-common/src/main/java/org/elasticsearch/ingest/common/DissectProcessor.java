@@ -31,7 +31,7 @@ public final class DissectProcessor extends AbstractProcessor {
 
     DissectProcessor(String tag, String description, String field, String pattern, String appendSeparator, boolean ignoreMissing) {
         super(tag, description);
-        this.field = FieldPathTemplate.constant(field);
+        this.field = FieldPathTemplate.of(field);
         this.ignoreMissing = ignoreMissing;
         this.pattern = pattern;
         this.appendSeparator = appendSeparator;

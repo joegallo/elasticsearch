@@ -55,8 +55,8 @@ public final class CircleProcessor extends AbstractProcessor {
         CircleShapeFieldType circleShapeFieldType
     ) {
         super(tag, description);
-        this.field = FieldPathTemplate.constant(field);
-        this.targetField = FieldPathTemplate.constant(targetField);
+        this.field = FieldPathTemplate.of(field);
+        this.targetField = FieldPathTemplate.of(targetField);
         this.ignoreMissing = ignoreMissing;
         this.errorDistance = errorDistance;
         this.circleShapeFieldType = circleShapeFieldType;

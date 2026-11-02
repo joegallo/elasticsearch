@@ -40,8 +40,8 @@ public class UriPartsProcessor extends AbstractProcessor {
         boolean ignoreMissing
     ) {
         super(tag, description);
-        this.field = FieldPathTemplate.constant(field);
-        this.targetField = FieldPathTemplate.constant(targetField);
+        this.field = FieldPathTemplate.of(field);
+        this.targetField = FieldPathTemplate.of(targetField);
         this.targetIsSourceField = targetField.equals(field);
         this.removeIfSuccessful = removeIfSuccessful;
         this.keepOriginal = keepOriginal;

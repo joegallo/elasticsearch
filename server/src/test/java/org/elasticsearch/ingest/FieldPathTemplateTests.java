@@ -56,7 +56,7 @@ public class FieldPathTemplateTests extends ESTestCase {
     }
 
     public void testConstantPathIsParsedOnlyOnce() {
-        FieldPathTemplate fieldPathTemplate = FieldPathTemplate.constant("foo.bar");
+        FieldPathTemplate fieldPathTemplate = FieldPathTemplate.of("foo.bar");
         FieldPath first = fieldPathTemplate.resolve(documentNamed("one"));
         assertThat(first.toString(), equalTo("foo.bar"));
         assertThat(fieldPathTemplate.resolve(documentNamed("two")), sameInstance(first));
@@ -96,7 +96,7 @@ public class FieldPathTemplateTests extends ESTestCase {
 
         for (FieldPathTemplate fieldPathTemplate : new FieldPathTemplate[] {
             FieldPathTemplate.of(template),
-            FieldPathTemplate.constant("a..b") }) {
+            FieldPathTemplate.of("a..b") }) {
             // and it fails the same way every time, not just the first time
             for (int i = 0; i < 3; i++) {
                 IllegalArgumentException e = expectThrows(
@@ -109,10 +109,28 @@ public class FieldPathTemplateTests extends ESTestCase {
     }
 
     /**
-     * Optional paths (like a set processor's <code>copy_from</code>) can be passed straight through, with null meaning "no path".
+     * Required paths are never null, and if one is that is a programming error, which is better found when the processor is created than
+     * when it is first used.
      */
-    public void testNullConstantPathIsNull() {
-        assertNull(FieldPathTemplate.constant(null));
+    public void testNullRequiredPathIsRejected() {
+        expectThrows(NullPointerException.class, () -> FieldPathTemplate.of((String) null));
+    }
+
+    /**
+     * A path that is merely malformed or empty, on the other hand, is not rejected, as pipelines are stored, so those still wait for
+     * {@link FieldPathTemplate#resolve(IngestDocument)}.
+     */
+    public void testRequiredPathThatIsMalformedOrEmptyIsNotRejected() {
+        assertNotNull(FieldPathTemplate.of("a..b"));
+        assertNotNull(FieldPathTemplate.of(""));
+    }
+
+    /**
+     * Optional paths on the other hand (like a set processor's <code>copy_from</code>) are, when they are not there, null.
+     */
+    public void testNullOptionalPathIsNull() {
+        assertNull(FieldPathTemplate.ofNullable(null));
+        assertThat(FieldPathTemplate.ofNullable("foo.bar").toString(), equalTo("foo.bar"));
     }
 
     /**
@@ -120,7 +138,7 @@ public class FieldPathTemplateTests extends ESTestCase {
      */
     public void testEmptyConstantPathsFailOnlyWhenResolved() {
         for (FieldPathTemplate fieldPathTemplate : new FieldPathTemplate[] {
-            FieldPathTemplate.constant(""),
+            FieldPathTemplate.of(""),
             FieldPathTemplate.of(ConfigurationUtils.compileTemplate("test", "tag", "field", "", TestTemplateService.instance())) }) {
             IllegalArgumentException e = expectThrows(
                 IllegalArgumentException.class,
@@ -132,14 +150,14 @@ public class FieldPathTemplateTests extends ESTestCase {
 
     public void testResolveUnlessEmpty() {
         // a path that is fine
-        assertThat(FieldPathTemplate.constant("foo.bar").resolveUnlessEmpty(documentNamed("one")).toString(), equalTo("foo.bar"));
+        assertThat(FieldPathTemplate.of("foo.bar").resolveUnlessEmpty(documentNamed("one")).toString(), equalTo("foo.bar"));
         assertThat(FieldPathTemplate.of(NAME_TEMPLATE).resolveUnlessEmpty(documentNamed("foo.bar")).toString(), equalTo("foo.bar"));
         // and one that is parsed ahead of time is the same one every time
-        FieldPathTemplate constant = FieldPathTemplate.constant("foo.bar");
+        FieldPathTemplate constant = FieldPathTemplate.of("foo.bar");
         assertThat(constant.resolveUnlessEmpty(documentNamed("one")), sameInstance(constant.resolve(documentNamed("two"))));
 
         // empty is the thing that is different
-        assertNull(FieldPathTemplate.constant("").resolveUnlessEmpty(documentNamed("one")));
+        assertNull(FieldPathTemplate.of("").resolveUnlessEmpty(documentNamed("one")));
         assertNull(FieldPathTemplate.of(NAME_TEMPLATE).resolveUnlessEmpty(documentNamed("")));
         TemplateScript.Factory constantEmpty = ConfigurationUtils.compileTemplate(
             "test",
@@ -150,12 +168,10 @@ public class FieldPathTemplateTests extends ESTestCase {
         );
         assertNull(FieldPathTemplate.of(constantEmpty).resolveUnlessEmpty(documentNamed("one")));
         // while resolve still throws for it
-        expectThrows(IllegalArgumentException.class, () -> FieldPathTemplate.constant("").resolve(documentNamed("one")));
+        expectThrows(IllegalArgumentException.class, () -> FieldPathTemplate.of("").resolve(documentNamed("one")));
 
         // anything else that is malformed still throws
-        for (FieldPathTemplate malformed : new FieldPathTemplate[] {
-            FieldPathTemplate.constant("a..b"),
-            FieldPathTemplate.of(NAME_TEMPLATE) }) {
+        for (FieldPathTemplate malformed : new FieldPathTemplate[] { FieldPathTemplate.of("a..b"), FieldPathTemplate.of(NAME_TEMPLATE) }) {
             IllegalArgumentException e = expectThrows(
                 IllegalArgumentException.class,
                 () -> malformed.resolveUnlessEmpty(documentNamed("a..b"))
@@ -164,11 +180,18 @@ public class FieldPathTemplateTests extends ESTestCase {
         }
     }
 
+    /**
+     * A null template is a programming error, and it is better for that to be found when the processor is created than for every document.
+     */
+    public void testNullTemplateIsRejected() {
+        expectThrows(NullPointerException.class, () -> FieldPathTemplate.of((TemplateScript.Factory) null));
+    }
+
     public void testToString() {
-        assertThat(FieldPathTemplate.constant("foo.bar").toString(), equalTo("foo.bar"));
+        assertThat(FieldPathTemplate.of("foo.bar").toString(), equalTo("foo.bar"));
         // malformed and empty paths are still shown the way that they were configured
-        assertThat(FieldPathTemplate.constant("a..b").toString(), equalTo("a..b"));
-        assertThat(FieldPathTemplate.constant("").toString(), equalTo(""));
+        assertThat(FieldPathTemplate.of("a..b").toString(), equalTo("a..b"));
+        assertThat(FieldPathTemplate.of("").toString(), equalTo(""));
         TemplateScript.Factory constantTemplate = ConfigurationUtils.compileTemplate(
             "test",
             "tag",
@@ -184,7 +207,7 @@ public class FieldPathTemplateTests extends ESTestCase {
      * A path that is only invalid for some access patterns is fine to parse up front, the access pattern is checked when it is used.
      */
     public void testPathThatIsOnlyInvalidForSomeAccessPatternsCanBeCreated() {
-        FieldPathTemplate fieldPathTemplate = FieldPathTemplate.constant("a[0]");
+        FieldPathTemplate fieldPathTemplate = FieldPathTemplate.of("a[0]");
         assertThat(fieldPathTemplate.resolve(documentNamed("irrelevant")).toString(), equalTo("a[0]"));
     }
 }

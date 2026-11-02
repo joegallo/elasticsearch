@@ -65,8 +65,8 @@ public final class JsonProcessor extends AbstractProcessor {
         boolean strictJsonParsing
     ) {
         super(tag, description);
-        this.field = FieldPathTemplate.constant(field);
-        this.targetField = FieldPathTemplate.constant(targetField);
+        this.field = FieldPathTemplate.of(field);
+        this.targetField = FieldPathTemplate.ofNullable(targetField);
         this.addToRoot = addToRoot;
         this.addToRootConflictStrategy = addToRootConflictStrategy;
         this.allowDuplicateKeys = allowDuplicateKeys;

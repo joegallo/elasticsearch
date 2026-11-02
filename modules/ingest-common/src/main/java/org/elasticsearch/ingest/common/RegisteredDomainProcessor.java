@@ -32,7 +32,7 @@ public class RegisteredDomainProcessor extends AbstractProcessor {
 
     RegisteredDomainProcessor(String tag, String description, String field, String targetField, boolean ignoreMissing) {
         super(tag, description);
-        this.field = FieldPathTemplate.constant(field);
+        this.field = FieldPathTemplate.of(field);
         this.targetField = targetField;
         this.ignoreMissing = ignoreMissing;
         String fieldPrefix = targetField;
@@ -40,10 +40,10 @@ public class RegisteredDomainProcessor extends AbstractProcessor {
             fieldPrefix += ".";
         }
         this.domainInfoFields = new DomainInfoFields(
-            FieldPathTemplate.constant(fieldPrefix + RegisteredDomain.DOMAIN),
-            FieldPathTemplate.constant(fieldPrefix + RegisteredDomain.REGISTERED_DOMAIN),
-            FieldPathTemplate.constant(fieldPrefix + RegisteredDomain.eTLD),
-            FieldPathTemplate.constant(fieldPrefix + RegisteredDomain.SUBDOMAIN)
+            FieldPathTemplate.of(fieldPrefix + RegisteredDomain.DOMAIN),
+            FieldPathTemplate.of(fieldPrefix + RegisteredDomain.REGISTERED_DOMAIN),
+            FieldPathTemplate.of(fieldPrefix + RegisteredDomain.eTLD),
+            FieldPathTemplate.of(fieldPrefix + RegisteredDomain.SUBDOMAIN)
         );
     }
 

@@ -59,7 +59,7 @@ public final class GrokProcessor extends AbstractProcessor {
     ) {
         super(tag, description);
         String combinedPattern = Grok.combinePatterns(matchPatterns, traceMatch ? PATTERN_MATCH_KEY : null);
-        this.matchField = FieldPathTemplate.constant(matchField);
+        this.matchField = FieldPathTemplate.of(matchField);
         this.matchPatterns = matchPatterns;
         this.grok = new Grok(patternBank, combinedPattern, matcherWatchdog, logger::debug);
         this.traceMatch = traceMatch;

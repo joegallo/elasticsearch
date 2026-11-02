@@ -82,10 +82,10 @@ public final class GeoIpProcessor extends AbstractProcessor {
     ) {
         super(tag, description);
         this.type = type;
-        this.field = FieldPathTemplate.constant(field);
+        this.field = FieldPathTemplate.of(field);
         this.ipDataLookup = ipDataLookup;
         this.targetField = targetField;
-        this.targetFieldPath = FieldPathTemplate.constant(targetField);
+        this.targetFieldPath = FieldPathTemplate.of(targetField);
         this.ignoreMissing = ignoreMissing;
         this.firstOnly = firstOnly;
         this.databaseFile = databaseFile;

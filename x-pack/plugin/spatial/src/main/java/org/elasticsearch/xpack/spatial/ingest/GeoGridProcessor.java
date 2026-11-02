@@ -92,8 +92,8 @@ public final class GeoGridProcessor extends AbstractProcessor {
             this.childrenField = childrenField;
             this.nonChildrenField = nonChildrenField;
             this.precisionField = precisionField;
-            this.fieldPath = FieldPathTemplate.constant(field);
-            this.targetFieldPath = FieldPathTemplate.constant(targetField);
+            this.fieldPath = FieldPathTemplate.of(field);
+            this.targetFieldPath = FieldPathTemplate.of(targetField);
             this.parentFieldPath = optional(parentField);
             this.childrenFieldPath = optional(childrenField);
             this.nonChildrenFieldPath = optional(nonChildrenField);
@@ -101,7 +101,7 @@ public final class GeoGridProcessor extends AbstractProcessor {
         }
 
         private static FieldPathTemplate optional(String field) {
-            return field != null && field.length() > 0 ? FieldPathTemplate.constant(field) : null;
+            return field != null && field.length() > 0 ? FieldPathTemplate.of(field) : null;
         }
 
         public String field(String key) {

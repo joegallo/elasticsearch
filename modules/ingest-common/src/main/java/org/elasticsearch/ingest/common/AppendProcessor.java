@@ -52,7 +52,7 @@ public final class AppendProcessor extends AbstractProcessor {
         super(tag, description);
         this.field = FieldPathTemplate.of(field);
         this.value = value;
-        this.copyFrom = FieldPathTemplate.constant(copyFrom);
+        this.copyFrom = FieldPathTemplate.ofNullable(copyFrom);
         this.allowDuplicates = allowDuplicates;
         this.ignoreEmptyValues = ignoreEmptyValues;
     }

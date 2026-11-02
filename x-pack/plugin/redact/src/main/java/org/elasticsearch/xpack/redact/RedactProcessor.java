@@ -94,7 +94,7 @@ public class RedactProcessor extends AbstractProcessor {
         boolean traceRedact
     ) {
         super(tag, description);
-        this.redactField = FieldPathTemplate.constant(redactField);
+        this.redactField = FieldPathTemplate.of(redactField);
         this.redactedStartToken = redactedStartToken;
         this.redactedEndToken = redactedEndToken;
         this.groks = new ArrayList<>(matchPatterns.size());

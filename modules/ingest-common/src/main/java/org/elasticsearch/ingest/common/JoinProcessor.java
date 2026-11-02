@@ -34,9 +34,9 @@ public final class JoinProcessor extends AbstractProcessor {
 
     JoinProcessor(String tag, String description, String field, String separator, String targetField) {
         super(tag, description);
-        this.field = FieldPathTemplate.constant(field);
+        this.field = FieldPathTemplate.of(field);
         this.separator = separator;
-        this.targetField = FieldPathTemplate.constant(targetField);
+        this.targetField = FieldPathTemplate.of(targetField);
     }
 
     FieldPathTemplate getField() {

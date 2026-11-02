@@ -109,13 +109,13 @@ public final class AttachmentProcessor extends AbstractProcessor {
         SetOnce<AttachmentIngestMetrics> attachmentMetrics
     ) {
         super(tag, description);
-        this.field = FieldPathTemplate.constant(field);
-        this.targetField = FieldPathTemplate.constant(targetField);
+        this.field = FieldPathTemplate.of(field);
+        this.targetField = FieldPathTemplate.of(targetField);
         this.properties = properties;
         this.indexedChars = indexedChars;
         this.ignoreMissing = ignoreMissing;
-        this.indexedCharsField = FieldPathTemplate.constant(indexedCharsField);
-        this.resourceName = FieldPathTemplate.constant(resourceName);
+        this.indexedCharsField = FieldPathTemplate.ofNullable(indexedCharsField);
+        this.resourceName = FieldPathTemplate.ofNullable(resourceName);
         this.removeBinary = removeBinary;
         this.maxFieldBytesFromProcessor = maxFieldBytesFromProcessor;
         this.maxFieldSizeFromNode = maxFieldSizeFromNode;

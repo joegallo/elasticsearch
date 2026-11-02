@@ -44,7 +44,7 @@ public final class CefProcessor extends AbstractProcessor {
         @Nullable TemplateScript.Factory timezone
     ) {
         super(tag, description);
-        this.field = FieldPathTemplate.constant(field);
+        this.field = FieldPathTemplate.of(field);
         this.targetField = targetField;
         this.ignoreMissing = ignoreMissing;
         this.ignoreEmptyValues = ignoreEmptyValues;

@@ -33,9 +33,9 @@ abstract class AbstractStringProcessor<T> extends AbstractProcessor {
 
     AbstractStringProcessor(String tag, String description, boolean ignoreMissing, String targetField, String field) {
         super(tag, description);
-        this.field = FieldPathTemplate.constant(field);
+        this.field = FieldPathTemplate.of(field);
         this.ignoreMissing = ignoreMissing;
-        this.targetField = FieldPathTemplate.constant(targetField);
+        this.targetField = FieldPathTemplate.of(targetField);
     }
 
     public FieldPathTemplate getField() {

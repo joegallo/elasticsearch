@@ -67,9 +67,9 @@ public final class SortProcessor extends AbstractProcessor {
 
     SortProcessor(String tag, String description, String field, SortOrder order, String targetField) {
         super(tag, description);
-        this.field = FieldPathTemplate.constant(field);
+        this.field = FieldPathTemplate.of(field);
         this.order = order;
-        this.targetField = FieldPathTemplate.constant(targetField);
+        this.targetField = FieldPathTemplate.of(targetField);
     }
 
     FieldPathTemplate getField() {

@@ -77,8 +77,8 @@ public final class DateProcessor extends AbstractProcessor {
         super(tag, description);
         this.timezone = timezone;
         this.locale = locale;
-        this.field = FieldPathTemplate.constant(field);
-        this.targetField = FieldPathTemplate.constant(targetField);
+        this.field = FieldPathTemplate.of(field);
+        this.targetField = FieldPathTemplate.of(targetField);
         this.formats = formats;
         this.dateParsers = new ArrayList<>(this.formats.size());
 

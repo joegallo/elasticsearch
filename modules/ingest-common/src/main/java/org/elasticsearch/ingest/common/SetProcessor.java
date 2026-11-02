@@ -57,7 +57,7 @@ public final class SetProcessor extends AbstractProcessor {
         this.overrideEnabled = overrideEnabled;
         this.field = FieldPathTemplate.of(field);
         this.value = value;
-        this.copyFrom = FieldPathTemplate.constant(copyFrom);
+        this.copyFrom = FieldPathTemplate.ofNullable(copyFrom);
         this.ignoreEmptyValue = ignoreEmptyValue;
     }
 

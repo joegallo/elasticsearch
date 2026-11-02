@@ -46,11 +46,11 @@ public final class SplitProcessor extends AbstractProcessor {
         String targetField
     ) {
         super(tag, description);
-        this.field = FieldPathTemplate.constant(field);
+        this.field = FieldPathTemplate.of(field);
         this.separator = separator;
         this.ignoreMissing = ignoreMissing;
         this.preserveTrailing = preserveTrailing;
-        this.targetField = FieldPathTemplate.constant(targetField);
+        this.targetField = FieldPathTemplate.of(targetField);
     }
 
     FieldPathTemplate getField() {

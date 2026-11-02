@@ -49,7 +49,7 @@ public final class ForEachProcessor extends AbstractProcessor implements Wrappin
 
     ForEachProcessor(String tag, String description, String field, Processor processor, boolean ignoreMissing) {
         super(tag, description);
-        this.field = FieldPathTemplate.constant(field);
+        this.field = FieldPathTemplate.of(field);
         this.processor = processor;
         this.ignoreMissing = ignoreMissing;
     }

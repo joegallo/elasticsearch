@@ -56,7 +56,7 @@ public final class DateIndexNameProcessor extends AbstractProcessor {
         TemplateScript.Factory indexNameFormatTemplate
     ) {
         super(tag, description);
-        this.field = FieldPathTemplate.constant(field);
+        this.field = FieldPathTemplate.of(field);
         this.timezone = timezone;
         this.dateFormats = dateFormats;
         this.indexNamePrefixTemplate = indexNamePrefixTemplate;

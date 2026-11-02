@@ -74,15 +74,15 @@ public final class CommunityIdProcessor extends AbstractProcessor {
         boolean ignoreMissing
     ) {
         super(tag, description);
-        this.sourceIpField = FieldPathTemplate.constant(sourceIpField);
-        this.sourcePortField = FieldPathTemplate.constant(sourcePortField);
-        this.destinationIpField = FieldPathTemplate.constant(destinationIpField);
-        this.destinationPortField = FieldPathTemplate.constant(destinationPortField);
-        this.ianaNumberField = FieldPathTemplate.constant(ianaNumberField);
-        this.transportField = FieldPathTemplate.constant(transportField);
-        this.icmpTypeField = FieldPathTemplate.constant(icmpTypeField);
-        this.icmpCodeField = FieldPathTemplate.constant(icmpCodeField);
-        this.targetField = FieldPathTemplate.constant(targetField);
+        this.sourceIpField = FieldPathTemplate.of(sourceIpField);
+        this.sourcePortField = FieldPathTemplate.of(sourcePortField);
+        this.destinationIpField = FieldPathTemplate.of(destinationIpField);
+        this.destinationPortField = FieldPathTemplate.of(destinationPortField);
+        this.ianaNumberField = FieldPathTemplate.of(ianaNumberField);
+        this.transportField = FieldPathTemplate.of(transportField);
+        this.icmpTypeField = FieldPathTemplate.of(icmpTypeField);
+        this.icmpCodeField = FieldPathTemplate.of(icmpCodeField);
+        this.targetField = FieldPathTemplate.of(targetField);
         this.seed = seed;
         this.ignoreMissing = ignoreMissing;
     }

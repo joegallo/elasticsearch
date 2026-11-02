@@ -68,8 +68,8 @@ public final class FingerprintProcessor extends AbstractProcessor {
         super(tag, description);
         this.fields = new ArrayList<>(fields);
         this.fields.sort(Comparator.naturalOrder());
-        this.fieldPaths = this.fields.stream().map(FieldPathTemplate::constant).toList();
-        this.targetField = FieldPathTemplate.constant(targetField);
+        this.fieldPaths = this.fields.stream().map(FieldPathTemplate::of).toList();
+        this.targetField = FieldPathTemplate.of(targetField);
         this.threadLocalHasher = threadLocalHasher;
         this.salt = salt;
         this.ignoreMissing = ignoreMissing;
