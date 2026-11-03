@@ -208,7 +208,10 @@ public class KeyValueProcessorTests extends ESTestCase {
     }
 
     /**
-     * An empty field is treated as one that is missing rather than as an invalid path.
+     * An empty field is treated as one that is missing rather than as an invalid path. That matters for a template that renders as
+     * nothing when the document doesn't have something that it refers to, combined with ignore_missing: the processor does nothing if
+     * ignore_missing is set, and otherwise it fails because the field doesn't exist. (The field here is a constant, so it is empty for
+     * every document, but a template that is only empty for some documents is treated the same way.)
      */
     public void testEmptyFieldIsTreatedAsMissing() throws Exception {
         IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
