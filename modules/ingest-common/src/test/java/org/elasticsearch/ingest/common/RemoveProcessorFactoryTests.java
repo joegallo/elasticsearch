@@ -103,11 +103,8 @@ public class RemoveProcessorFactoryTests extends ESTestCase {
     public void testCreateWithMalformedField() throws Exception {
         Map<String, Object> config = new HashMap<>();
         config.put("field", "a..b");
-        config.put("ignore_missing", randomBoolean());
         RemoveProcessor processor = factory.create(null, randomAlphaOfLength(10), null, config, null);
         assertThat(processor.getFieldsToRemove().get(0), hasToString("a..b"));
-
-        // being malformed is not the same as being missing, so ignore_missing doesn't make a difference
         IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
         assertThat(e.getMessage(), equalTo("path [a..b] is not valid"));

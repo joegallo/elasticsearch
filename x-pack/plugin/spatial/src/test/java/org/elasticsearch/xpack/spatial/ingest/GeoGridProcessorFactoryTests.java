@@ -221,4 +221,5 @@ public class GeoGridProcessorFactoryTests extends ESTestCase {
             assertThat(malformed, e.getCause().getMessage(), equalTo("path [a..b] is not valid"));
         }
     }
+
 }

@@ -54,7 +54,6 @@ public class CsvProcessorFactoryTests extends ESTestCase {
         Map<String, Object> config = new HashMap<>();
         config.put("field", "a..b");
         config.put("target_fields", List.of("target"));
-        config.put("ignore_missing", randomBoolean());
         CsvProcessor processor = new CsvProcessor.Factory().create(null, "csv", null, config, null);
         assertThat(processor.field, hasToString("a..b"));
 
@@ -80,4 +79,5 @@ public class CsvProcessorFactoryTests extends ESTestCase {
         assertThat(e.getMessage(), equalTo("path [a..b] is not valid"));
         assertThat(ingestDocument.getFieldValue("first", String.class), equalTo("one"));
     }
+
 }

@@ -128,7 +128,6 @@ public class ForEachProcessorFactoryTests extends ESTestCase {
         Map<String, Object> config = new HashMap<>();
         config.put("field", "a..b");
         config.put("processor", Map.of("_name", Collections.emptyMap()));
-        config.put("ignore_missing", randomBoolean());
         ForEachProcessor processor = new ForEachProcessor.Factory(scriptService).create(
             registry,
             randomAlphaOfLength(10),

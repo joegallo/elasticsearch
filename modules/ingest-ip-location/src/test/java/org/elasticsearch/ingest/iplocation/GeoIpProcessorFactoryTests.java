@@ -371,7 +371,6 @@ public class GeoIpProcessorFactoryTests extends ESTestCase {
         GeoIpProcessor.Factory factory = new GeoIpProcessor.Factory(GEOIP_TYPE, databaseNodeService);
         Map<String, Object> config = new HashMap<>();
         config.put("field", "a..b");
-        config.put("ignore_missing", randomBoolean());
         GeoIpProcessor processor = (GeoIpProcessor) factory.create(null, randomAlphaOfLength(10), null, config, projectId);
         assertThat(processor.getField(), hasToString("a..b"));
 

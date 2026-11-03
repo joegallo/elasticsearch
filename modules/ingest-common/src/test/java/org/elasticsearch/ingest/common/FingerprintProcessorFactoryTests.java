@@ -145,6 +145,10 @@ public class FingerprintProcessorFactoryTests extends ESTestCase {
         assertThat(e.getMessage(), equalTo("path [a..b] is not valid"));
     }
 
+    /**
+     * Pipelines are stored, so a malformed path in one has to be accepted when the processor is created, with the failure only coming
+     * when a document is run through it. This goes through the factory, as creating a processor from a stored pipeline does.
+     */
     public void testCreateWithMalformedTargetField() throws Exception {
         Map<String, Object> config = new HashMap<>();
         config.put("fields", List.of("source"));

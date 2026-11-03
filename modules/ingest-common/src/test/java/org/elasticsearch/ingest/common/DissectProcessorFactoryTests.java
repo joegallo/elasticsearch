@@ -90,7 +90,6 @@ public class DissectProcessorFactoryTests extends ESTestCase {
         Map<String, Object> config = new HashMap<>();
         config.put("field", "a..b");
         config.put("pattern", "%{a},%{b}");
-        config.put("ignore_missing", randomBoolean());
         DissectProcessor processor = new DissectProcessor.Factory().create(null, randomAlphaOfLength(10), null, config, null);
         assertThat(processor.field, hasToString("a..b"));
 

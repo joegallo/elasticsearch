@@ -102,7 +102,6 @@ public abstract class AbstractStringProcessorFactoryTestCase extends ESTestCase 
         AbstractStringProcessor.Factory factory = newFactory();
         Map<String, Object> config = new HashMap<>();
         config.put("field", "a..b");
-        config.put("ignore_missing", randomBoolean());
 
         AbstractStringProcessor<?> processor = factory.create(null, randomAlphaOfLength(10), null, modifyConfig(config), null);
         assertThat(processor.getField(), hasToString("a..b"));

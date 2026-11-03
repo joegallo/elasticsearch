@@ -1020,7 +1020,6 @@ public class CefProcessorTests extends ESTestCase {
     public void testCreateWithMalformedField() throws Exception {
         Map<String, Object> config = new HashMap<>();
         config.put("field", "a..b");
-        config.put("ignore_missing", randomBoolean());
         CefProcessor processor = new CefProcessor.Factory(TestTemplateService.instance()).create(
             null,
             randomAlphaOfLength(10),

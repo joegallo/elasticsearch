@@ -199,7 +199,7 @@ public class KeyValueProcessorTests extends ESTestCase {
      * when a document is run through it. This goes through the factory, as creating a processor from a stored pipeline does.
      */
     public void testMalformedFieldFailsAtExecutionTime() throws Exception {
-        KeyValueProcessor processor = createKvProcessor("a..b", "&", "=", null, null, "target", randomBoolean());
+        KeyValueProcessor processor = createKvProcessor("a..b", "&", "=", null, null, "target", false);
         assertThat(processor.getField(), hasToString("a..b"));
 
         IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();

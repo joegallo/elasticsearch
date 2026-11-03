@@ -152,7 +152,6 @@ public class GrokProcessorFactoryTests extends ESTestCase {
         Map<String, Object> config = new HashMap<>();
         config.put("field", "a..b");
         config.put("patterns", List.of("(?<foo>\\w+)"));
-        config.put("ignore_missing", randomBoolean());
         GrokProcessor processor = new GrokProcessor.Factory(MatcherWatchdog.noop()).create(
             null,
             randomAlphaOfLength(10),

@@ -100,7 +100,6 @@ public class RenameProcessorFactoryTests extends ESTestCase {
         Map<String, Object> config = new HashMap<>();
         config.put("field", "a..b");
         config.put("target_field", "target");
-        config.put("ignore_missing", randomBoolean());
         RenameProcessor processor = factory.create(null, randomAlphaOfLength(10), null, config, null);
         assertThat(processor.getField(), hasToString("a..b"));
 
@@ -123,4 +122,5 @@ public class RenameProcessorFactoryTests extends ESTestCase {
         assertThat(e.getMessage(), equalTo("path [a..b] is not valid"));
         assertThat(ingestDocument.getFieldValue("source", String.class), equalTo("value"));
     }
+
 }

@@ -630,7 +630,6 @@ public class RedactProcessorTests extends ESTestCase {
         var config = new HashMap<String, Object>();
         config.put("field", "a..b");
         config.put("patterns", List.of("%{EMAILADDRESS:EMAIL}"));
-        config.put("ignore_missing", randomBoolean());
         var processor = new RedactProcessor.Factory(mockLicenseState(), MatcherWatchdog.noop()).create(null, "t", "d", config, null);
 
         var ingestDocument = createIngestDoc(Map.of("to_redact", "thisisanemail@address.com"));

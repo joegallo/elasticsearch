@@ -141,4 +141,5 @@ public class CircleProcessorFactoryTests extends ESTestCase {
         assertThat(e.getMessage(), equalTo("invalid circle definition"));
         assertThat(e.getCause().getMessage(), equalTo("path [a..b] is not valid"));
     }
+
 }

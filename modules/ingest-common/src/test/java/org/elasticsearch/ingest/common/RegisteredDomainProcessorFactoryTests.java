@@ -98,4 +98,5 @@ public class RegisteredDomainProcessorFactoryTests extends ESTestCase {
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
         assertThat(e.getMessage(), containsString("is not valid"));
     }
+
 }
