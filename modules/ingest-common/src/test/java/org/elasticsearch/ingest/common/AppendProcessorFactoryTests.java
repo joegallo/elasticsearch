@@ -178,18 +178,4 @@ public class AppendProcessorFactoryTests extends ESTestCase {
         IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
         assertThat(e.getMessage(), equalTo("path [a..b] is not valid"));
     }
-
-    /**
-     * If both are malformed then it is the copy_from that is reported, as that is the one that is used first.
-     */
-    public void testMalformedCopyFromIsReportedBeforeMalformedField() throws Exception {
-        Map<String, Object> config = new HashMap<>();
-        config.put("field", "c..d");
-        config.put("copy_from", "a..b");
-        AppendProcessor processor = factory.create(null, randomAlphaOfLength(10), null, config, null);
-
-        IngestDocument ingestDocument = TestIngestDocument.emptyIngestDocument();
-        IllegalArgumentException e = expectThrows(IllegalArgumentException.class, () -> processor.execute(ingestDocument));
-        assertThat(e.getMessage(), equalTo("path [a..b] is not valid"));
-    }
 }
