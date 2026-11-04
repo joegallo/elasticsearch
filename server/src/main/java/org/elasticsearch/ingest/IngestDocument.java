@@ -218,7 +218,7 @@ public final class IngestDocument {
      * Same as {@link #getFieldValue(String, Class, boolean)} but takes a path that has already been parsed, see {@link FieldPath}.
      */
     public <T> T getFieldValue(FieldPath fieldPath, Class<T> clazz, boolean ignoreMissing) {
-        final FieldPath.Parsed parsedPath = fieldPath.resolveParsed(this);
+        final FieldPath parsedPath = fieldPath.resolve(this);
         final String path = parsedPath.path;
         parsedPath.validate(getCurrentAccessPatternSafe());
         Object context = parsedPath.initialContext(this);
@@ -280,7 +280,7 @@ public final class IngestDocument {
      * Same as {@link #getFieldValueAsBytes(String, boolean)} but takes a path that has already been parsed, see {@link FieldPath}.
      */
     public byte[] getFieldValueAsBytes(FieldPath fieldPath, boolean ignoreMissing) {
-        FieldPath.Parsed parsedPath = fieldPath.resolveParsed(this);
+        FieldPath parsedPath = fieldPath.resolve(this);
         Object object = getFieldValue(parsedPath, Object.class, ignoreMissing);
         return getFieldValueAsBytes(parsedPath.path, object);
     }
@@ -356,7 +356,7 @@ public final class IngestDocument {
      * Same as {@link #hasField(String, boolean)} but takes a path that has already been parsed, see {@link FieldPath}.
      */
     public boolean hasField(FieldPath fieldPath, boolean failOutOfRange) {
-        final FieldPath.Parsed parsedPath = fieldPath.resolveParsed(this);
+        final FieldPath parsedPath = fieldPath.resolve(this);
         final String path = parsedPath.path;
         parsedPath.validate(getCurrentAccessPatternSafe());
         Object context = parsedPath.initialContext(this);
@@ -526,7 +526,7 @@ public final class IngestDocument {
      * Same as {@link #removeField(String, boolean)} but takes a path that has already been parsed, see {@link FieldPath}.
      */
     public void removeField(FieldPath fieldPath, boolean ignoreMissing) {
-        final FieldPath.Parsed parsedPath = fieldPath.resolveParsed(this);
+        final FieldPath parsedPath = fieldPath.resolve(this);
         final String path = parsedPath.path;
         parsedPath.validate(getCurrentAccessPatternSafe());
         Object context = parsedPath.initialContext(this);
@@ -918,7 +918,7 @@ public final class IngestDocument {
     private void setFieldValue(FieldPath fieldPath, Object value, boolean append, boolean allowDuplicates, boolean ignoreEmptyValues) {
         assert append || (allowDuplicates == false && ignoreEmptyValues == false)
             : "allowDuplicates and ignoreEmptyValues only apply if append is true";
-        final FieldPath.Parsed parsedPath = fieldPath.resolveParsed(this);
+        final FieldPath parsedPath = fieldPath.resolve(this);
         final String path = parsedPath.path;
         parsedPath.validate(getCurrentAccessPatternSafe());
         Object context = parsedPath.initialContext(this);

@@ -41,13 +41,48 @@ import java.util.Objects;
  * <p>
  * A {@link FieldPath} is immutable and thread safe, and it is independent of the {@link IngestPipelineFieldAccessPattern}: whether a
  * path is valid for the access pattern of the pipeline that is currently executing is checked when the path is used.
+ * <p>
+ * Implementation note: there is deliberately just this one concrete class, rather than a class for each kind of path, so that the
+ * (very hot) uses of it in {@link IngestDocument} are never polymorphic. A {@link FieldPath} is in exactly one of three states, which
+ * are told apart by which of the fields below are set, and which are only ever created by the private factories:
+ * <ul>
+ * <li><em>parsed</em>: <code>pathElements</code> is set. This is the only state that {@link IngestDocument} ever operates on, which
+ * is why {@link #resolve(IngestDocument)} always returns one.</li>
+ * <li><em>templated</em>: <code>template</code> is set, and the path is only known once the template is rendered.</li>
+ * <li><em>unparseable</em>: neither is set. The path is the same for every document, but it is malformed. It is only kept in order to
+ * report why when it is resolved. (It is null if a constant template rendered as null.)</li>
+ * </ul>
  */
-public abstract sealed class FieldPath permits FieldPath.Parsed, FieldPath.Unparseable, FieldPath.Templated {
+public final class FieldPath {
 
     private static final int MAX_SIZE = 512;
-    private static final Map<String, Parsed> CACHE = ConcurrentCollections.newConcurrentMapWithAggressiveConcurrency();
+    private static final Map<String, FieldPath> CACHE = ConcurrentCollections.newConcurrentMapWithAggressiveConcurrency();
 
-    private FieldPath() {}
+    /** The path as configured. Not set for a templated path, and null for an unparseable path that was null. */
+    @Nullable
+    final String path;
+    /** The path elements. Only set for a parsed path, see the class documentation. */
+    @Nullable
+    final String[] pathElements;
+    private final boolean useIngestContext;
+    private final boolean containsBrackets;
+    /** The template to render for every document. Only set for a templated path, see the class documentation. */
+    @Nullable
+    private final TemplateScript.Factory template;
+
+    private FieldPath(
+        @Nullable String path,
+        @Nullable String[] pathElements,
+        boolean useIngestContext,
+        boolean containsBrackets,
+        @Nullable TemplateScript.Factory template
+    ) {
+        this.path = path;
+        this.pathElements = pathElements;
+        this.useIngestContext = useIngestContext;
+        this.containsBrackets = containsBrackets;
+        this.template = template;
+    }
 
     /**
      * Creates a {@link FieldPath} for a path that is the same for every document, such as a processor's <code>field</code>. This
@@ -101,7 +136,7 @@ public abstract sealed class FieldPath permits FieldPath.Parsed, FieldPath.Unpar
             // every document: resolving throws).
             return create(template.newInstance(Map.of()).execute());
         }
-        return new Templated(template);
+        return new FieldPath(null, null, false, false, template);
     }
 
     /**
@@ -112,7 +147,7 @@ public abstract sealed class FieldPath permits FieldPath.Parsed, FieldPath.Unpar
             return parse(path);
         } catch (IllegalArgumentException e) {
             // keep the path around so that resolving can report the problem, at the same time as it always has
-            return new Unparseable(path);
+            return new FieldPath(path, null, false, false, null);
         }
     }
 
@@ -123,19 +158,54 @@ public abstract sealed class FieldPath permits FieldPath.Parsed, FieldPath.Unpar
      * @return the parsed path
      * @throws IllegalArgumentException if the path is null, empty, or has an empty path element anywhere but the end
      */
-    static Parsed parse(String path) {
+    static FieldPath parse(String path) {
         if (Strings.isEmpty(path)) {
             throw new IllegalArgumentException("path cannot be null nor empty");
         }
-        Parsed res = CACHE.get(path);
+        FieldPath res = CACHE.get(path);
         if (res == null) {
-            res = new Parsed(path);
+            res = doParse(path);
             if (CACHE.size() > MAX_SIZE) {
                 CACHE.clear();
             }
             CACHE.put(path, res);
         }
         return res;
+    }
+
+    // constructing a new parsed FieldPath requires that we parse a String (e.g. "foo.bar.baz") into an array of path elements
+    // (e.g. ["foo", "bar", "baz"]). Calling String#split results in the allocation of an ArrayList to hold the results, then a new
+    // String is created for each path element, and then finally a String[] is allocated to hold the actual result -- in addition
+    // to all that, we do some processing ourselves on the path and path elements to validate and prepare them. The cache and
+    // the pre-parsing of paths that are known ahead of time allow us to almost always avoid this work.
+    //
+    // note that parsing is independent of the access pattern: the only thing that depends on the access pattern is whether
+    // the parsed path is valid, and that is checked (cheaply) every time the path is used rather than being baked in here.
+    private static FieldPath doParse(String path) {
+        boolean useIngestContext;
+        String newPath;
+        if (path.startsWith(IngestDocument.INGEST_PREFIX)) {
+            useIngestContext = true;
+            newPath = path.substring(IngestDocument.INGEST_PREFIX.length());
+        } else {
+            useIngestContext = false;
+            newPath = path.startsWith(IngestDocument.SOURCE_PREFIX) ? path.substring(IngestDocument.SOURCE_PREFIX.length()) : path;
+        }
+        String[] pathParts = newPath.split("\\.");
+        if (pathParts.length == 0) {
+            // String#split drops trailing empty strings, so a path made up of nothing but separators (e.g. "." or "_source..")
+            // yields no elements at all, which is just as invalid as an empty element in the beginning or middle of a path
+            throw new IllegalArgumentException("path [" + path + "] is not valid");
+        }
+        boolean brackets = false;
+        for (String pathPart : pathParts) {
+            // empty path elements are not valid in any access pattern
+            if (pathPart.isEmpty()) {
+                throw new IllegalArgumentException("path [" + path + "] is not valid");
+            }
+            brackets |= pathPart.contains("[") || pathPart.contains("]");
+        }
+        return new FieldPath(path, pathParts, useIngestContext, brackets, null);
     }
 
     /**
@@ -146,8 +216,15 @@ public abstract sealed class FieldPath permits FieldPath.Parsed, FieldPath.Unpar
      *
      * @throws IllegalArgumentException if the path is null, empty, or otherwise malformed
      */
-    public final FieldPath resolve(IngestDocument document) {
-        return resolveParsed(document);
+    public FieldPath resolve(IngestDocument document) {
+        if (pathElements != null) {
+            return this;
+        } else if (template != null) {
+            return parse(document.renderTemplate(template));
+        } else {
+            // this throws, for the same reason that it did when we first tried to parse it
+            return parse(path);
+        }
     }
 
     /**
@@ -161,155 +238,46 @@ public abstract sealed class FieldPath permits FieldPath.Parsed, FieldPath.Unpar
      * @throws IllegalArgumentException if the path is malformed (but not if it is empty)
      */
     @Nullable
-    public abstract FieldPath resolveUnlessEmpty(IngestDocument document);
-
-    /** The same as {@link #resolve}, but for the {@link IngestDocument}, which needs the parsed path. */
-    abstract Parsed resolveParsed(IngestDocument document);
-
-    /**
-     * A path that is the same for every document, and that has been parsed into its path elements. Parsing is relatively expensive,
-     * which is why this is not something that is done for every document, and why the parsed paths are cached.
-     */
-    static final class Parsed extends FieldPath {
-
-        final String path;
-        final String[] pathElements;
-        private final boolean useIngestContext;
-        private final boolean containsBrackets;
-
-        // you shouldn't call this directly, use FieldPath.parse instead!
-        //
-        // constructing a new Parsed requires that we parse a String (e.g. "foo.bar.baz") into an array of path elements
-        // (e.g. ["foo", "bar", "baz"]). Calling String#split results in the allocation of an ArrayList to hold the results, then a new
-        // String is created for each path element, and then finally a String[] is allocated to hold the actual result -- in addition
-        // to all that, we do some processing ourselves on the path and path elements to validate and prepare them. The cache and
-        // the pre-parsing of paths that are known ahead of time allow us to almost always avoid this work.
-        //
-        // note that parsing is independent of the access pattern: the only thing that depends on the access pattern is whether
-        // the parsed path is valid, and that is checked (cheaply) every time the path is used rather than being baked in here.
-        private Parsed(String path) {
-            this.path = path;
-            String newPath;
-            if (path.startsWith(IngestDocument.INGEST_PREFIX)) {
-                useIngestContext = true;
-                newPath = path.substring(IngestDocument.INGEST_PREFIX.length());
-            } else {
-                useIngestContext = false;
-                newPath = path.startsWith(IngestDocument.SOURCE_PREFIX) ? path.substring(IngestDocument.SOURCE_PREFIX.length()) : path;
-            }
-            String[] pathParts = newPath.split("\\.");
-            if (pathParts.length == 0) {
-                // String#split drops trailing empty strings, so a path made up of nothing but separators (e.g. "." or "_source..")
-                // yields no elements at all, which is just as invalid as an empty element in the beginning or middle of a path
-                throw new IllegalArgumentException("path [" + path + "] is not valid");
-            }
-            boolean brackets = false;
-            for (String pathPart : pathParts) {
-                // empty path elements are not valid in any access pattern
-                if (pathPart.isEmpty()) {
-                    throw new IllegalArgumentException("path [" + path + "] is not valid");
-                }
-                brackets |= pathPart.contains("[") || pathPart.contains("]");
-            }
-            this.pathElements = pathParts;
-            this.containsBrackets = brackets;
-        }
-
-        /**
-         * Checks the access pattern specific rules for a parsed path. The {@link IngestPipelineFieldAccessPattern#CLASSIC} pattern
-         * supports syntax like context aware array access, so it has no further restrictions. The
-         * {@link IngestPipelineFieldAccessPattern#FLEXIBLE} pattern reserves square brackets for (future) array access syntax, so
-         * path elements containing them are rejected.
-         * @param accessPattern The access pattern to validate against
-         * @throws IllegalArgumentException if this path is not valid for the access pattern
-         */
-        void validate(IngestPipelineFieldAccessPattern accessPattern) {
-            switch (accessPattern) {
-                case CLASSIC -> {
-                }
-                case FLEXIBLE -> {
-                    if (containsBrackets) {
-                        throw new IllegalArgumentException("path [" + path + "] is not valid");
-                    }
-                }
-            }
-        }
-
-        Object initialContext(IngestDocument document) {
-            return useIngestContext ? document.getIngestMetadata() : document.getCtxMap();
-        }
-
-        @Override
-        Parsed resolveParsed(IngestDocument document) {
-            return this;
-        }
-
-        @Override
-        public FieldPath resolveUnlessEmpty(IngestDocument document) {
+    public FieldPath resolveUnlessEmpty(IngestDocument document) {
+        if (pathElements != null) {
             return this; // a path that parsed can't be empty
         }
-
-        @Override
-        public String toString() {
-            return path;
-        }
+        String unresolved = template != null ? document.renderTemplate(template) : path;
+        return Strings.isEmpty(unresolved) ? null : parse(unresolved);
     }
 
     /**
-     * A path that is the same for every document but that could not be parsed. It is kept only in order to report why, when it is
-     * resolved.
+     * Checks the access pattern specific rules for a parsed path. The {@link IngestPipelineFieldAccessPattern#CLASSIC} pattern
+     * supports syntax like context aware array access, so it has no further restrictions. The
+     * {@link IngestPipelineFieldAccessPattern#FLEXIBLE} pattern reserves square brackets for (future) array access syntax, so
+     * path elements containing them are rejected.
+     * @param accessPattern The access pattern to validate against
+     * @throws IllegalArgumentException if this path is not valid for the access pattern
      */
-    static final class Unparseable extends FieldPath {
-
-        @Nullable
-        private final String path; // only null if a constant template rendered as null, see FieldPath.of(TemplateScript.Factory)
-
-        private Unparseable(@Nullable String path) {
-            this.path = path;
-        }
-
-        @Override
-        Parsed resolveParsed(IngestDocument document) {
-            // this throws, for the same reason that it did when we first tried to parse it
-            return parse(path);
-        }
-
-        @Override
-        public FieldPath resolveUnlessEmpty(IngestDocument document) {
-            return Strings.isEmpty(path) ? null : parse(path);
-        }
-
-        /** The path, exactly as it was configured. */
-        @Override
-        public String toString() {
-            return String.valueOf(path);
+    void validate(IngestPipelineFieldAccessPattern accessPattern) {
+        assert pathElements != null : "only a resolved path can be validated";
+        switch (accessPattern) {
+            case CLASSIC -> {
+            }
+            case FLEXIBLE -> {
+                if (containsBrackets) {
+                    throw new IllegalArgumentException("path [" + path + "] is not valid");
+                }
+            }
         }
     }
 
-    /** A path that is different for different documents, as it is the result of rendering a template with the document. */
-    static final class Templated extends FieldPath {
+    Object initialContext(IngestDocument document) {
+        assert pathElements != null : "only a resolved path has a context";
+        return useIngestContext ? document.getIngestMetadata() : document.getCtxMap();
+    }
 
-        private final TemplateScript.Factory template;
-
-        private Templated(TemplateScript.Factory template) {
-            this.template = template;
-        }
-
-        @Override
-        Parsed resolveParsed(IngestDocument document) {
-            return parse(document.renderTemplate(template));
-        }
-
-        @Override
-        public FieldPath resolveUnlessEmpty(IngestDocument document) {
-            String rendered = document.renderTemplate(template);
-            return Strings.isEmpty(rendered) ? null : parse(rendered);
-        }
-
-        /** A templated path has no one path to show, so this is just a description of it. */
-        @Override
-        public String toString() {
-            return "[templated path]";
-        }
+    /**
+     * For a path that is the same for every document this is that path, exactly as it was configured (even if it turned out to be
+     * malformed). A templated path has no one path to show, so this is just a description of it.
+     */
+    @Override
+    public String toString() {
+        return template != null ? "[templated path]" : String.valueOf(path);
     }
 }
