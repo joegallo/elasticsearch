@@ -11,6 +11,7 @@ package org.elasticsearch.ingest.common;
 
 import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.common.util.CollectionUtils;
+import org.elasticsearch.core.Nullable;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
 import org.elasticsearch.ingest.FieldPath;
@@ -36,6 +37,7 @@ public final class SetProcessor extends AbstractProcessor {
     private final boolean overrideEnabled;
     private final FieldPath field;
     private final ValueSource value;
+    @Nullable
     private final FieldPath copyFrom;
     private final boolean ignoreEmptyValue;
 
@@ -72,6 +74,7 @@ public final class SetProcessor extends AbstractProcessor {
         return value;
     }
 
+    @Nullable
     public FieldPath getCopyFrom() {
         return copyFrom;
     }

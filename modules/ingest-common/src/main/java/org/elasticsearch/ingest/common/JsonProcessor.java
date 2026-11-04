@@ -10,6 +10,7 @@
 package org.elasticsearch.ingest.common;
 
 import org.elasticsearch.cluster.metadata.ProjectId;
+import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.Strings;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
@@ -36,6 +37,7 @@ public final class JsonProcessor extends AbstractProcessor {
     private static final String STRICT_JSON_PARSING_PARAMETER = "strict_json_parsing";
 
     private final FieldPath field;
+    @Nullable
     private final FieldPath targetField;
     private final boolean addToRoot;
     private final ConflictStrategy addToRootConflictStrategy;
@@ -77,6 +79,7 @@ public final class JsonProcessor extends AbstractProcessor {
         return field;
     }
 
+    @Nullable
     public FieldPath getTargetField() {
         return targetField;
     }

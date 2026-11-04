@@ -24,6 +24,7 @@ import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.RelativeByteSizeValue;
+import org.elasticsearch.core.Nullable;
 import org.elasticsearch.core.UpdateForV10;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.FieldPath;
@@ -83,7 +84,9 @@ public final class AttachmentProcessor extends AbstractProcessor {
     private final int indexedChars;
     private final boolean ignoreMissing;
     private final boolean removeBinary;
+    @Nullable
     private final FieldPath indexedCharsField;
+    @Nullable
     private final FieldPath resourceName;
     // Per-processor cap on raw attachment field size in bytes, or -1 for no per-processor cap (node cap still applies when set).
     private final int maxFieldBytesFromProcessor;

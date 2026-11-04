@@ -11,6 +11,7 @@ package org.elasticsearch.ingest.common;
 
 import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.common.network.NetworkDirectionUtils;
+import org.elasticsearch.core.Nullable;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
 import org.elasticsearch.ingest.FieldPath;
@@ -34,6 +35,7 @@ public class NetworkDirectionProcessor extends AbstractProcessor {
     private final FieldPath destinationIpField;
     private final FieldPath targetField;
     private final List<TemplateScript.Factory> internalNetworks;
+    @Nullable
     private final FieldPath internalNetworksField;
     private final boolean ignoreMissing;
 
@@ -72,6 +74,7 @@ public class NetworkDirectionProcessor extends AbstractProcessor {
         return internalNetworks;
     }
 
+    @Nullable
     public FieldPath getInternalNetworksField() {
         return internalNetworksField;
     }
