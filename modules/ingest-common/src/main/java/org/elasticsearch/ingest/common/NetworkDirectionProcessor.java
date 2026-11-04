@@ -100,7 +100,7 @@ public class NetworkDirectionProcessor extends AbstractProcessor {
 
         if (internalNetworksField != null) {
             @SuppressWarnings("unchecked")
-            List<String> stringList = d.getFieldValue(internalNetworksField.resolve(d), networks.getClass(), ignoreMissing);
+            List<String> stringList = d.getFieldValue(internalNetworksField, networks.getClass(), ignoreMissing);
             if (stringList == null) {
                 return null;
             }
@@ -109,12 +109,12 @@ public class NetworkDirectionProcessor extends AbstractProcessor {
             networks = internalNetworks.stream().map(network -> d.renderTemplate(network)).toList();
         }
 
-        String sourceIpAddrString = d.getFieldValue(sourceIpField.resolve(d), String.class, ignoreMissing);
+        String sourceIpAddrString = d.getFieldValue(sourceIpField, String.class, ignoreMissing);
         if (sourceIpAddrString == null) {
             return null;
         }
 
-        String destIpAddrString = d.getFieldValue(destinationIpField.resolve(d), String.class, ignoreMissing);
+        String destIpAddrString = d.getFieldValue(destinationIpField, String.class, ignoreMissing);
         if (destIpAddrString == null) {
             return null;
         }
