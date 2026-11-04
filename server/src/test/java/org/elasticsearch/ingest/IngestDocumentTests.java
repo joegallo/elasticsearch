@@ -212,10 +212,6 @@ public class IngestDocumentTests extends ESTestCase {
                 expectThrows(IllegalArgumentException.class, () -> doc.getFieldValue(bracketed, Object.class)).getMessage(),
                 equalTo(expected)
             );
-            assertThat(
-                expectThrows(IllegalArgumentException.class, () -> doc.getFieldValueAsBytes(bracketed)).getMessage(),
-                equalTo(expected)
-            );
             assertThat(expectThrows(IllegalArgumentException.class, () -> doc.removeField(bracketed)).getMessage(), equalTo(expected));
             assertThat(
                 expectThrows(IllegalArgumentException.class, () -> doc.setFieldValue(bracketed, "value")).getMessage(),
@@ -280,12 +276,6 @@ public class IngestDocumentTests extends ESTestCase {
             doc.appendFieldValue(FieldPath.of("new.list"), "", true, true);
             doc.appendFieldValue(FieldPath.of("new.list"), ValueSource.wrap(1, null), true, true);
             assertThat(doc.getFieldValue("new.list", List.class), equalTo(List.of("a", "a", 1)));
-
-            // bytes
-            doc.setFieldValue(FieldPath.of("new.bytes"), new byte[] { 1, 2, 3 });
-            assertThat(doc.getFieldValueAsBytes(FieldPath.of("new.bytes")), equalTo(new byte[] { 1, 2, 3 }));
-            assertThat(doc.getFieldValueAsBytes(FieldPath.of("new.bytes"), false), equalTo(new byte[] { 1, 2, 3 }));
-            assertThat(doc.getFieldValueAsBytes(FieldPath.of("new.missingbytes"), true), nullValue());
 
             // remove
             doc.removeField(FieldPath.of("new.object"));
@@ -2166,55 +2156,6 @@ public class IngestDocumentTests extends ESTestCase {
 
         assertThat(copy.getSource().get("beforeClockChange"), equalTo(original.getSource().get("beforeClockChange")));
         assertThat(copy.getSource().get("afterClockChange"), equalTo(original.getSource().get("afterClockChange")));
-    }
-
-    public void testSetInvalidSourceField() {
-        Map<String, Object> document = new HashMap<>();
-        Object randomObject = randomFrom(new ArrayList<>(), new HashMap<>(), 12, 12.34);
-        document.put("source_field", randomObject);
-
-        IngestDocument ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), document);
-        try {
-            ingestDocument.getFieldValueAsBytes("source_field");
-            fail("Expected an exception due to invalid source field, but did not happen");
-        } catch (IllegalArgumentException e) {
-            String expectedClassName = randomObject.getClass().getName();
-
-            assertThat(
-                e.getMessage(),
-                containsString("field [source_field] of unknown type [" + expectedClassName + "], must be string or byte array")
-            );
-        }
-    }
-
-    public void testGetFieldValueRawBytesLength() {
-        Map<String, Object> document = new HashMap<>();
-        document.put("bytes_field", new byte[] { 1, 2, 3 });
-        document.put("ascii_field", "QQ==");
-        IngestDocument ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), document);
-        assertThat(
-            ingestDocument.getFieldValueRawBytesLength("bytes_field", ingestDocument.getFieldValue("bytes_field", Object.class)),
-            equalTo(3)
-        );
-        assertThat(
-            ingestDocument.getFieldValueRawBytesLength("ascii_field", ingestDocument.getFieldValue("ascii_field", Object.class)),
-            equalTo(4)
-        );
-    }
-
-    public void testGetFieldValueRawBytesLengthInvalidType() {
-        Map<String, Object> document = new HashMap<>();
-        Object randomObject = randomFrom(new ArrayList<>(), new HashMap<>(), 12, 12.34);
-        document.put("source_field", randomObject);
-        IngestDocument ingestDocument = RandomDocumentPicks.randomIngestDocument(random(), document);
-        IllegalArgumentException e = expectThrows(
-            IllegalArgumentException.class,
-            () -> ingestDocument.getFieldValueRawBytesLength("source_field", randomObject)
-        );
-        assertThat(
-            e.getMessage(),
-            containsString("field [source_field] of unknown type [" + randomObject.getClass().getName() + "], must be string or byte array")
-        );
     }
 
     public void testDeepCopy() {
