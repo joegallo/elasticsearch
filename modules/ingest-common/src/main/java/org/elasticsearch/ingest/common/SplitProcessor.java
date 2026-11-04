@@ -75,7 +75,7 @@ public final class SplitProcessor extends AbstractProcessor {
 
     @Override
     public IngestDocument execute(IngestDocument document) {
-        String oldVal = document.getFieldValue(field.resolve(document), String.class, ignoreMissing);
+        String oldVal = document.getFieldValue(field, String.class, ignoreMissing);
 
         if (oldVal == null && ignoreMissing) {
             return document;
@@ -86,7 +86,7 @@ public final class SplitProcessor extends AbstractProcessor {
         String[] strings = oldVal.split(separator, preserveTrailing ? -1 : 0);
         List<String> splitList = new ArrayList<>(strings.length);
         Collections.addAll(splitList, strings);
-        document.setFieldValue(targetField.resolve(document), splitList);
+        document.setFieldValue(targetField, splitList);
         return document;
     }
 

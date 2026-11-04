@@ -85,7 +85,7 @@ public final class SetProcessor extends AbstractProcessor {
         FieldPath path = field.resolve(document);
         if (overrideEnabled || document.hasField(path) == false || document.getFieldValue(path, Object.class) == null) {
             if (copyFrom != null) {
-                Object fieldValue = document.getFieldValue(copyFrom.resolve(document), Object.class, ignoreEmptyValue);
+                Object fieldValue = document.getFieldValue(copyFrom, Object.class, ignoreEmptyValue);
                 document.setFieldValue(path, CollectionUtils.deepCopy(fieldValue), ignoreEmptyValue);
             } else {
                 document.setFieldValue(path, value, ignoreEmptyValue);

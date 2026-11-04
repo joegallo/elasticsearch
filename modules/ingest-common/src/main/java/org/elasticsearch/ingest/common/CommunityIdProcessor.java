@@ -133,18 +133,14 @@ public final class CommunityIdProcessor extends AbstractProcessor {
 
     @Override
     public IngestDocument execute(IngestDocument document) throws Exception {
-        String sourceIp = document.getFieldValue(sourceIpField.resolve(document), String.class, ignoreMissing);
-        String destinationIp = document.getFieldValue(destinationIpField.resolve(document), String.class, ignoreMissing);
-        Object ianaNumber = document.getFieldValue(ianaNumberField.resolve(document), Object.class, true);
-        Supplier<Object> transport = () -> document.getFieldValue(transportField.resolve(document), Object.class, ignoreMissing);
-        Supplier<Object> sourcePort = () -> document.getFieldValue(sourcePortField.resolve(document), Object.class, ignoreMissing);
-        Supplier<Object> destinationPort = () -> document.getFieldValue(
-            destinationPortField.resolve(document),
-            Object.class,
-            ignoreMissing
-        );
-        Object icmpType = document.getFieldValue(icmpTypeField.resolve(document), Object.class, true);
-        Object icmpCode = document.getFieldValue(icmpCodeField.resolve(document), Object.class, true);
+        String sourceIp = document.getFieldValue(sourceIpField, String.class, ignoreMissing);
+        String destinationIp = document.getFieldValue(destinationIpField, String.class, ignoreMissing);
+        Object ianaNumber = document.getFieldValue(ianaNumberField, Object.class, true);
+        Supplier<Object> transport = () -> document.getFieldValue(transportField, Object.class, ignoreMissing);
+        Supplier<Object> sourcePort = () -> document.getFieldValue(sourcePortField, Object.class, ignoreMissing);
+        Supplier<Object> destinationPort = () -> document.getFieldValue(destinationPortField, Object.class, ignoreMissing);
+        Object icmpType = document.getFieldValue(icmpTypeField, Object.class, true);
+        Object icmpCode = document.getFieldValue(icmpCodeField, Object.class, true);
         Flow flow = buildFlow(sourceIp, destinationIp, ianaNumber, transport, sourcePort, destinationPort, icmpType, icmpCode);
         if (flow == null) {
             if (ignoreMissing) {
@@ -154,7 +150,7 @@ public final class CommunityIdProcessor extends AbstractProcessor {
             }
         }
 
-        document.setFieldValue(targetField.resolve(document), flow.toCommunityId(seed));
+        document.setFieldValue(targetField, flow.toCommunityId(seed));
         return document;
     }
 

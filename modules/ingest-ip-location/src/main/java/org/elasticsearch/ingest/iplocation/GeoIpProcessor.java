@@ -96,7 +96,7 @@ public final class GeoIpProcessor extends AbstractProcessor {
 
     @Override
     public IngestDocument execute(IngestDocument document) throws IOException {
-        Object ip = document.getFieldValue(field.resolve(document), Object.class, ignoreMissing);
+        Object ip = document.getFieldValue(field, Object.class, ignoreMissing);
 
         if (ipDataLookup.isValid() == false) {
             document.appendFieldValue(TAGS_PATH, "_" + type + "_expired_database", false);
@@ -192,7 +192,7 @@ public final class GeoIpProcessor extends AbstractProcessor {
             }
         } else {
             // In classic mode, write as a single nested object
-            document.setFieldValue(targetFieldPath.resolve(document), data);
+            document.setFieldValue(targetFieldPath, data);
         }
     }
 
@@ -229,7 +229,7 @@ public final class GeoIpProcessor extends AbstractProcessor {
             }
         } else {
             // In classic mode, write as a single list of maps
-            document.setFieldValue(targetFieldPath.resolve(document), dataList);
+            document.setFieldValue(targetFieldPath, dataList);
         }
     }
 

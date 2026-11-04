@@ -132,7 +132,7 @@ public class RedactProcessor extends AbstractProcessor {
         }
 
         // Call with ignoreMissing = true so getFieldValue does not throw
-        final String fieldValue = ingestDocument.getFieldValue(redactField.resolve(ingestDocument), String.class, true);
+        final String fieldValue = ingestDocument.getFieldValue(redactField, String.class, true);
 
         if (fieldValue == null && ignoreMissing) {
             return ingestDocument;
@@ -142,7 +142,7 @@ public class RedactProcessor extends AbstractProcessor {
 
         try {
             String redacted = matchRedact(fieldValue, groks, redactedStartToken, redactedEndToken);
-            ingestDocument.setFieldValue(redactField.resolve(ingestDocument), redacted);
+            ingestDocument.setFieldValue(redactField, redacted);
             updateMetadataIfNecessary(ingestDocument, fieldValue, redacted);
 
             return ingestDocument;

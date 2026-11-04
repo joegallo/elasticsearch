@@ -61,7 +61,7 @@ public class RegisteredDomainProcessor extends AbstractProcessor {
 
     @Override
     public IngestDocument execute(IngestDocument document) throws Exception {
-        final String fqdn = document.getFieldValue(field.resolve(document), String.class, ignoreMissing);
+        final String fqdn = document.getFieldValue(field, String.class, ignoreMissing);
         boolean infoFound = RegisteredDomain.parseRegisteredDomainInfo(
             fqdn,
             new IngestDocumentRegisteredDomainInfoCollector(document, domainInfoFields)
@@ -113,22 +113,22 @@ public class RegisteredDomainProcessor extends AbstractProcessor {
 
         @Override
         public void domain(String domain) {
-            document.setFieldValue(fields.domain().resolve(document), domain);
+            document.setFieldValue(fields.domain(), domain);
         }
 
         @Override
         public void registeredDomain(String registeredDomain) {
-            document.setFieldValue(fields.registeredDomain().resolve(document), registeredDomain);
+            document.setFieldValue(fields.registeredDomain(), registeredDomain);
         }
 
         @Override
         public void topLevelDomain(String topLevelDomain) {
-            document.setFieldValue(fields.topLevelDomain().resolve(document), topLevelDomain);
+            document.setFieldValue(fields.topLevelDomain(), topLevelDomain);
         }
 
         @Override
         public void subdomain(String subdomain) {
-            document.setFieldValue(fields.subdomain().resolve(document), subdomain);
+            document.setFieldValue(fields.subdomain(), subdomain);
         }
     }
 }

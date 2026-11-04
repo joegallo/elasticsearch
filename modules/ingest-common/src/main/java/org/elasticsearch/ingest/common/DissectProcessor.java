@@ -40,7 +40,7 @@ public final class DissectProcessor extends AbstractProcessor {
 
     @Override
     public IngestDocument execute(IngestDocument ingestDocument) {
-        String input = ingestDocument.getFieldValue(field.resolve(ingestDocument), String.class, ignoreMissing);
+        String input = ingestDocument.getFieldValue(field, String.class, ignoreMissing);
         if (input == null && ignoreMissing) {
             return ingestDocument;
         } else if (input == null) {

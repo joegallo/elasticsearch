@@ -70,7 +70,7 @@ public class UriPartsProcessor extends AbstractProcessor {
 
     @Override
     public IngestDocument execute(IngestDocument ingestDocument) throws Exception {
-        String value = ingestDocument.getFieldValue(field.resolve(ingestDocument), String.class, ignoreMissing);
+        String value = ingestDocument.getFieldValue(field, String.class, ignoreMissing);
 
         if (ignoreMissing && null == value) {
             return ingestDocument;
@@ -81,9 +81,9 @@ public class UriPartsProcessor extends AbstractProcessor {
         }
 
         if (removeIfSuccessful && targetIsSourceField == false) {
-            ingestDocument.removeField(field.resolve(ingestDocument));
+            ingestDocument.removeField(field);
         }
-        ingestDocument.setFieldValue(targetField.resolve(ingestDocument), uriParts);
+        ingestDocument.setFieldValue(targetField, uriParts);
         return ingestDocument;
     }
 

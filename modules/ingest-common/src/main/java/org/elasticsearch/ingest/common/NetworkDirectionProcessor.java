@@ -91,7 +91,7 @@ public class NetworkDirectionProcessor extends AbstractProcessor {
             }
         }
 
-        ingestDocument.setFieldValue(targetField.resolve(ingestDocument), direction);
+        ingestDocument.setFieldValue(targetField, direction);
         return ingestDocument;
     }
 

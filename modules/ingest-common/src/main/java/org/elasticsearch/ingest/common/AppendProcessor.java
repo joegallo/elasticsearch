@@ -73,10 +73,10 @@ public final class AppendProcessor extends AbstractProcessor {
     public IngestDocument execute(IngestDocument document) throws Exception {
         // note that the field is only resolved when it is needed, and not before the copy_from field has been looked at
         if (copyFrom != null) {
-            Object fieldValue = document.getFieldValue(copyFrom.resolve(document), Object.class, ignoreEmptyValues);
-            document.appendFieldValue(field.resolve(document), CollectionUtils.deepCopy(fieldValue), allowDuplicates, ignoreEmptyValues);
+            Object fieldValue = document.getFieldValue(copyFrom, Object.class, ignoreEmptyValues);
+            document.appendFieldValue(field, CollectionUtils.deepCopy(fieldValue), allowDuplicates, ignoreEmptyValues);
         } else {
-            document.appendFieldValue(field.resolve(document), value, allowDuplicates, ignoreEmptyValues);
+            document.appendFieldValue(field, value, allowDuplicates, ignoreEmptyValues);
         }
         return document;
     }

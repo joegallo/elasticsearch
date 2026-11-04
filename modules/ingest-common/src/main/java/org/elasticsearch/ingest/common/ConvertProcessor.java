@@ -185,7 +185,7 @@ public final class ConvertProcessor extends AbstractProcessor {
 
     @Override
     public IngestDocument execute(IngestDocument document) {
-        Object oldValue = document.getFieldValue(field.resolve(document), Object.class, ignoreMissing);
+        Object oldValue = document.getFieldValue(field, Object.class, ignoreMissing);
         Object newValue;
 
         if (oldValue == null && ignoreMissing) {
@@ -203,7 +203,7 @@ public final class ConvertProcessor extends AbstractProcessor {
         } else {
             newValue = convertType.convert(oldValue);
         }
-        document.setFieldValue(targetField.resolve(document), newValue);
+        document.setFieldValue(targetField, newValue);
         return document;
     }
 

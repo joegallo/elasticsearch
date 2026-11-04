@@ -85,7 +85,7 @@ public final class FingerprintProcessor extends AbstractProcessor {
         var values = new Stack<>();
         for (int k = fields.size() - 1; k >= 0; k--) {
             String field = fields.get(k);
-            Object value = ingestDocument.getFieldValue(fieldPaths.get(k).resolve(ingestDocument), Object.class, true);
+            Object value = ingestDocument.getFieldValue(fieldPaths.get(k), Object.class, true);
             if (value == null) {
                 if (ignoreMissing) {
                     continue;
@@ -133,7 +133,7 @@ public final class FingerprintProcessor extends AbstractProcessor {
                 }
             }
 
-            ingestDocument.setFieldValue(targetField.resolve(ingestDocument), Base64.getEncoder().encodeToString(hasher.digest()));
+            ingestDocument.setFieldValue(targetField, Base64.getEncoder().encodeToString(hasher.digest()));
         }
 
         return ingestDocument;

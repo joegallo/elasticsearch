@@ -62,7 +62,7 @@ public final class RemoveProcessor extends AbstractProcessor {
     private void fieldsToRemoveProcessor(IngestDocument document) {
         // micro-optimization note: actual for-each loop here rather than a .forEach because it happens to be ~5% faster in benchmarks
         for (FieldPath field : fieldsToRemove) {
-            document.removeField(field.resolve(document), ignoreMissing);
+            document.removeField(field, ignoreMissing);
         }
     }
 

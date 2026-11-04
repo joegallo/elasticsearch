@@ -109,10 +109,7 @@ public final class SetSecurityUserProcessor extends AbstractProcessor {
             }
         }
 
-        final Map<String, Object> userObject = valueOrMapOfSize(
-            document.getFieldValue(field.resolve(document), Object.class, true),
-            properties.size()
-        );
+        final Map<String, Object> userObject = valueOrMapOfSize(document.getFieldValue(field, Object.class, true), properties.size());
 
         for (Property property : properties) {
             switch (property) {
@@ -195,7 +192,7 @@ public final class SetSecurityUserProcessor extends AbstractProcessor {
                     throw new UnsupportedOperationException("unsupported property [" + property + "]");
             }
         }
-        document.setFieldValue(field.resolve(document), userObject);
+        document.setFieldValue(field, userObject);
         return document;
     }
 

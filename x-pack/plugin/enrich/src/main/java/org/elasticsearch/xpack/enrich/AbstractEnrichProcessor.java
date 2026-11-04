@@ -62,7 +62,7 @@ public abstract class AbstractEnrichProcessor extends AbstractProcessor {
     public void execute(IngestDocument ingestDocument, BiConsumer<IngestDocument, Exception> handler) {
         try {
             // If a document does not have the enrich key, return the unchanged document
-            final Object value = ingestDocument.getFieldValue(this.field.resolve(ingestDocument), Object.class, ignoreMissing);
+            final Object value = ingestDocument.getFieldValue(this.field, Object.class, ignoreMissing);
             if (value == null) {
                 handler.accept(ingestDocument, null);
                 return;

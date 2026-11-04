@@ -65,7 +65,7 @@ public final class CircleProcessor extends AbstractProcessor {
     @Override
     @SuppressWarnings("unchecked")
     public IngestDocument execute(IngestDocument ingestDocument) {
-        Object obj = ingestDocument.getFieldValue(field.resolve(ingestDocument), Object.class, ignoreMissing);
+        Object obj = ingestDocument.getFieldValue(field, Object.class, ignoreMissing);
 
         if (obj == null && ignoreMissing) {
             return ingestDocument;
@@ -104,7 +104,7 @@ public final class CircleProcessor extends AbstractProcessor {
                 newValueBuilder.endObject();
                 Map<String, Object> newObj = XContentHelper.convertToMap(BytesReference.bytes(newValueBuilder), true, XContentType.JSON)
                     .v2();
-                ingestDocument.setFieldValue(targetField.resolve(ingestDocument), newObj.get("val"));
+                ingestDocument.setFieldValue(targetField, newObj.get("val"));
             } else {
                 throw new IllegalArgumentException("found [" + geometry.type() + "] instead of circle");
             }

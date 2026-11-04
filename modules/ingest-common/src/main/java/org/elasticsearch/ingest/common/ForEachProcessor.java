@@ -62,7 +62,7 @@ public final class ForEachProcessor extends AbstractProcessor implements Wrappin
     public IngestDocument execute(IngestDocument ingestDocument) throws Exception {
         assert isAsync() == false;
 
-        Object o = ingestDocument.getFieldValue(field.resolve(ingestDocument), Object.class, ignoreMissing);
+        Object o = ingestDocument.getFieldValue(field, Object.class, ignoreMissing);
         if (o == null) {
             if (ignoreMissing) {
                 return ingestDocument;
@@ -98,7 +98,7 @@ public final class ForEachProcessor extends AbstractProcessor implements Wrappin
             }
         }
 
-        document.setFieldValue(field.resolve(document), new HashMap<>(newValues));
+        document.setFieldValue(field, new HashMap<>(newValues));
         return document;
     }
 
@@ -116,14 +116,14 @@ public final class ForEachProcessor extends AbstractProcessor implements Wrappin
                 newValues.add(ingestDocument.getIngestMetadata().put("_value", previousValue));
             }
         }
-        ingestDocument.setFieldValue(field.resolve(ingestDocument), newValues);
+        ingestDocument.setFieldValue(field, newValues);
         return ingestDocument;
     }
 
     @Override
     public void execute(IngestDocument ingestDocument, BiConsumer<IngestDocument, Exception> handler) {
         assert isAsync();
-        Object o = ingestDocument.getFieldValue(field.resolve(ingestDocument), Object.class, ignoreMissing);
+        Object o = ingestDocument.getFieldValue(field, Object.class, ignoreMissing);
         if (o == null) {
             if (ignoreMissing) {
                 handler.accept(ingestDocument, null);
@@ -177,7 +177,7 @@ public final class ForEachProcessor extends AbstractProcessor implements Wrappin
         }
 
         if (keyIndex == keys.size()) {
-            document.setFieldValue(field.resolve(document), new HashMap<>(newValues));
+            document.setFieldValue(field, new HashMap<>(newValues));
             handler.accept(document, null);
         }
     }
@@ -210,7 +210,7 @@ public final class ForEachProcessor extends AbstractProcessor implements Wrappin
         }
 
         if (index == values.size()) {
-            document.setFieldValue(field.resolve(document), new ArrayList<>(newValues));
+            document.setFieldValue(field, new ArrayList<>(newValues));
             handler.accept(document, null);
         }
     }

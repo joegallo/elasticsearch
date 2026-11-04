@@ -78,7 +78,7 @@ public final class CsvProcessor extends AbstractProcessor {
             return ingestDocument;
         }
 
-        String line = ingestDocument.getFieldValue(field.resolve(ingestDocument), String.class, ignoreMissing);
+        String line = ingestDocument.getFieldValue(field, String.class, ignoreMissing);
         if (line == null && ignoreMissing) {
             return ingestDocument;
         } else if (line == null) {

@@ -87,7 +87,7 @@ public final class SortProcessor extends AbstractProcessor {
     @Override
     @SuppressWarnings("unchecked")
     public IngestDocument execute(IngestDocument document) {
-        List<? extends Comparable<Object>> list = document.getFieldValue(field.resolve(document), List.class);
+        List<? extends Comparable<Object>> list = document.getFieldValue(field, List.class);
 
         if (list == null) {
             throw new IllegalArgumentException("field [" + field + "] is null, cannot sort.");
@@ -101,7 +101,7 @@ public final class SortProcessor extends AbstractProcessor {
             Collections.sort(copy, Collections.reverseOrder());
         }
 
-        document.setFieldValue(targetField.resolve(document), copy);
+        document.setFieldValue(targetField, copy);
         return document;
     }
 

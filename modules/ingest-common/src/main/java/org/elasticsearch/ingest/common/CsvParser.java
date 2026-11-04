@@ -189,9 +189,9 @@ final class CsvParser {
             value = builder.append(line, startIndex, endIndex).toString();
         }
         if (value.length() > 0) {
-            ingestDocument.setFieldValue(headers[currentHeader].resolve(ingestDocument), value);
+            ingestDocument.setFieldValue(headers[currentHeader], value);
         } else if (emptyValue != null) {
-            ingestDocument.setFieldValue(headers[currentHeader].resolve(ingestDocument), emptyValue);
+            ingestDocument.setFieldValue(headers[currentHeader], emptyValue);
         }
         currentHeader++;
         return currentHeader == headers.length;

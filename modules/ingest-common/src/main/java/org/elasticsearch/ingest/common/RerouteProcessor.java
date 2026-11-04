@@ -297,7 +297,7 @@ public final class RerouteProcessor extends AbstractProcessor {
         @Nullable
         public String resolve(IngestDocument ingestDocument) {
             if (fieldReference != null) {
-                String value = ingestDocument.getFieldValue(fieldReferencePath.resolve(ingestDocument), String.class, true);
+                String value = ingestDocument.getFieldValue(fieldReferencePath, String.class, true);
                 if (value == null) {
                     value = getStringFieldValueInDottedNotation(ingestDocument);
                 }

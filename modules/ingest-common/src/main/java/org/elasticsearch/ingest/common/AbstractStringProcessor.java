@@ -52,7 +52,7 @@ abstract class AbstractStringProcessor<T> extends AbstractProcessor {
 
     @Override
     public final IngestDocument execute(IngestDocument document) {
-        Object val = document.getFieldValue(field.resolve(document), Object.class, ignoreMissing);
+        Object val = document.getFieldValue(field, Object.class, ignoreMissing);
         Object newValue;
 
         if (val == null && ignoreMissing) {
@@ -92,7 +92,7 @@ abstract class AbstractStringProcessor<T> extends AbstractProcessor {
 
         }
 
-        document.setFieldValue(targetField.resolve(document), newValue);
+        document.setFieldValue(targetField, newValue);
         return document;
     }
 

@@ -53,7 +53,7 @@ public final class CefProcessor extends AbstractProcessor {
 
     @Override
     public IngestDocument execute(IngestDocument document) {
-        String line = document.getFieldValue(field.resolve(document), String.class, ignoreMissing);
+        String line = document.getFieldValue(field, String.class, ignoreMissing);
         if (line == null && ignoreMissing) {
             return document;
         } else if (line == null) {

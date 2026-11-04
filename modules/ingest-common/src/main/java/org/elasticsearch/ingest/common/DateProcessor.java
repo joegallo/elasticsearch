@@ -97,7 +97,7 @@ public final class DateProcessor extends AbstractProcessor {
 
     @Override
     public IngestDocument execute(IngestDocument document) {
-        Object obj = document.getFieldValue(field.resolve(document), Object.class);
+        Object obj = document.getFieldValue(field, Object.class);
         String value = null;
         if (obj != null) {
             // Don't use Objects.toString(...) here, because null gets changed to "null" which may confuse some date parsers
@@ -131,7 +131,7 @@ public final class DateProcessor extends AbstractProcessor {
             throw new IllegalArgumentException("unable to parse date [" + value + "]", lastException);
         }
 
-        document.setFieldValue(targetField.resolve(document), formatter.format(dateTime));
+        document.setFieldValue(targetField, formatter.format(dateTime));
         return document;
     }
 

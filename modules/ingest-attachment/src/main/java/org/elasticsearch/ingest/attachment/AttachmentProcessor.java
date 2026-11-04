@@ -191,10 +191,10 @@ public final class AttachmentProcessor extends AbstractProcessor {
     public IngestDocument execute(IngestDocument ingestDocument) {
         Map<String, Object> additionalFields = new HashMap<>();
 
-        Object fieldValue = ingestDocument.getFieldValue(field.resolve(ingestDocument), Object.class, ignoreMissing);
+        Object fieldValue = ingestDocument.getFieldValue(field, Object.class, ignoreMissing);
         String resourceNameInput = null;
         if (resourceName != null) {
-            resourceNameInput = ingestDocument.getFieldValue(resourceName.resolve(ingestDocument), String.class, true);
+            resourceNameInput = ingestDocument.getFieldValue(resourceName, String.class, true);
         }
         if (fieldValue == null && ignoreMissing) {
             return ingestDocument;
@@ -212,7 +212,7 @@ public final class AttachmentProcessor extends AbstractProcessor {
 
         if (indexedCharsField != null) {
             // If the user provided the number of characters to be extracted as part of the document, we use it
-            indexedCharsValue = ingestDocument.getFieldValue(indexedCharsField.resolve(ingestDocument), Integer.class, true);
+            indexedCharsValue = ingestDocument.getFieldValue(indexedCharsField, Integer.class, true);
             if (indexedCharsValue == null) {
                 // If the field does not exist we fall back to the global limit
                 indexedCharsValue = this.indexedChars;
@@ -288,10 +288,10 @@ public final class AttachmentProcessor extends AbstractProcessor {
         addAdditionalField(additionalFields, Property.RATING, metadata.get(TikaCoreProperties.RATING));
         addAdditionalField(additionalFields, Property.COMMENTS, metadata.get(TikaCoreProperties.COMMENTS));
 
-        ingestDocument.setFieldValue(targetField.resolve(ingestDocument), additionalFields);
+        ingestDocument.setFieldValue(targetField, additionalFields);
 
         if (removeBinary) {
-            ingestDocument.removeField(field.resolve(ingestDocument));
+            ingestDocument.removeField(field);
         }
         if (attachmentMetrics.get() != null) {
             attachmentMetrics.get().recordRawBytesProcessed(rawBytes);
