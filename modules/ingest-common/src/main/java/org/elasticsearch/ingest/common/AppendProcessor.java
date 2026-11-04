@@ -13,7 +13,7 @@ import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
-import org.elasticsearch.ingest.FieldPathTemplate;
+import org.elasticsearch.ingest.FieldPath;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.ingest.ValueSource;
@@ -34,9 +34,9 @@ public final class AppendProcessor extends AbstractProcessor {
 
     public static final String TYPE = "append";
 
-    private final FieldPathTemplate field;
+    private final FieldPath field;
     private final ValueSource value;
-    private final FieldPathTemplate copyFrom;
+    private final FieldPath copyFrom;
     private final boolean allowDuplicates;
     private final boolean ignoreEmptyValues;
 
@@ -50,14 +50,14 @@ public final class AppendProcessor extends AbstractProcessor {
         boolean ignoreEmptyValues
     ) {
         super(tag, description);
-        this.field = FieldPathTemplate.of(field);
+        this.field = FieldPath.of(field);
         this.value = value;
-        this.copyFrom = FieldPathTemplate.ofNullable(copyFrom);
+        this.copyFrom = FieldPath.ofNullable(copyFrom);
         this.allowDuplicates = allowDuplicates;
         this.ignoreEmptyValues = ignoreEmptyValues;
     }
 
-    public FieldPathTemplate getField() {
+    public FieldPath getField() {
         return field;
     }
 
@@ -65,7 +65,7 @@ public final class AppendProcessor extends AbstractProcessor {
         return value;
     }
 
-    public FieldPathTemplate getCopyFrom() {
+    public FieldPath getCopyFrom() {
         return copyFrom;
     }
 

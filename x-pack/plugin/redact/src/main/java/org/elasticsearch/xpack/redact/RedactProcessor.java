@@ -17,9 +17,8 @@ import org.elasticsearch.grok.MatcherWatchdog;
 import org.elasticsearch.grok.PatternBank;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
-import org.elasticsearch.ingest.FieldPathTemplate;
+import org.elasticsearch.ingest.FieldPath;
 import org.elasticsearch.ingest.IngestDocument;
-import org.elasticsearch.ingest.IngestDocument.FieldPath;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.license.License;
 import org.elasticsearch.license.LicenseUtils;
@@ -67,7 +66,7 @@ public class RedactProcessor extends AbstractProcessor {
 
     private static final FieldPath REDACT_IS_REDACTED_PATH = FieldPath.of(METADATA_PATH_REDACT_IS_REDACTED);
 
-    private final FieldPathTemplate redactField;
+    private final FieldPath redactField;
     private final List<Grok> groks;
     private final boolean ignoreMissing;
 
@@ -94,7 +93,7 @@ public class RedactProcessor extends AbstractProcessor {
         boolean traceRedact
     ) {
         super(tag, description);
-        this.redactField = FieldPathTemplate.of(redactField);
+        this.redactField = FieldPath.of(redactField);
         this.redactedStartToken = redactedStartToken;
         this.redactedEndToken = redactedEndToken;
         this.groks = new ArrayList<>(matchPatterns.size());

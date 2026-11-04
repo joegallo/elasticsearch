@@ -13,9 +13,8 @@ import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
-import org.elasticsearch.ingest.FieldPathTemplate;
+import org.elasticsearch.ingest.FieldPath;
 import org.elasticsearch.ingest.IngestDocument;
-import org.elasticsearch.ingest.IngestDocument.FieldPath;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.ingest.ValueSource;
 import org.elasticsearch.script.Script;
@@ -35,9 +34,9 @@ public final class SetProcessor extends AbstractProcessor {
     public static final String TYPE = "set";
 
     private final boolean overrideEnabled;
-    private final FieldPathTemplate field;
+    private final FieldPath field;
     private final ValueSource value;
-    private final FieldPathTemplate copyFrom;
+    private final FieldPath copyFrom;
     private final boolean ignoreEmptyValue;
 
     SetProcessor(String tag, String description, TemplateScript.Factory field, ValueSource value, String copyFrom) {
@@ -55,9 +54,9 @@ public final class SetProcessor extends AbstractProcessor {
     ) {
         super(tag, description);
         this.overrideEnabled = overrideEnabled;
-        this.field = FieldPathTemplate.of(field);
+        this.field = FieldPath.of(field);
         this.value = value;
-        this.copyFrom = FieldPathTemplate.ofNullable(copyFrom);
+        this.copyFrom = FieldPath.ofNullable(copyFrom);
         this.ignoreEmptyValue = ignoreEmptyValue;
     }
 
@@ -65,7 +64,7 @@ public final class SetProcessor extends AbstractProcessor {
         return overrideEnabled;
     }
 
-    public FieldPathTemplate getField() {
+    public FieldPath getField() {
         return field;
     }
 
@@ -73,7 +72,7 @@ public final class SetProcessor extends AbstractProcessor {
         return value;
     }
 
-    public FieldPathTemplate getCopyFrom() {
+    public FieldPath getCopyFrom() {
         return copyFrom;
     }
 

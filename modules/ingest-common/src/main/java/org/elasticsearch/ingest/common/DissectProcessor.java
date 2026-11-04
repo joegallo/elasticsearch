@@ -13,7 +13,7 @@ import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.dissect.DissectParser;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
-import org.elasticsearch.ingest.FieldPathTemplate;
+import org.elasticsearch.ingest.FieldPath;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 
@@ -23,7 +23,7 @@ public final class DissectProcessor extends AbstractProcessor {
 
     public static final String TYPE = "dissect";
     // package private members for testing
-    final FieldPathTemplate field;
+    final FieldPath field;
     final boolean ignoreMissing;
     final String pattern;
     final String appendSeparator;
@@ -31,7 +31,7 @@ public final class DissectProcessor extends AbstractProcessor {
 
     DissectProcessor(String tag, String description, String field, String pattern, String appendSeparator, boolean ignoreMissing) {
         super(tag, description);
-        this.field = FieldPathTemplate.of(field);
+        this.field = FieldPath.of(field);
         this.ignoreMissing = ignoreMissing;
         this.pattern = pattern;
         this.appendSeparator = appendSeparator;

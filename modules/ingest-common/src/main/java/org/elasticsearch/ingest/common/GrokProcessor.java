@@ -18,9 +18,8 @@ import org.elasticsearch.grok.MatcherWatchdog;
 import org.elasticsearch.grok.PatternBank;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
-import org.elasticsearch.ingest.FieldPathTemplate;
+import org.elasticsearch.ingest.FieldPath;
 import org.elasticsearch.ingest.IngestDocument;
-import org.elasticsearch.ingest.IngestDocument.FieldPath;
 import org.elasticsearch.ingest.Processor;
 
 import java.util.HashMap;
@@ -39,7 +38,7 @@ public final class GrokProcessor extends AbstractProcessor {
     private static final FieldPath PATTERN_MATCH_PATH = FieldPath.of(PATTERN_MATCH_KEY);
     private static final Logger logger = LogManager.getLogger(GrokProcessor.class);
 
-    private final FieldPathTemplate matchField;
+    private final FieldPath matchField;
     private final List<String> matchPatterns;
     private final Grok grok;
     private final boolean traceMatch;
@@ -59,7 +58,7 @@ public final class GrokProcessor extends AbstractProcessor {
     ) {
         super(tag, description);
         String combinedPattern = Grok.combinePatterns(matchPatterns, traceMatch ? PATTERN_MATCH_KEY : null);
-        this.matchField = FieldPathTemplate.of(matchField);
+        this.matchField = FieldPath.of(matchField);
         this.matchPatterns = matchPatterns;
         this.grok = new Grok(patternBank, combinedPattern, matcherWatchdog, logger::debug);
         this.traceMatch = traceMatch;
@@ -114,7 +113,7 @@ public final class GrokProcessor extends AbstractProcessor {
         return ignoreMissing;
     }
 
-    FieldPathTemplate getMatchField() {
+    FieldPath getMatchField() {
         return matchField;
     }
 

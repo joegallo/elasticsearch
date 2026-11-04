@@ -15,7 +15,7 @@ import org.elasticsearch.geometry.utils.Geohash;
 import org.elasticsearch.h3.H3;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
-import org.elasticsearch.ingest.FieldPathTemplate;
+import org.elasticsearch.ingest.FieldPath;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.search.aggregations.bucket.geogrid.GeoTileUtils;
@@ -71,12 +71,12 @@ public final class GeoGridProcessor extends AbstractProcessor {
         private final String precisionField;
         // the same fields as above, parsed ahead of time. The optional ones that are not used are null here, as that is not just null
         // but also empty in the above.
-        private final FieldPathTemplate fieldPath;
-        private final FieldPathTemplate targetFieldPath;
-        private final FieldPathTemplate parentFieldPath;
-        private final FieldPathTemplate childrenFieldPath;
-        private final FieldPathTemplate nonChildrenFieldPath;
-        private final FieldPathTemplate precisionFieldPath;
+        private final FieldPath fieldPath;
+        private final FieldPath targetFieldPath;
+        private final FieldPath parentFieldPath;
+        private final FieldPath childrenFieldPath;
+        private final FieldPath nonChildrenFieldPath;
+        private final FieldPath precisionFieldPath;
 
         FieldConfig(
             String field,
@@ -92,16 +92,16 @@ public final class GeoGridProcessor extends AbstractProcessor {
             this.childrenField = childrenField;
             this.nonChildrenField = nonChildrenField;
             this.precisionField = precisionField;
-            this.fieldPath = FieldPathTemplate.of(field);
-            this.targetFieldPath = FieldPathTemplate.of(targetField);
+            this.fieldPath = FieldPath.of(field);
+            this.targetFieldPath = FieldPath.of(targetField);
             this.parentFieldPath = optional(parentField);
             this.childrenFieldPath = optional(childrenField);
             this.nonChildrenFieldPath = optional(nonChildrenField);
             this.precisionFieldPath = optional(precisionField);
         }
 
-        private static FieldPathTemplate optional(String field) {
-            return field != null && field.length() > 0 ? FieldPathTemplate.of(field) : null;
+        private static FieldPath optional(String field) {
+            return field != null && field.length() > 0 ? FieldPath.of(field) : null;
         }
 
         public String field(String key) {

@@ -14,9 +14,8 @@ import org.elasticsearch.core.Predicates;
 import org.elasticsearch.core.SuppressForbidden;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
-import org.elasticsearch.ingest.FieldPathTemplate;
+import org.elasticsearch.ingest.FieldPath;
 import org.elasticsearch.ingest.IngestDocument;
-import org.elasticsearch.ingest.IngestDocument.FieldPath;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.script.TemplateScript;
@@ -38,7 +37,7 @@ public final class KeyValueProcessor extends AbstractProcessor {
 
     private static final Pattern STRIP_BRACKETS = Pattern.compile("(^[\\(\\[<\"'])|([\\]\\)>\"']$)");
 
-    private final FieldPathTemplate field;
+    private final FieldPath field;
     private final String fieldSplit;
     private final String valueSplit;
     private final Set<String> includeKeys;
@@ -63,7 +62,7 @@ public final class KeyValueProcessor extends AbstractProcessor {
         String prefix
     ) {
         super(tag, description);
-        this.field = FieldPathTemplate.of(field);
+        this.field = FieldPath.of(field);
         this.targetField = targetField;
         this.fieldSplit = fieldSplit;
         this.valueSplit = valueSplit;
@@ -88,7 +87,7 @@ public final class KeyValueProcessor extends AbstractProcessor {
     private Consumer<IngestDocument> buildExecution(
         String fieldSplit,
         String valueSplit,
-        FieldPathTemplate field,
+        FieldPath field,
         Set<String> includeKeys,
         Set<String> excludeKeys,
         TemplateScript.Factory targetField,
@@ -204,7 +203,7 @@ public final class KeyValueProcessor extends AbstractProcessor {
         }
     }
 
-    FieldPathTemplate getField() {
+    FieldPath getField() {
         return field;
     }
 

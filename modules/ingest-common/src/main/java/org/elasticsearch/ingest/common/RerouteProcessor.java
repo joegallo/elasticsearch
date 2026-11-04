@@ -14,9 +14,8 @@ import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
-import org.elasticsearch.ingest.FieldPathTemplate;
+import org.elasticsearch.ingest.FieldPath;
 import org.elasticsearch.ingest.IngestDocument;
-import org.elasticsearch.ingest.IngestDocument.FieldPath;
 import org.elasticsearch.ingest.Processor;
 
 import java.util.List;
@@ -245,7 +244,7 @@ public final class RerouteProcessor extends AbstractProcessor {
 
         private final String value;
         private final String fieldReference;
-        private final FieldPathTemplate fieldReferencePath;
+        private final FieldPath fieldReferencePath;
         private final Function<String, String> sanitizer;
 
         public static DataStreamValueSource type(String type) {
@@ -279,7 +278,7 @@ public final class RerouteProcessor extends AbstractProcessor {
                     throw new IllegalArgumentException("'" + value + "' is not a valid field reference");
                 }
                 this.fieldReference = fieldReference;
-                this.fieldReferencePath = FieldPathTemplate.of(fieldReference);
+                this.fieldReferencePath = FieldPath.of(fieldReference);
             } else {
                 this.fieldReference = null;
                 this.fieldReferencePath = null;

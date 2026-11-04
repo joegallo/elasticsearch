@@ -12,7 +12,7 @@ package org.elasticsearch.ingest.common;
 import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
-import org.elasticsearch.ingest.FieldPathTemplate;
+import org.elasticsearch.ingest.FieldPath;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 
@@ -40,10 +40,10 @@ public final class CsvProcessor extends AbstractProcessor {
     public static final String TYPE = "csv";
 
     // visible for testing
-    final FieldPathTemplate field;
+    final FieldPath field;
     final String[] headers;
     // the same as the headers, but parsed ahead of time
-    private final FieldPathTemplate[] headerPaths;
+    private final FieldPath[] headerPaths;
     final boolean trim;
     final char quote;
     final char separator;
@@ -62,9 +62,9 @@ public final class CsvProcessor extends AbstractProcessor {
         Object emptyValue
     ) {
         super(tag, description);
-        this.field = FieldPathTemplate.of(field);
+        this.field = FieldPath.of(field);
         this.headers = headers;
-        this.headerPaths = Arrays.stream(headers).map(FieldPathTemplate::of).toArray(FieldPathTemplate[]::new);
+        this.headerPaths = Arrays.stream(headers).map(FieldPath::of).toArray(FieldPath[]::new);
         this.trim = trim;
         this.quote = quote;
         this.separator = separator;

@@ -15,7 +15,7 @@ import org.elasticsearch.common.hash.Murmur3Hasher;
 import org.elasticsearch.common.util.ByteUtils;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
-import org.elasticsearch.ingest.FieldPathTemplate;
+import org.elasticsearch.ingest.FieldPath;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 
@@ -50,8 +50,8 @@ public final class FingerprintProcessor extends AbstractProcessor {
 
     private final List<String> fields;
     // the same fields, in the same (sorted) order
-    private final List<FieldPathTemplate> fieldPaths;
-    private final FieldPathTemplate targetField;
+    private final List<FieldPath> fieldPaths;
+    private final FieldPath targetField;
     private final ThreadLocal<Hasher> threadLocalHasher;
     private final byte[] salt;
     private final boolean ignoreMissing;
@@ -68,8 +68,8 @@ public final class FingerprintProcessor extends AbstractProcessor {
         super(tag, description);
         this.fields = new ArrayList<>(fields);
         this.fields.sort(Comparator.naturalOrder());
-        this.fieldPaths = this.fields.stream().map(FieldPathTemplate::of).toList();
-        this.targetField = FieldPathTemplate.of(targetField);
+        this.fieldPaths = this.fields.stream().map(FieldPath::of).toList();
+        this.targetField = FieldPath.of(targetField);
         this.threadLocalHasher = threadLocalHasher;
         this.salt = salt;
         this.ignoreMissing = ignoreMissing;
@@ -198,7 +198,7 @@ public final class FingerprintProcessor extends AbstractProcessor {
         return fields;
     }
 
-    public FieldPathTemplate getTargetField() {
+    public FieldPath getTargetField() {
         return targetField;
     }
 

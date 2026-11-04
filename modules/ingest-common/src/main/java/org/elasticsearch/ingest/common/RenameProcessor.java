@@ -12,9 +12,8 @@ package org.elasticsearch.ingest.common;
 import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
-import org.elasticsearch.ingest.FieldPathTemplate;
+import org.elasticsearch.ingest.FieldPath;
 import org.elasticsearch.ingest.IngestDocument;
-import org.elasticsearch.ingest.IngestDocument.FieldPath;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.script.TemplateScript;
@@ -27,8 +26,8 @@ import java.util.Map;
 public final class RenameProcessor extends AbstractProcessor {
 
     public static final String TYPE = "rename";
-    private final FieldPathTemplate field;
-    private final FieldPathTemplate targetField;
+    private final FieldPath field;
+    private final FieldPath targetField;
     private final boolean ignoreMissing;
     private final boolean overrideEnabled;
 
@@ -41,17 +40,17 @@ public final class RenameProcessor extends AbstractProcessor {
         boolean overrideEnabled
     ) {
         super(tag, description);
-        this.field = FieldPathTemplate.of(field);
-        this.targetField = FieldPathTemplate.of(targetField);
+        this.field = FieldPath.of(field);
+        this.targetField = FieldPath.of(targetField);
         this.ignoreMissing = ignoreMissing;
         this.overrideEnabled = overrideEnabled;
     }
 
-    FieldPathTemplate getField() {
+    FieldPath getField() {
         return field;
     }
 
-    FieldPathTemplate getTargetField() {
+    FieldPath getTargetField() {
         return targetField;
     }
 

@@ -13,7 +13,7 @@ import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.common.network.InetAddresses;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
-import org.elasticsearch.ingest.FieldPathTemplate;
+import org.elasticsearch.ingest.FieldPath;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 
@@ -46,15 +46,15 @@ public final class CommunityIdProcessor extends AbstractProcessor {
         }
     });
 
-    private final FieldPathTemplate sourceIpField;
-    private final FieldPathTemplate sourcePortField;
-    private final FieldPathTemplate destinationIpField;
-    private final FieldPathTemplate destinationPortField;
-    private final FieldPathTemplate ianaNumberField;
-    private final FieldPathTemplate transportField;
-    private final FieldPathTemplate icmpTypeField;
-    private final FieldPathTemplate icmpCodeField;
-    private final FieldPathTemplate targetField;
+    private final FieldPath sourceIpField;
+    private final FieldPath sourcePortField;
+    private final FieldPath destinationIpField;
+    private final FieldPath destinationPortField;
+    private final FieldPath ianaNumberField;
+    private final FieldPath transportField;
+    private final FieldPath icmpTypeField;
+    private final FieldPath icmpCodeField;
+    private final FieldPath targetField;
     private final byte[] seed;
     private final boolean ignoreMissing;
 
@@ -74,52 +74,52 @@ public final class CommunityIdProcessor extends AbstractProcessor {
         boolean ignoreMissing
     ) {
         super(tag, description);
-        this.sourceIpField = FieldPathTemplate.of(sourceIpField);
-        this.sourcePortField = FieldPathTemplate.of(sourcePortField);
-        this.destinationIpField = FieldPathTemplate.of(destinationIpField);
-        this.destinationPortField = FieldPathTemplate.of(destinationPortField);
-        this.ianaNumberField = FieldPathTemplate.of(ianaNumberField);
-        this.transportField = FieldPathTemplate.of(transportField);
-        this.icmpTypeField = FieldPathTemplate.of(icmpTypeField);
-        this.icmpCodeField = FieldPathTemplate.of(icmpCodeField);
-        this.targetField = FieldPathTemplate.of(targetField);
+        this.sourceIpField = FieldPath.of(sourceIpField);
+        this.sourcePortField = FieldPath.of(sourcePortField);
+        this.destinationIpField = FieldPath.of(destinationIpField);
+        this.destinationPortField = FieldPath.of(destinationPortField);
+        this.ianaNumberField = FieldPath.of(ianaNumberField);
+        this.transportField = FieldPath.of(transportField);
+        this.icmpTypeField = FieldPath.of(icmpTypeField);
+        this.icmpCodeField = FieldPath.of(icmpCodeField);
+        this.targetField = FieldPath.of(targetField);
         this.seed = seed;
         this.ignoreMissing = ignoreMissing;
     }
 
-    public FieldPathTemplate getSourceIpField() {
+    public FieldPath getSourceIpField() {
         return sourceIpField;
     }
 
-    public FieldPathTemplate getSourcePortField() {
+    public FieldPath getSourcePortField() {
         return sourcePortField;
     }
 
-    public FieldPathTemplate getDestinationIpField() {
+    public FieldPath getDestinationIpField() {
         return destinationIpField;
     }
 
-    public FieldPathTemplate getDestinationPortField() {
+    public FieldPath getDestinationPortField() {
         return destinationPortField;
     }
 
-    public FieldPathTemplate getIanaNumberField() {
+    public FieldPath getIanaNumberField() {
         return ianaNumberField;
     }
 
-    public FieldPathTemplate getTransportField() {
+    public FieldPath getTransportField() {
         return transportField;
     }
 
-    public FieldPathTemplate getIcmpTypeField() {
+    public FieldPath getIcmpTypeField() {
         return icmpTypeField;
     }
 
-    public FieldPathTemplate getIcmpCodeField() {
+    public FieldPath getIcmpCodeField() {
         return icmpCodeField;
     }
 
-    public FieldPathTemplate getTargetField() {
+    public FieldPath getTargetField() {
         return targetField;
     }
 

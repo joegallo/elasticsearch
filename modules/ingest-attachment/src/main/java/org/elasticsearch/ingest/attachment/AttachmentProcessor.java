@@ -26,7 +26,7 @@ import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.RelativeByteSizeValue;
 import org.elasticsearch.core.UpdateForV10;
 import org.elasticsearch.ingest.AbstractProcessor;
-import org.elasticsearch.ingest.FieldPathTemplate;
+import org.elasticsearch.ingest.FieldPath;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.monitor.jvm.JvmInfo;
@@ -76,14 +76,14 @@ public final class AttachmentProcessor extends AbstractProcessor {
         Setting.Property.NodeScope
     );
 
-    private final FieldPathTemplate field;
-    private final FieldPathTemplate targetField;
+    private final FieldPath field;
+    private final FieldPath targetField;
     private final Set<Property> properties;
     private final int indexedChars;
     private final boolean ignoreMissing;
     private final boolean removeBinary;
-    private final FieldPathTemplate indexedCharsField;
-    private final FieldPathTemplate resourceName;
+    private final FieldPath indexedCharsField;
+    private final FieldPath resourceName;
     // Per-processor cap on raw attachment field size in bytes, or -1 for no per-processor cap (node cap still applies when set).
     private final int maxFieldBytesFromProcessor;
     // Node-level cap from {@link #MAX_FIELD_SIZE_SETTING}, or -1 if not applicable.
@@ -109,13 +109,13 @@ public final class AttachmentProcessor extends AbstractProcessor {
         SetOnce<AttachmentIngestMetrics> attachmentMetrics
     ) {
         super(tag, description);
-        this.field = FieldPathTemplate.of(field);
-        this.targetField = FieldPathTemplate.of(targetField);
+        this.field = FieldPath.of(field);
+        this.targetField = FieldPath.of(targetField);
         this.properties = properties;
         this.indexedChars = indexedChars;
         this.ignoreMissing = ignoreMissing;
-        this.indexedCharsField = FieldPathTemplate.ofNullable(indexedCharsField);
-        this.resourceName = FieldPathTemplate.ofNullable(resourceName);
+        this.indexedCharsField = FieldPath.ofNullable(indexedCharsField);
+        this.resourceName = FieldPath.ofNullable(resourceName);
         this.removeBinary = removeBinary;
         this.maxFieldBytesFromProcessor = maxFieldBytesFromProcessor;
         this.maxFieldSizeFromNode = maxFieldSizeFromNode;
@@ -316,11 +316,11 @@ public final class AttachmentProcessor extends AbstractProcessor {
         return TYPE;
     }
 
-    FieldPathTemplate getField() {
+    FieldPath getField() {
         return field;
     }
 
-    FieldPathTemplate getTargetField() {
+    FieldPath getTargetField() {
         return targetField;
     }
 

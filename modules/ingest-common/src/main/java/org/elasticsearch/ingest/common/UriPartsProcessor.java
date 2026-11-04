@@ -12,7 +12,7 @@ package org.elasticsearch.ingest.common;
 import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
-import org.elasticsearch.ingest.FieldPathTemplate;
+import org.elasticsearch.ingest.FieldPath;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.web.UriParts;
@@ -23,8 +23,8 @@ public class UriPartsProcessor extends AbstractProcessor {
 
     public static final String TYPE = "uri_parts";
 
-    private final FieldPathTemplate field;
-    private final FieldPathTemplate targetField;
+    private final FieldPath field;
+    private final FieldPath targetField;
     private final boolean targetIsSourceField;
     private final boolean removeIfSuccessful;
     private final boolean keepOriginal;
@@ -40,19 +40,19 @@ public class UriPartsProcessor extends AbstractProcessor {
         boolean ignoreMissing
     ) {
         super(tag, description);
-        this.field = FieldPathTemplate.of(field);
-        this.targetField = FieldPathTemplate.of(targetField);
+        this.field = FieldPath.of(field);
+        this.targetField = FieldPath.of(targetField);
         this.targetIsSourceField = targetField.equals(field);
         this.removeIfSuccessful = removeIfSuccessful;
         this.keepOriginal = keepOriginal;
         this.ignoreMissing = ignoreMissing;
     }
 
-    public FieldPathTemplate getField() {
+    public FieldPath getField() {
         return field;
     }
 
-    public FieldPathTemplate getTargetField() {
+    public FieldPath getTargetField() {
         return targetField;
     }
 

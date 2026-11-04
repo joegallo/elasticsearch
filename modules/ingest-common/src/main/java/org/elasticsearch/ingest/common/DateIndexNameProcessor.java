@@ -14,9 +14,8 @@ import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.common.time.DateFormatter;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
-import org.elasticsearch.ingest.FieldPathTemplate;
+import org.elasticsearch.ingest.FieldPath;
 import org.elasticsearch.ingest.IngestDocument;
-import org.elasticsearch.ingest.IngestDocument.FieldPath;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.script.TemplateScript;
@@ -38,7 +37,7 @@ public final class DateIndexNameProcessor extends AbstractProcessor {
 
     private static final FieldPath INDEX_PATH = FieldPath.of(IngestDocument.Metadata.INDEX.getFieldName());
 
-    private final FieldPathTemplate field;
+    private final FieldPath field;
     private final TemplateScript.Factory indexNamePrefixTemplate;
     private final TemplateScript.Factory dateRoundingTemplate;
     private final TemplateScript.Factory indexNameFormatTemplate;
@@ -56,7 +55,7 @@ public final class DateIndexNameProcessor extends AbstractProcessor {
         TemplateScript.Factory indexNameFormatTemplate
     ) {
         super(tag, description);
-        this.field = FieldPathTemplate.of(field);
+        this.field = FieldPath.of(field);
         this.timezone = timezone;
         this.dateFormats = dateFormats;
         this.indexNamePrefixTemplate = indexNamePrefixTemplate;
@@ -118,7 +117,7 @@ public final class DateIndexNameProcessor extends AbstractProcessor {
         return TYPE;
     }
 
-    FieldPathTemplate getField() {
+    FieldPath getField() {
         return field;
     }
 

@@ -11,9 +11,8 @@ import org.elasticsearch.cluster.routing.Preference;
 import org.elasticsearch.index.query.ConstantScoreQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.ingest.AbstractProcessor;
-import org.elasticsearch.ingest.FieldPathTemplate;
+import org.elasticsearch.ingest.FieldPath;
 import org.elasticsearch.ingest.IngestDocument;
-import org.elasticsearch.ingest.IngestDocument.FieldPath;
 import org.elasticsearch.script.TemplateScript;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
@@ -27,8 +26,8 @@ public abstract class AbstractEnrichProcessor extends AbstractProcessor {
 
     private final String policyName;
     private final EnrichProcessorFactory.SearchRunner searchRunner;
-    private final FieldPathTemplate field;
-    private final FieldPathTemplate targetField;
+    private final FieldPath field;
+    private final FieldPath targetField;
     private final boolean ignoreMissing;
     private final boolean overrideEnabled;
     protected final String matchField;
@@ -49,8 +48,8 @@ public abstract class AbstractEnrichProcessor extends AbstractProcessor {
         super(tag, description);
         this.policyName = policyName;
         this.searchRunner = searchRunner;
-        this.field = FieldPathTemplate.of(field);
-        this.targetField = FieldPathTemplate.of(targetField);
+        this.field = FieldPath.of(field);
+        this.targetField = FieldPath.of(targetField);
         this.ignoreMissing = ignoreMissing;
         this.overrideEnabled = overrideEnabled;
         this.matchField = matchField;
@@ -136,12 +135,12 @@ public abstract class AbstractEnrichProcessor extends AbstractProcessor {
         return EnrichProcessorFactory.TYPE;
     }
 
-    FieldPathTemplate getField() {
+    FieldPath getField() {
         // used for testing only:
         return field;
     }
 
-    FieldPathTemplate getTargetField() {
+    FieldPath getTargetField() {
         // used for testing only:
         return targetField;
     }

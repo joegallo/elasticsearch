@@ -12,7 +12,7 @@ package org.elasticsearch.ingest.common;
 import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
-import org.elasticsearch.ingest.FieldPathTemplate;
+import org.elasticsearch.ingest.FieldPath;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 
@@ -27,18 +27,18 @@ import java.util.Map;
  * @param <T> The resultant type for the target field
  */
 abstract class AbstractStringProcessor<T> extends AbstractProcessor {
-    private final FieldPathTemplate field;
+    private final FieldPath field;
     private final boolean ignoreMissing;
-    private final FieldPathTemplate targetField;
+    private final FieldPath targetField;
 
     AbstractStringProcessor(String tag, String description, boolean ignoreMissing, String targetField, String field) {
         super(tag, description);
-        this.field = FieldPathTemplate.of(field);
+        this.field = FieldPath.of(field);
         this.ignoreMissing = ignoreMissing;
-        this.targetField = FieldPathTemplate.of(targetField);
+        this.targetField = FieldPath.of(targetField);
     }
 
-    public FieldPathTemplate getField() {
+    public FieldPath getField() {
         return field;
     }
 
@@ -46,7 +46,7 @@ abstract class AbstractStringProcessor<T> extends AbstractProcessor {
         return ignoreMissing;
     }
 
-    FieldPathTemplate getTargetField() {
+    FieldPath getTargetField() {
         return targetField;
     }
 

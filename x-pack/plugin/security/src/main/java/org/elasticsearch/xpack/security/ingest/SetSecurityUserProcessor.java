@@ -12,7 +12,7 @@ import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.ingest.AbstractProcessor;
-import org.elasticsearch.ingest.FieldPathTemplate;
+import org.elasticsearch.ingest.FieldPath;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.xpack.core.XPackSettings;
@@ -52,7 +52,7 @@ public final class SetSecurityUserProcessor extends AbstractProcessor {
 
     private final SecurityContext securityContext;
     private final Settings settings;
-    private final FieldPathTemplate field;
+    private final FieldPath field;
     private final Set<Property> properties;
 
     public SetSecurityUserProcessor(
@@ -77,7 +77,7 @@ public final class SetSecurityUserProcessor extends AbstractProcessor {
         } else if (this.securityContext == null) {
             throw new IllegalArgumentException("Authentication is allowed on this cluster state, but there is no security context");
         }
-        this.field = FieldPathTemplate.of(field);
+        this.field = FieldPath.of(field);
         this.properties = properties;
     }
 
@@ -209,7 +209,7 @@ public final class SetSecurityUserProcessor extends AbstractProcessor {
         return TYPE;
     }
 
-    FieldPathTemplate getField() {
+    FieldPath getField() {
         return field;
     }
 

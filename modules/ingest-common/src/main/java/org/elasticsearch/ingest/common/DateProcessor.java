@@ -18,7 +18,7 @@ import org.elasticsearch.common.util.concurrent.ConcurrentCollections;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
-import org.elasticsearch.ingest.FieldPathTemplate;
+import org.elasticsearch.ingest.FieldPath;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.script.ScriptService;
@@ -46,8 +46,8 @@ public final class DateProcessor extends AbstractProcessor {
     private final DateFormatter formatter;
     private final TemplateScript.Factory timezone;
     private final TemplateScript.Factory locale;
-    private final FieldPathTemplate field;
-    private final FieldPathTemplate targetField;
+    private final FieldPath field;
+    private final FieldPath targetField;
     private final List<String> formats;
     private final List<BiFunction<ZoneId, Locale, Function<String, ZonedDateTime>>> dateParsers;
     private final String outputFormat;
@@ -77,8 +77,8 @@ public final class DateProcessor extends AbstractProcessor {
         super(tag, description);
         this.timezone = timezone;
         this.locale = locale;
-        this.field = FieldPathTemplate.of(field);
-        this.targetField = FieldPathTemplate.of(targetField);
+        this.field = FieldPath.of(field);
+        this.targetField = FieldPath.of(targetField);
         this.formats = formats;
         this.dateParsers = new ArrayList<>(this.formats.size());
 
@@ -160,11 +160,11 @@ public final class DateProcessor extends AbstractProcessor {
         }
     }
 
-    FieldPathTemplate getField() {
+    FieldPath getField() {
         return field;
     }
 
-    FieldPathTemplate getTargetField() {
+    FieldPath getTargetField() {
         return targetField;
     }
 

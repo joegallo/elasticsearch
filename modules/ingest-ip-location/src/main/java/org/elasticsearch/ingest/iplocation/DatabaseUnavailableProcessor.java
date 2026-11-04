@@ -10,8 +10,8 @@
 package org.elasticsearch.ingest.iplocation;
 
 import org.elasticsearch.ingest.AbstractProcessor;
+import org.elasticsearch.ingest.FieldPath;
 import org.elasticsearch.ingest.IngestDocument;
-import org.elasticsearch.ingest.IngestDocument.FieldPath;
 
 /**
  * Processor that tags documents when the IP location database is not yet available.

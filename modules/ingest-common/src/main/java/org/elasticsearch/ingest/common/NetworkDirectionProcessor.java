@@ -13,7 +13,7 @@ import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.common.network.NetworkDirectionUtils;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
-import org.elasticsearch.ingest.FieldPathTemplate;
+import org.elasticsearch.ingest.FieldPath;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.script.ScriptService;
@@ -30,11 +30,11 @@ public class NetworkDirectionProcessor extends AbstractProcessor {
 
     public static final String TYPE = "network_direction";
 
-    private final FieldPathTemplate sourceIpField;
-    private final FieldPathTemplate destinationIpField;
-    private final FieldPathTemplate targetField;
+    private final FieldPath sourceIpField;
+    private final FieldPath destinationIpField;
+    private final FieldPath targetField;
     private final List<TemplateScript.Factory> internalNetworks;
-    private final FieldPathTemplate internalNetworksField;
+    private final FieldPath internalNetworksField;
     private final boolean ignoreMissing;
 
     NetworkDirectionProcessor(
@@ -48,23 +48,23 @@ public class NetworkDirectionProcessor extends AbstractProcessor {
         boolean ignoreMissing
     ) {
         super(tag, description);
-        this.sourceIpField = FieldPathTemplate.of(sourceIpField);
-        this.destinationIpField = FieldPathTemplate.of(destinationIpField);
-        this.targetField = FieldPathTemplate.of(targetField);
+        this.sourceIpField = FieldPath.of(sourceIpField);
+        this.destinationIpField = FieldPath.of(destinationIpField);
+        this.targetField = FieldPath.of(targetField);
         this.internalNetworks = internalNetworks;
-        this.internalNetworksField = FieldPathTemplate.ofNullable(internalNetworksField);
+        this.internalNetworksField = FieldPath.ofNullable(internalNetworksField);
         this.ignoreMissing = ignoreMissing;
     }
 
-    public FieldPathTemplate getSourceIpField() {
+    public FieldPath getSourceIpField() {
         return sourceIpField;
     }
 
-    public FieldPathTemplate getDestinationIpField() {
+    public FieldPath getDestinationIpField() {
         return destinationIpField;
     }
 
-    public FieldPathTemplate getTargetField() {
+    public FieldPath getTargetField() {
         return targetField;
     }
 
@@ -72,7 +72,7 @@ public class NetworkDirectionProcessor extends AbstractProcessor {
         return internalNetworks;
     }
 
-    public FieldPathTemplate getInternalNetworksField() {
+    public FieldPath getInternalNetworksField() {
         return internalNetworksField;
     }
 

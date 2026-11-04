@@ -14,9 +14,8 @@ import org.elasticsearch.common.logging.DeprecationCategory;
 import org.elasticsearch.common.logging.DeprecationLogger;
 import org.elasticsearch.core.Strings;
 import org.elasticsearch.ingest.AbstractProcessor;
-import org.elasticsearch.ingest.FieldPathTemplate;
+import org.elasticsearch.ingest.FieldPath;
 import org.elasticsearch.ingest.IngestDocument;
-import org.elasticsearch.ingest.IngestDocument.FieldPath;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.iplocation.api.IpDataLookup;
 import org.elasticsearch.iplocation.api.IpLocationService;
@@ -48,11 +47,11 @@ public final class GeoIpProcessor extends AbstractProcessor {
     private final String type;
     private static final FieldPath TAGS_PATH = FieldPath.of("tags");
 
-    private final FieldPathTemplate field;
+    private final FieldPath field;
     private final IpDataLookup ipDataLookup;
     // the target field is needed as a plain string too, because in flexible mode the results are written to <target field>.<key>
     private final String targetField;
-    private final FieldPathTemplate targetFieldPath;
+    private final FieldPath targetFieldPath;
     private final boolean ignoreMissing;
     private final boolean firstOnly;
     private final String databaseFile;
@@ -82,10 +81,10 @@ public final class GeoIpProcessor extends AbstractProcessor {
     ) {
         super(tag, description);
         this.type = type;
-        this.field = FieldPathTemplate.of(field);
+        this.field = FieldPath.of(field);
         this.ipDataLookup = ipDataLookup;
         this.targetField = targetField;
-        this.targetFieldPath = FieldPathTemplate.of(targetField);
+        this.targetFieldPath = FieldPath.of(targetField);
         this.ignoreMissing = ignoreMissing;
         this.firstOnly = firstOnly;
         this.databaseFile = databaseFile;
@@ -159,11 +158,11 @@ public final class GeoIpProcessor extends AbstractProcessor {
         return type;
     }
 
-    FieldPathTemplate getField() {
+    FieldPath getField() {
         return field;
     }
 
-    FieldPathTemplate getTargetField() {
+    FieldPath getTargetField() {
         return targetFieldPath;
     }
 

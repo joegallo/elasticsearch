@@ -12,7 +12,7 @@ package org.elasticsearch.ingest.common;
 import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
-import org.elasticsearch.ingest.FieldPathTemplate;
+import org.elasticsearch.ingest.FieldPath;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.script.ScriptService;
@@ -31,7 +31,7 @@ public final class RemoveProcessor extends AbstractProcessor {
 
     public static final String TYPE = "remove";
 
-    private final List<FieldPathTemplate> fieldsToRemove;
+    private final List<FieldPath> fieldsToRemove;
     private final List<TemplateScript.Factory> fieldsToKeep;
     private final boolean ignoreMissing;
 
@@ -43,7 +43,7 @@ public final class RemoveProcessor extends AbstractProcessor {
         boolean ignoreMissing
     ) {
         super(tag, description);
-        this.fieldsToRemove = fieldsToRemove.stream().map(FieldPathTemplate::of).toList();
+        this.fieldsToRemove = fieldsToRemove.stream().map(FieldPath::of).toList();
         this.fieldsToKeep = List.copyOf(fieldsToKeep);
         this.ignoreMissing = ignoreMissing;
     }
@@ -61,7 +61,7 @@ public final class RemoveProcessor extends AbstractProcessor {
 
     private void fieldsToRemoveProcessor(IngestDocument document) {
         // micro-optimization note: actual for-each loop here rather than a .forEach because it happens to be ~5% faster in benchmarks
-        for (FieldPathTemplate field : fieldsToRemove) {
+        for (FieldPath field : fieldsToRemove) {
             document.removeField(field.resolve(document), ignoreMissing);
         }
     }
@@ -142,7 +142,7 @@ public final class RemoveProcessor extends AbstractProcessor {
         }
     }
 
-    public List<FieldPathTemplate> getFieldsToRemove() {
+    public List<FieldPath> getFieldsToRemove() {
         return fieldsToRemove;
     }
 

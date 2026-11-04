@@ -12,7 +12,7 @@ package org.elasticsearch.ingest.common;
 import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
-import org.elasticsearch.ingest.FieldPathTemplate;
+import org.elasticsearch.ingest.FieldPath;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.web.RegisteredDomain;
@@ -23,7 +23,7 @@ public class RegisteredDomainProcessor extends AbstractProcessor {
 
     public static final String TYPE = "registered_domain";
 
-    private final FieldPathTemplate field;
+    private final FieldPath field;
     // note that this is a prefix for the fields that the results are written to (and can be empty), rather than a field itself
     private final String targetField;
     private final boolean ignoreMissing;
@@ -32,7 +32,7 @@ public class RegisteredDomainProcessor extends AbstractProcessor {
 
     RegisteredDomainProcessor(String tag, String description, String field, String targetField, boolean ignoreMissing) {
         super(tag, description);
-        this.field = FieldPathTemplate.of(field);
+        this.field = FieldPath.of(field);
         this.targetField = targetField;
         this.ignoreMissing = ignoreMissing;
         String fieldPrefix = targetField;
@@ -40,14 +40,14 @@ public class RegisteredDomainProcessor extends AbstractProcessor {
             fieldPrefix += ".";
         }
         this.domainInfoFields = new DomainInfoFields(
-            FieldPathTemplate.of(fieldPrefix + RegisteredDomain.DOMAIN),
-            FieldPathTemplate.of(fieldPrefix + RegisteredDomain.REGISTERED_DOMAIN),
-            FieldPathTemplate.of(fieldPrefix + RegisteredDomain.eTLD),
-            FieldPathTemplate.of(fieldPrefix + RegisteredDomain.SUBDOMAIN)
+            FieldPath.of(fieldPrefix + RegisteredDomain.DOMAIN),
+            FieldPath.of(fieldPrefix + RegisteredDomain.REGISTERED_DOMAIN),
+            FieldPath.of(fieldPrefix + RegisteredDomain.eTLD),
+            FieldPath.of(fieldPrefix + RegisteredDomain.SUBDOMAIN)
         );
     }
 
-    public FieldPathTemplate getField() {
+    public FieldPath getField() {
         return field;
     }
 
@@ -100,12 +100,7 @@ public class RegisteredDomainProcessor extends AbstractProcessor {
     /**
      * The fields that the different parts of the domain information are written to.
      */
-    private record DomainInfoFields(
-        FieldPathTemplate domain,
-        FieldPathTemplate registeredDomain,
-        FieldPathTemplate topLevelDomain,
-        FieldPathTemplate subdomain
-    ) {}
+    private record DomainInfoFields(FieldPath domain, FieldPath registeredDomain, FieldPath topLevelDomain, FieldPath subdomain) {}
 
     private static class IngestDocumentRegisteredDomainInfoCollector implements RegisteredDomain.RegisteredDomainInfoCollector {
         private final IngestDocument document;

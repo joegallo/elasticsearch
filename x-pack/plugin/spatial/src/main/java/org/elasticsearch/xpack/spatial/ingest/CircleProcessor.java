@@ -17,7 +17,7 @@ import org.elasticsearch.geometry.utils.CircleUtils;
 import org.elasticsearch.geometry.utils.StandardValidator;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
-import org.elasticsearch.ingest.FieldPathTemplate;
+import org.elasticsearch.ingest.FieldPath;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.xcontent.DeprecationHandler;
@@ -39,8 +39,8 @@ import java.util.Map;
 public final class CircleProcessor extends AbstractProcessor {
     public static final String TYPE = "circle";
 
-    private final FieldPathTemplate field;
-    private final FieldPathTemplate targetField;
+    private final FieldPath field;
+    private final FieldPath targetField;
     private final boolean ignoreMissing;
     private final double errorDistance;
     private final CircleShapeFieldType circleShapeFieldType;
@@ -55,8 +55,8 @@ public final class CircleProcessor extends AbstractProcessor {
         CircleShapeFieldType circleShapeFieldType
     ) {
         super(tag, description);
-        this.field = FieldPathTemplate.of(field);
-        this.targetField = FieldPathTemplate.of(targetField);
+        this.field = FieldPath.of(field);
+        this.targetField = FieldPath.of(targetField);
         this.ignoreMissing = ignoreMissing;
         this.errorDistance = errorDistance;
         this.circleShapeFieldType = circleShapeFieldType;
@@ -120,11 +120,11 @@ public final class CircleProcessor extends AbstractProcessor {
         return TYPE;
     }
 
-    FieldPathTemplate field() {
+    FieldPath field() {
         return field;
     }
 
-    FieldPathTemplate targetField() {
+    FieldPath targetField() {
         return targetField;
     }
 

@@ -12,7 +12,7 @@ package org.elasticsearch.ingest.common;
 import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
-import org.elasticsearch.ingest.FieldPathTemplate;
+import org.elasticsearch.ingest.FieldPath;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 
@@ -30,11 +30,11 @@ public final class SplitProcessor extends AbstractProcessor {
 
     public static final String TYPE = "split";
 
-    private final FieldPathTemplate field;
+    private final FieldPath field;
     private final String separator;
     private final boolean ignoreMissing;
     private final boolean preserveTrailing;
-    private final FieldPathTemplate targetField;
+    private final FieldPath targetField;
 
     SplitProcessor(
         String tag,
@@ -46,14 +46,14 @@ public final class SplitProcessor extends AbstractProcessor {
         String targetField
     ) {
         super(tag, description);
-        this.field = FieldPathTemplate.of(field);
+        this.field = FieldPath.of(field);
         this.separator = separator;
         this.ignoreMissing = ignoreMissing;
         this.preserveTrailing = preserveTrailing;
-        this.targetField = FieldPathTemplate.of(targetField);
+        this.targetField = FieldPath.of(targetField);
     }
 
-    FieldPathTemplate getField() {
+    FieldPath getField() {
         return field;
     }
 
@@ -69,7 +69,7 @@ public final class SplitProcessor extends AbstractProcessor {
         return preserveTrailing;
     }
 
-    FieldPathTemplate getTargetField() {
+    FieldPath getTargetField() {
         return targetField;
     }
 

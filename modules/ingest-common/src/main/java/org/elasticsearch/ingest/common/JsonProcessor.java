@@ -13,7 +13,7 @@ import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.core.Strings;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
-import org.elasticsearch.ingest.FieldPathTemplate;
+import org.elasticsearch.ingest.FieldPath;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.xcontent.XContentParser;
@@ -35,8 +35,8 @@ public final class JsonProcessor extends AbstractProcessor {
     public static final String TYPE = "json";
     private static final String STRICT_JSON_PARSING_PARAMETER = "strict_json_parsing";
 
-    private final FieldPathTemplate field;
-    private final FieldPathTemplate targetField;
+    private final FieldPath field;
+    private final FieldPath targetField;
     private final boolean addToRoot;
     private final ConflictStrategy addToRootConflictStrategy;
     private final boolean allowDuplicateKeys;
@@ -65,19 +65,19 @@ public final class JsonProcessor extends AbstractProcessor {
         boolean strictJsonParsing
     ) {
         super(tag, description);
-        this.field = FieldPathTemplate.of(field);
-        this.targetField = FieldPathTemplate.ofNullable(targetField);
+        this.field = FieldPath.of(field);
+        this.targetField = FieldPath.ofNullable(targetField);
         this.addToRoot = addToRoot;
         this.addToRootConflictStrategy = addToRootConflictStrategy;
         this.allowDuplicateKeys = allowDuplicateKeys;
         this.strictJsonParsing = strictJsonParsing;
     }
 
-    public FieldPathTemplate getField() {
+    public FieldPath getField() {
         return field;
     }
 
-    public FieldPathTemplate getTargetField() {
+    public FieldPath getTargetField() {
         return targetField;
     }
 

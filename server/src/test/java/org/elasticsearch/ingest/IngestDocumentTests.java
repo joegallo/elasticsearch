@@ -12,7 +12,6 @@ package org.elasticsearch.ingest;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.util.CollectionUtils;
 import org.elasticsearch.common.xcontent.XContentHelper;
-import org.elasticsearch.ingest.IngestDocument.FieldPath;
 import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.xcontent.XContentType;
 import org.hamcrest.Matchers;
@@ -174,23 +173,23 @@ public class IngestDocumentTests extends ESTestCase {
     }
 
     public void testFieldPathParsing() {
-        assertThat(FieldPath.of("a.b.c").toString(), equalTo("a.b.c"));
-        assertThat(FieldPath.of("_source.a.").toString(), equalTo("_source.a."));
+        IngestDocument doc = RandomDocumentPicks.randomIngestDocument(random());
+        assertThat(FieldPath.of("a.b.c").resolve(doc).toString(), equalTo("a.b.c"));
+        assertThat(FieldPath.of("_source.a.").resolve(doc).toString(), equalTo("_source.a."));
         // parsing is cached, but that is not something callers can rely on, so only check that repeated parsing is well behaved
-        assertThat(FieldPath.of("a.b.c").toString(), equalTo(FieldPath.of("a.b.c").toString()));
+        assertThat(FieldPath.of("a.b.c").resolve(doc).toString(), equalTo(FieldPath.of("a.b.c").resolve(doc).toString()));
 
-        assertThat(
-            expectThrows(IllegalArgumentException.class, () -> FieldPath.of(null)).getMessage(),
-            equalTo("path cannot be null nor empty")
-        );
-        assertThat(
-            expectThrows(IllegalArgumentException.class, () -> FieldPath.of("")).getMessage(),
-            equalTo("path cannot be null nor empty")
-        );
+        // creating a field path never fails because of what the path is, that is only found out when it is used
+        for (String empty : List.of("")) {
+            assertThat(
+                expectThrows(IllegalArgumentException.class, () -> FieldPath.of(empty).resolve(doc)).getMessage(),
+                equalTo("path cannot be null nor empty")
+            );
+        }
         for (String invalid : List.of("a..b", ".a", ".", "..", "_source..", "_ingest..")) {
             assertThat(
                 invalid,
-                expectThrows(IllegalArgumentException.class, () -> FieldPath.of(invalid)).getMessage(),
+                expectThrows(IllegalArgumentException.class, () -> FieldPath.of(invalid).resolve(doc)).getMessage(),
                 equalTo("path [" + invalid + "] is not valid")
             );
         }

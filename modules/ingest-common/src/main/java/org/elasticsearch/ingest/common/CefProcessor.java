@@ -12,7 +12,7 @@ import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.core.Nullable;
 import org.elasticsearch.ingest.AbstractProcessor;
 import org.elasticsearch.ingest.ConfigurationUtils;
-import org.elasticsearch.ingest.FieldPathTemplate;
+import org.elasticsearch.ingest.FieldPath;
 import org.elasticsearch.ingest.IngestDocument;
 import org.elasticsearch.ingest.Processor;
 import org.elasticsearch.ingest.common.CefParser.CefEvent;
@@ -28,7 +28,7 @@ public final class CefProcessor extends AbstractProcessor {
     public static final String TYPE = "cef";
 
     // visible for testing
-    final FieldPathTemplate field;
+    final FieldPath field;
     final String targetField;
     final boolean ignoreMissing;
     final boolean ignoreEmptyValues;
@@ -44,7 +44,7 @@ public final class CefProcessor extends AbstractProcessor {
         @Nullable TemplateScript.Factory timezone
     ) {
         super(tag, description);
-        this.field = FieldPathTemplate.of(field);
+        this.field = FieldPath.of(field);
         this.targetField = targetField;
         this.ignoreMissing = ignoreMissing;
         this.ignoreEmptyValues = ignoreEmptyValues;
