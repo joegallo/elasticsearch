@@ -244,6 +244,7 @@ public final class RerouteProcessor extends AbstractProcessor {
 
         private final String value;
         private final String fieldReference;
+        @Nullable
         private final FieldPath fieldReferencePath;
         private final Function<String, String> sanitizer;
 

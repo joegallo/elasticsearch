@@ -10,6 +10,7 @@ import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.geo.GeometryParserFormat;
 import org.elasticsearch.common.xcontent.XContentHelper;
+import org.elasticsearch.core.Nullable;
 import org.elasticsearch.geometry.Geometry;
 import org.elasticsearch.geometry.utils.Geohash;
 import org.elasticsearch.h3.H3;
@@ -73,9 +74,13 @@ public final class GeoGridProcessor extends AbstractProcessor {
         // but also empty in the above.
         private final FieldPath fieldPath;
         private final FieldPath targetFieldPath;
+        @Nullable
         private final FieldPath parentFieldPath;
+        @Nullable
         private final FieldPath childrenFieldPath;
+        @Nullable
         private final FieldPath nonChildrenFieldPath;
+        @Nullable
         private final FieldPath precisionFieldPath;
 
         FieldConfig(
@@ -100,7 +105,8 @@ public final class GeoGridProcessor extends AbstractProcessor {
             this.precisionFieldPath = optional(precisionField);
         }
 
-        private static FieldPath optional(String field) {
+        @Nullable
+        private static FieldPath optional(@Nullable String field) {
             return field != null && field.length() > 0 ? FieldPath.of(field) : null;
         }
 
