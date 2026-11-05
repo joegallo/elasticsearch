@@ -107,7 +107,7 @@ public final class GeoGridProcessor extends AbstractProcessor {
 
         @Nullable
         private static FieldPath optional(@Nullable String field) {
-            return field != null && field.length() > 0 ? FieldPath.of(field) : null;
+            return field == null || field.isEmpty() ? null : FieldPath.of(field);
         }
 
         public String field(String key) {
