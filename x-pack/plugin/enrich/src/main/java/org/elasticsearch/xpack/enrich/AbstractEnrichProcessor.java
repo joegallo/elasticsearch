@@ -98,15 +98,15 @@ public abstract class AbstractEnrichProcessor extends AbstractProcessor {
                     return;
                 }
 
-                FieldPath renderedTargetField = this.targetField.resolve(ingestDocument);
-                if (overrideEnabled || ingestDocument.hasField(renderedTargetField) == false) {
+                FieldPath targetPath = this.targetField.resolve(ingestDocument);
+                if (overrideEnabled || ingestDocument.hasField(targetPath) == false) {
                     if (maxMatches == 1) {
                         Map<?, ?> firstDocument = searchHits.get(0);
-                        ingestDocument.setFieldValue(renderedTargetField, firstDocument);
+                        ingestDocument.setFieldValue(targetPath, firstDocument);
                     } else {
                         List<Map<?, ?>> enrichDocuments = new ArrayList<>(searchHits.size());
                         enrichDocuments.addAll(searchHits);
-                        ingestDocument.setFieldValue(renderedTargetField, enrichDocuments);
+                        ingestDocument.setFieldValue(targetPath, enrichDocuments);
                     }
                 }
                 handler.accept(ingestDocument, null);
