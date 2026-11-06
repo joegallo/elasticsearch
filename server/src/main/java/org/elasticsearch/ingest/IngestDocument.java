@@ -38,7 +38,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
@@ -236,14 +235,15 @@ public final class IngestDocument {
     public <T> T getFieldValue(FieldPath fieldPath, Class<T> clazz, boolean ignoreMissing) {
         final FieldPath parsedPath = fieldPath.resolve(this);
         final String path = parsedPath.path;
-        parsedPath.validate(getCurrentAccessPatternSafe());
+        final IngestPipelineFieldAccessPattern accessPattern = getAccessPattern();
+        parsedPath.validate(accessPattern);
         Object context = parsedPath.initialContext(this);
         Object result = resolve(
             parsedPath.pathElements,
             parsedPath.pathElements.length,
             path,
             context,
-            getCurrentAccessPatternSafe(),
+            accessPattern,
             ignoreMissing ? Failures.IGNORE_ALL : Failures.REPORT
         );
         if (result == IGNORED_FAILURE) {
@@ -293,7 +293,8 @@ public final class IngestDocument {
     public boolean hasField(FieldPath fieldPath, boolean failOutOfRange) {
         final FieldPath parsedPath = fieldPath.resolve(this);
         final String path = parsedPath.path;
-        parsedPath.validate(getCurrentAccessPatternSafe());
+        final IngestPipelineFieldAccessPattern accessPattern = getAccessPattern();
+        parsedPath.validate(accessPattern);
         Object context = parsedPath.initialContext(this);
         int leafKeyIndex = parsedPath.pathElements.length - 1;
         int lastContainerIndex = parsedPath.pathElements.length - 2;
@@ -303,7 +304,7 @@ public final class IngestDocument {
             if (context == null) {
                 return false;
             } else if (context instanceof IngestCtxMap map) { // optimization: handle IngestCtxMap separately from Map
-                switch (getCurrentAccessPatternSafe()) {
+                switch (accessPattern) {
                     case CLASSIC -> context = map.get(pathElement);
                     case FLEXIBLE -> {
                         Object object = map.getOrDefault(pathElement, NOT_FOUND);
@@ -337,7 +338,7 @@ public final class IngestDocument {
                     }
                 }
             } else if (context instanceof Map<?, ?> map) {
-                switch (getCurrentAccessPatternSafe()) {
+                switch (accessPattern) {
                     case CLASSIC -> context = map.get(pathElement);
                     case FLEXIBLE -> {
                         @SuppressWarnings("unchecked")
@@ -373,7 +374,7 @@ public final class IngestDocument {
                     }
                 }
             } else if (context instanceof List<?> list) {
-                if (getCurrentAccessPatternSafe() == IngestPipelineFieldAccessPattern.FLEXIBLE) {
+                if (accessPattern == IngestPipelineFieldAccessPattern.FLEXIBLE) {
                     // Flexible access pattern cannot yet access array values, new syntax must be added.
                     // Handle this as if the path element was not parsable as an integer in the classic mode
                     return false;
@@ -405,7 +406,7 @@ public final class IngestDocument {
         } else if (context instanceof Map<?, ?> map) {
             return map.containsKey(leafKey);
         } else if (context instanceof List<?> list) {
-            if (getCurrentAccessPatternSafe() == IngestPipelineFieldAccessPattern.FLEXIBLE) {
+            if (accessPattern == IngestPipelineFieldAccessPattern.FLEXIBLE) {
                 // Flexible access pattern cannot yet access array values, new syntax must be added.
                 // Handle this as if the path element was not parsable as an integer in the classic mode
                 return false;
@@ -463,7 +464,8 @@ public final class IngestDocument {
     public void removeField(FieldPath fieldPath, boolean ignoreMissing) {
         final FieldPath parsedPath = fieldPath.resolve(this);
         final String path = parsedPath.path;
-        parsedPath.validate(getCurrentAccessPatternSafe());
+        final IngestPipelineFieldAccessPattern accessPattern = getAccessPattern();
+        parsedPath.validate(accessPattern);
         Object context = parsedPath.initialContext(this);
         String leafKey = parsedPath.pathElements[parsedPath.pathElements.length - 1];
         Object result = resolve(
@@ -471,7 +473,7 @@ public final class IngestDocument {
             parsedPath.pathElements.length - 1,
             path,
             context,
-            getCurrentAccessPatternSafe(),
+            accessPattern,
             ignoreMissing ? Failures.IGNORE_ERRORS : Failures.REPORT
         );
         if (result == IGNORED_FAILURE) {
@@ -504,7 +506,7 @@ public final class IngestDocument {
                 throw new IllegalArgumentException(Errors.notPresent(path, leafKey));
             }
         } else if (context instanceof List<?> list) {
-            if (getCurrentAccessPatternSafe() == IngestPipelineFieldAccessPattern.FLEXIBLE) {
+            if (accessPattern == IngestPipelineFieldAccessPattern.FLEXIBLE) {
                 // Flexible access pattern cannot yet access array values, new syntax must be added.
                 if (ignoreMissing == false) {
                     throw new IllegalArgumentException("path [" + path + "] is not valid");
@@ -877,7 +879,8 @@ public final class IngestDocument {
             : "allowDuplicates and ignoreEmptyValues only apply if append is true";
         final FieldPath parsedPath = fieldPath.resolve(this);
         final String path = parsedPath.path;
-        parsedPath.validate(getCurrentAccessPatternSafe());
+        final IngestPipelineFieldAccessPattern accessPattern = getAccessPattern();
+        parsedPath.validate(accessPattern);
         Object context = parsedPath.initialContext(this);
         int leafKeyIndex = parsedPath.pathElements.length - 1;
         int lastContainerIndex = parsedPath.pathElements.length - 2;
@@ -887,7 +890,7 @@ public final class IngestDocument {
             if (context == null) {
                 throw new IllegalArgumentException(Errors.cannotResolve(path, pathElement, null));
             } else if (context instanceof IngestCtxMap map) { // optimization: handle IngestCtxMap separately from Map
-                switch (getCurrentAccessPatternSafe()) {
+                switch (accessPattern) {
                     case CLASSIC -> {
                         Object object = map.getOrDefault(pathElement, NOT_FOUND); // getOrDefault is faster than containsKey + get
                         if (object == NOT_FOUND) {
@@ -930,7 +933,7 @@ public final class IngestDocument {
                     }
                 }
             } else if (context instanceof Map<?, ?>) {
-                switch (getCurrentAccessPatternSafe()) {
+                switch (accessPattern) {
                     case CLASSIC -> {
                         @SuppressWarnings("unchecked")
                         Map<String, Object> map = (Map<String, Object>) context;
@@ -977,7 +980,7 @@ public final class IngestDocument {
                     }
                 }
             } else if (context instanceof List<?> list) {
-                if (getCurrentAccessPatternSafe() == IngestPipelineFieldAccessPattern.FLEXIBLE) {
+                if (accessPattern == IngestPipelineFieldAccessPattern.FLEXIBLE) {
                     // Flexible access pattern cannot yet access array values, new syntax must be added.
                     throw new IllegalArgumentException("path [" + path + "] is not valid");
                 }
@@ -1038,7 +1041,7 @@ public final class IngestDocument {
             }
             map.put(leafKey, value);
         } else if (context instanceof List<?>) {
-            if (getCurrentAccessPatternSafe() == IngestPipelineFieldAccessPattern.FLEXIBLE) {
+            if (accessPattern == IngestPipelineFieldAccessPattern.FLEXIBLE) {
                 // Flexible access pattern cannot yet access array values, new syntax must be added.
                 throw new IllegalArgumentException("path [" + path + "] is not valid");
             }
@@ -1254,18 +1257,12 @@ public final class IngestDocument {
     }
 
     /**
-     * @return The access pattern for any currently executing pipelines, or empty if no pipelines are in progress for this doc
+     * @return The access pattern of the pipeline that is currently executing on this doc, or
+     * {@link IngestPipelineFieldAccessPattern#CLASSIC} if no pipelines are in progress for the sake of backwards compatibility
      */
-    public Optional<IngestPipelineFieldAccessPattern> getCurrentAccessPattern() {
-        return Optional.ofNullable(accessPatternStack.peek());
-    }
-
-    /**
-     * @return The access pattern for any currently executing pipelines, or {@link IngestPipelineFieldAccessPattern#CLASSIC} if no
-     * pipelines are in progress for this doc for the sake of backwards compatibility
-     */
-    public IngestPipelineFieldAccessPattern getCurrentAccessPatternSafe() {
-        return getCurrentAccessPattern().orElse(IngestPipelineFieldAccessPattern.CLASSIC);
+    public IngestPipelineFieldAccessPattern getAccessPattern() {
+        final IngestPipelineFieldAccessPattern current = accessPatternStack.peek();
+        return current != null ? current : IngestPipelineFieldAccessPattern.CLASSIC;
     }
 
     /**
