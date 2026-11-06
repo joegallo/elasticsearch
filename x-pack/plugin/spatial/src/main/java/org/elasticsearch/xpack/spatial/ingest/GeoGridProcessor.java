@@ -7,6 +7,7 @@
 package org.elasticsearch.xpack.spatial.ingest;
 
 import org.elasticsearch.cluster.metadata.ProjectId;
+import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.geo.GeometryParserFormat;
 import org.elasticsearch.common.xcontent.XContentHelper;
@@ -107,7 +108,7 @@ public final class GeoGridProcessor extends AbstractProcessor {
 
         @Nullable
         private static FieldPath optional(@Nullable String field) {
-            return field == null || field.isEmpty() ? null : FieldPath.of(field);
+            return Strings.isEmpty(field) ? null : FieldPath.of(field);
         }
 
         public String field(String key) {
