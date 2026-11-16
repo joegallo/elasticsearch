@@ -25,6 +25,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.file.Path;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Calendar;
@@ -35,6 +36,8 @@ import java.util.EnumSet;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -1164,15 +1167,62 @@ public final class XContentBuilder implements Closeable, Flushable {
         if (writeStartAndEndHeaders) {
             startObject();
         }
+        writeMapEntries(values);
+        if (writeStartAndEndHeaders) {
+            endObject();
+        }
+        return this;
+    }
+
+    /*
+     * The JIT records receiver-type profiles per bytecode, so a single entry loop that sees every Map implementation
+     * has megamorphic entrySet()/iterator()/hasNext()/next()/getKey()/getValue() call sites. Ingest documents are a mixture of
+     * HashMap, LinkedHashMap and immutable maps (Map.of/Map.copyOf), so the loop is deliberately duplicated per common
+     * implementation: each copy gets its own, usually monomorphic, profile. Do not fold these back into a shared helper.
+     * Exact class checks are used because LinkedHashMap extends HashMap.
+     */
+    private static final Class<?> IMMUTABLE_MAP_N = Map.of("a", 1, "b", 2).getClass();
+
+    private void writeMapEntries(Map<String, ?> values) throws IOException {
+        final Class<?> type = values.getClass();
+        if (type == HashMap.class) {
+            writeHashMapEntries(values);
+        } else if (type == LinkedHashMap.class) {
+            writeLinkedHashMapEntries(values);
+        } else if (type == IMMUTABLE_MAP_N) {
+            writeImmutableMapEntries(values);
+        } else {
+            writeOtherMapEntries(values);
+        }
+    }
+
+    private void writeHashMapEntries(Map<String, ?> values) throws IOException {
         for (Map.Entry<String, ?> value : values.entrySet()) {
             field(value.getKey());
             // pass ensureNoSelfReferences=false as we already performed the check at a higher level
             unknownValue(value.getValue(), false);
         }
-        if (writeStartAndEndHeaders) {
-            endObject();
+    }
+
+    private void writeLinkedHashMapEntries(Map<String, ?> values) throws IOException {
+        for (Map.Entry<String, ?> value : values.entrySet()) {
+            field(value.getKey());
+            unknownValue(value.getValue(), false);
         }
-        return this;
+    }
+
+    private void writeImmutableMapEntries(Map<String, ?> values) throws IOException {
+        for (Map.Entry<String, ?> value : values.entrySet()) {
+            field(value.getKey());
+            unknownValue(value.getValue(), false);
+        }
+    }
+
+    private void writeOtherMapEntries(Map<String, ?> values) throws IOException {
+        for (Map.Entry<String, ?> value : values.entrySet()) {
+            field(value.getKey());
+            unknownValue(value.getValue(), false);
+        }
     }
 
     public XContentBuilder field(String name, Iterable<?> values) throws IOException {
@@ -1194,13 +1244,64 @@ public final class XContentBuilder implements Closeable, Flushable {
                 ensureNoSelfReferences(values);
             }
             startArray();
-            for (Object value : values) {
-                // pass ensureNoSelfReferences=false as we already performed the check at a higher level
-                unknownValue(value, false);
-            }
+            writeIterableItems(values);
             endArray();
         }
         return this;
+    }
+
+    /*
+     * Same reasoning as writeMapEntries: one loop over Iterable sees ArrayList, List.of (List12/ListN), Arrays.asList and so on,
+     * so iterator()/hasNext()/next() are megamorphic. Keep one loop copy per common implementation.
+     */
+    private static final Class<?> IMMUTABLE_LIST_12 = List.of(1, 2).getClass();
+    private static final Class<?> IMMUTABLE_LIST_N = List.of(1, 2, 3).getClass();
+    private static final Class<?> ARRAYS_AS_LIST = Arrays.asList(1, 2).getClass();
+
+    private void writeIterableItems(Iterable<?> values) throws IOException {
+        final Class<?> type = values.getClass();
+        if (type == ArrayList.class) {
+            writeArrayListItems(values);
+        } else if (type == IMMUTABLE_LIST_N) {
+            writeImmutableListNItems(values);
+        } else if (type == IMMUTABLE_LIST_12) {
+            writeImmutableList12Items(values);
+        } else if (type == ARRAYS_AS_LIST) {
+            writeArraysAsListItems(values);
+        } else {
+            writeOtherIterableItems(values);
+        }
+    }
+
+    private void writeArrayListItems(Iterable<?> values) throws IOException {
+        for (Object value : values) {
+            // pass ensureNoSelfReferences=false as we already performed the check at a higher level
+            unknownValue(value, false);
+        }
+    }
+
+    private void writeImmutableListNItems(Iterable<?> values) throws IOException {
+        for (Object value : values) {
+            unknownValue(value, false);
+        }
+    }
+
+    private void writeImmutableList12Items(Iterable<?> values) throws IOException {
+        for (Object value : values) {
+            unknownValue(value, false);
+        }
+    }
+
+    private void writeArraysAsListItems(Iterable<?> values) throws IOException {
+        for (Object value : values) {
+            unknownValue(value, false);
+        }
+    }
+
+    private void writeOtherIterableItems(Iterable<?> values) throws IOException {
+        for (Object value : values) {
+            unknownValue(value, false);
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////
