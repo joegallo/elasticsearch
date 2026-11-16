@@ -999,6 +999,12 @@ public final class XContentBuilder implements Closeable, Flushable {
             nullValue();
             return;
         }
+        // Strings are by far the most common value, so skip the WRITERS lookup (a hash probe plus a megamorphic call on the
+        // writer lambda) for them. String is final, so this is a single class compare, and it matches the default String writer.
+        if (value instanceof String string) {
+            value(string);
+            return;
+        }
         Writer writer = WRITERS.get(value.getClass());
         if (writer != null) {
             writer.write(this, value);
