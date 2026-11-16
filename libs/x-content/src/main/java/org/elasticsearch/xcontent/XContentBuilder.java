@@ -170,11 +170,9 @@ public final class XContentBuilder implements Closeable, Flushable {
             unixEpochMillisFormatter = service::formatUnixEpochMillis;
         }
 
-        // while Map.copyOf is a more-compact memory layout, an unmodifiableMap wrapper offers faster performance due
-        // the specifics of hashCode behavior (especially on misses!)
-        WRITERS = Collections.unmodifiableMap(writers);
-        HUMAN_READABLE_TRANSFORMERS = Collections.unmodifiableMap(humanReadableTransformer);
-        DATE_TRANSFORMERS = Collections.unmodifiableMap(dateTransformers);
+        WRITERS = Map.copyOf(writers);
+        HUMAN_READABLE_TRANSFORMERS = Map.copyOf(humanReadableTransformer);
+        DATE_TRANSFORMERS = Map.copyOf(dateTransformers);
         UNIX_EPOCH_MILLIS_FORMATTER = unixEpochMillisFormatter;
     }
 
