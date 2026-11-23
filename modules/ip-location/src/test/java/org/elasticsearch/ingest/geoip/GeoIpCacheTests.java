@@ -9,7 +9,7 @@
 
 package org.elasticsearch.ingest.geoip;
 
-import com.maxmind.geoip2.model.AbstractResponse;
+import com.maxmind.geoip2.model.CountryResponse;
 
 import org.elasticsearch.cluster.metadata.ProjectId;
 import org.elasticsearch.core.PathUtils;
@@ -23,18 +23,25 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
 import static org.hamcrest.Matchers.equalTo;
-import static org.mockito.Mockito.mock;
 
 public class GeoIpCacheTests extends ESTestCase {
+
+    /**
+     * The cache is agnostic to the type of response it holds and these tests only care about object identity, so any real response
+     * will do. Records compare by value, so callers must use assertSame/assertNotSame rather than equals to tell instances apart.
+     */
+    private static CountryResponse newResponse() {
+        return new CountryResponse(null, null, null, null, null, null);
+    }
 
     public void testCachesAndEvictsResults() {
         GeoIpCache cache = new GeoIpCache(1);
         ProjectId projectId = randomProjectIdOrDefault();
-        AbstractResponse response1 = mock(AbstractResponse.class);
-        AbstractResponse response2 = mock(AbstractResponse.class);
+        CountryResponse response1 = newResponse();
+        CountryResponse response2 = newResponse();
 
         // add a key
-        AbstractResponse cachedResponse = cache.putIfAbsent(projectId, "127.0.0.1", "path/to/db", ip -> response1);
+        CountryResponse cachedResponse = cache.putIfAbsent(projectId, "127.0.0.1", "path/to/db", ip -> response1);
         assertSame(cachedResponse, response1);
         assertSame(cachedResponse, cache.putIfAbsent(projectId, "127.0.0.1", "path/to/db", ip -> response1));
         assertSame(cachedResponse, cache.get(projectId, "127.0.0.1", "path/to/db"));
@@ -50,13 +57,13 @@ public class GeoIpCacheTests extends ESTestCase {
     public void testCachesNoResult() {
         GeoIpCache cache = new GeoIpCache(1);
         final AtomicInteger count = new AtomicInteger(0);
-        Function<String, AbstractResponse> countAndReturnNull = (ip) -> {
+        Function<String, CountryResponse> countAndReturnNull = (ip) -> {
             count.incrementAndGet();
             return null;
         };
 
         ProjectId projectId = randomProjectIdOrDefault();
-        AbstractResponse response = cache.putIfAbsent(projectId, "127.0.0.1", "path/to/db", countAndReturnNull);
+        CountryResponse response = cache.putIfAbsent(projectId, "127.0.0.1", "path/to/db", countAndReturnNull);
         assertNull(response);
         assertNull(cache.putIfAbsent(projectId, "127.0.0.1", "path/to/db", countAndReturnNull));
         assertEquals(1, count.get());
@@ -67,8 +74,8 @@ public class GeoIpCacheTests extends ESTestCase {
 
     public void testCacheDoesNotCollideForDifferentDatabases() {
         GeoIpCache cache = new GeoIpCache(2);
-        AbstractResponse response1 = mock(AbstractResponse.class);
-        AbstractResponse response2 = mock(AbstractResponse.class);
+        CountryResponse response1 = newResponse();
+        CountryResponse response2 = newResponse();
 
         ProjectId projectId = randomProjectIdOrDefault();
         assertSame(response1, cache.putIfAbsent(projectId, "127.0.0.1", "path/to/db1", ip -> response1));
@@ -79,8 +86,8 @@ public class GeoIpCacheTests extends ESTestCase {
 
     public void testCacheDoesNotCollideForDifferentProjects() {
         GeoIpCache cache = new GeoIpCache(2);
-        AbstractResponse response1 = mock(AbstractResponse.class);
-        AbstractResponse response2 = mock(AbstractResponse.class);
+        CountryResponse response1 = newResponse();
+        CountryResponse response2 = newResponse();
 
         ProjectId projectId1 = randomUniqueProjectId();
         ProjectId projectId2 = randomUniqueProjectId();
@@ -113,7 +120,7 @@ public class GeoIpCacheTests extends ESTestCase {
         // We use a relative time provider that increments 1ms every time it is called. So each operation appears to take 1ms
         GeoIpCache cache = new GeoIpCache(maxCacheSize, () -> testNanoTime.addAndGet(TimeValue.timeValueMillis(1).getNanos()));
         ProjectId projectId = randomProjectIdOrDefault();
-        AbstractResponse response = mock(AbstractResponse.class);
+        CountryResponse response = newResponse();
         String databasePath = "path/to/db1";
         String key1 = "127.0.0.1";
         String key2 = "127.0.0.2";
@@ -148,7 +155,7 @@ public class GeoIpCacheTests extends ESTestCase {
         String ip1 = "127.0.0.1";
         String ip2 = "127.0.0.2";
 
-        AbstractResponse response = mock(AbstractResponse.class);
+        CountryResponse response = newResponse();
         cache.putIfAbsent(projectId1, ip1, databasePath1.toString(), ip -> response); // cache miss
         cache.putIfAbsent(projectId1, ip2, databasePath1.toString(), ip -> response); // cache miss
         cache.putIfAbsent(projectId2, ip1, databasePath1.toString(), ip -> response); // cache miss

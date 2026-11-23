@@ -194,8 +194,8 @@ public final class GeoIpTestUtils {
      */
     public static CityResponse getCity(Reader reader, String ip) throws IOException {
         DatabaseRecord<CityResponse> record = reader.getRecord(InetAddresses.forString(ip), CityResponse.class);
-        CityResponse data = record.getData();
-        return data == null ? null : new CityResponse(data, ip, record.getNetwork(), List.of("en"));
+        CityResponse data = record.data();
+        return data == null ? null : new CityResponse(data, List.of("en"));
     }
 
     /**
@@ -206,7 +206,7 @@ public final class GeoIpTestUtils {
      */
     public static CountryResponse getCountry(Reader reader, String ip) throws IOException {
         DatabaseRecord<CountryResponse> record = reader.getRecord(InetAddresses.forString(ip), CountryResponse.class);
-        CountryResponse data = record.getData();
-        return data == null ? null : new CountryResponse(data, ip, record.getNetwork(), List.of("en"));
+        CountryResponse data = record.data();
+        return data == null ? null : new CountryResponse(data, List.of("en"));
     }
 }

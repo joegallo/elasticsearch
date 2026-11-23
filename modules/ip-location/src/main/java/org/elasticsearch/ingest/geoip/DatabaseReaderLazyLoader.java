@@ -190,7 +190,7 @@ public class DatabaseReaderLazyLoader implements IpDatabase {
         if (buildDate.get() == null) {
             synchronized (buildDate) {
                 if (buildDate.get() == null) {
-                    buildDate.set(loader.get().getMetadata().getBuildDate().getTime());
+                    buildDate.set(loader.get().getMetadata().buildTime().toEpochMilli());
                 }
             }
         }

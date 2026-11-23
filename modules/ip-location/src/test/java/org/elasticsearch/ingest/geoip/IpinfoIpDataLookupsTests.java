@@ -723,7 +723,7 @@ public class IpinfoIpDataLookupsTests extends ESTestCase {
             Networks<?> networks = reader.networks(Map.class);
             while (networks.hasNext()) {
                 DatabaseRecord<?> dbr = networks.next();
-                InetAddress address = dbr.getNetwork().getNetworkAddress();
+                InetAddress address = dbr.network().networkAddress();
                 @SuppressWarnings("unchecked")
                 Map<String, Object> result = reader.get(address, Map.class);
                 try {

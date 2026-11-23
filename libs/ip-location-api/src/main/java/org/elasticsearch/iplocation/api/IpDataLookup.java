@@ -25,6 +25,15 @@ import java.util.Map;
 public interface IpDataLookup {
 
     /**
+     * The number of entries to leave room for in a result map, beyond the properties that the lookup itself puts there. Consumers of the
+     * result, ingest pipelines in particular, commonly add a field or two to the map that they get back (for example, an integration
+     * might add a {@code name} or {@code postal_code} next to the looked-up geo fields). Leaving room for those avoids a resize of the
+     * map, which would otherwise copy every entry. A survey of the Elastic integrations pipelines found that the map grew by at most
+     * one entry, so two is comfortable headroom without being wasteful.
+     */
+    int EXPECTED_EXTRA_FIELDS = 2;
+
+    /**
      * Look up IP data and push results to the collector.
      * <p>
      * Return value semantics (three-way):
@@ -46,7 +55,7 @@ public interface IpDataLookup {
      */
     @Nullable
     default Map<String, Object> lookup(String ip) throws IOException {
-        Map<String, Object> map = new HashMap<>();
+        Map<String, Object> map = HashMap.newHashMap(getInfo().getFields().size() + EXPECTED_EXTRA_FIELDS);
         Boolean result = lookup(ip, new IpLocationInfoMapCollector(map));
         if (result == null) {
             return null;

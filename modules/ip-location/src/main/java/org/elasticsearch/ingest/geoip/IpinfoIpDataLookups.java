@@ -667,8 +667,8 @@ final class IpinfoIpDataLookups {
         private Result<RESPONSE> lookup(final Reader reader, final String ipAddress) throws IOException {
             final InetAddress ip = InetAddresses.forString(ipAddress);
             final DatabaseRecord<RESPONSE> entry = reader.getRecord(ip, clazz);
-            final RESPONSE data = entry.getData();
-            return (data == null) ? null : new Result<>(data, NetworkAddress.format(ip), entry.getNetwork().toString());
+            final RESPONSE data = entry.data();
+            return (data == null) ? null : new Result<>(data, NetworkAddress.format(ip), entry.network().toString());
         }
 
         /**
